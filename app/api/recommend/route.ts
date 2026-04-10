@@ -10,12 +10,12 @@ export async function POST(req: NextRequest) {
     const prendasContext =
       prendas?.length > 0
         ? `El usuario tiene estas prendas en su armario: ${prendas
-            .map((p: { name: string; category: string }) => `${p.name} (${p.category})`)
-            .join(", ")}.`
+          .map((p: { name: string; category: string }) => `${p.name} (${p.category})`)
+          .join(", ")}.`
         : "El usuario aún no tiene prendas cargadas. Sugiere outfits genéricos de lujo y tendencia."
 
     const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
+      model: "claude-haiku-4-5",
       max_tokens: 1024,
       system: `Eres una estilista experta de Clossapp. Tu tono es girly, cool y aesthetic. 
 Analiza las prendas del usuario y sugiere 3 outfits basados en el clima y la ocasión indicados.
