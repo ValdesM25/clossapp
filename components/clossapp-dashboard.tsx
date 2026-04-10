@@ -325,8 +325,12 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
     try {
       // Compress to max 800px / JPEG 0.7 before sending — avoids Vercel 4.5MB payload limit
       const compressed = await resizeImage(file, 800, 0.7)
-      const arrayBuffer = await compressed.arrayBuffer()
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve((reader.result as string).split(",")[1])
+        reader.onerror = reject
+        reader.readAsDataURL(compressed)
+      })
       const mediaType = "image/jpeg"
 
       const res = await fetch("/api/analyze-prenda", {
@@ -344,7 +348,8 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
         estilo: data.estilo ?? "",
         descripcion: data.descripcion ?? "",
       }))
-    } catch {
+    } catch (err) {
+      console.error("[analyzeImage]", err)
       setAnalyzeError("No se pudo analizar la imagen. Puedes completar los campos manualmente.")
     } finally {
       setAnalyzing(false)
