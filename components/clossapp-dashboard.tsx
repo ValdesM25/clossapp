@@ -101,7 +101,7 @@ async function fetchPrendas(userId: string): Promise<Prenda[]> {
   return data ?? []
 }
 
-async function resizeImage(file: File, maxWidth = 1000): Promise<Blob> {
+async function resizeImage(file: File, maxWidth = 1000, quality = 0.85): Promise<Blob> {
   return new Promise((resolve) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
@@ -112,7 +112,7 @@ async function resizeImage(file: File, maxWidth = 1000): Promise<Blob> {
       canvas.height = img.height * scale
       canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height)
       URL.revokeObjectURL(url)
-      canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.85)
+      canvas.toBlob((b) => resolve(b!), "image/jpeg", quality)
     }
     img.src = url
   })
@@ -323,10 +323,11 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
   async function analyzeImage(file: File) {
     setAnalyzing(true)
     try {
-      // Convert to base64
-      const arrayBuffer = await file.arrayBuffer()
+      // Compress to max 800px / JPEG 0.7 before sending — avoids Vercel 4.5MB payload limit
+      const compressed = await resizeImage(file, 800, 0.7)
+      const arrayBuffer = await compressed.arrayBuffer()
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
-      const mediaType = file.type || "image/jpeg"
+      const mediaType = "image/jpeg"
 
       const res = await fetch("/api/analyze-prenda", {
         method: "POST",
@@ -637,7 +638,7 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
                     <div className="flex items-center gap-2 shrink-0">
                       <span className={cn("text-[10px] px-2 py-0.5 border",
                         rep.prioridad === "Alta" ? "border-zinc-900 text-zinc-900" :
-                        rep.prioridad === "Media" ? "border-zinc-400 text-zinc-500" : "border-zinc-200 text-zinc-400")}>
+                          rep.prioridad === "Media" ? "border-zinc-400 text-zinc-500" : "border-zinc-200 text-zinc-400")}>
                         {rep.prioridad}
                       </span>
                       <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleCompleteRep(rep.id)}
@@ -915,9 +916,9 @@ function OutfitCard({
   const [showDesc, setShowDesc] = useState(false)
 
   // Split prendas into visual layers for the photo grid
-  const tops = outfitPrendas.filter((p) => ["top", "outerwear"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string,string> | null)?.categoria?.toLowerCase().includes(k)))
-  const bottoms = outfitPrendas.filter((p) => ["bottom", "calzado"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string,string> | null)?.categoria?.toLowerCase().includes(k)))
-  const accesorios = outfitPrendas.filter((p) => ["accesorio"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string,string> | null)?.categoria?.toLowerCase().includes(k)))
+  const tops = outfitPrendas.filter((p) => ["top", "outerwear"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string, string> | null)?.categoria?.toLowerCase().includes(k)))
+  const bottoms = outfitPrendas.filter((p) => ["bottom", "calzado"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string, string> | null)?.categoria?.toLowerCase().includes(k)))
+  const accesorios = outfitPrendas.filter((p) => ["accesorio"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string, string> | null)?.categoria?.toLowerCase().includes(k)))
   // Fallback: if no layer matched, show all
   const hasLayers = tops.length + bottoms.length + accesorios.length > 0
   const allPhotos = hasLayers ? [...tops, ...bottoms, ...accesorios] : outfitPrendas
