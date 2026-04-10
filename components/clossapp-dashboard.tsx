@@ -292,6 +292,7 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
   const [showRepForm, setShowRepForm] = useState(false)
   const [repForm, setRepForm] = useState({ prenda_id: null as string | null, tarea: "", prioridad: "Media" as ReparacionDB["prioridad"] })
   const [savingRep, setSavingRep] = useState(false)
+  const [selectedPrenda, setSelectedPrenda] = useState<Prenda | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const prendasConRep = new Set(reparaciones.map((r) => r.prenda_id).filter(Boolean))
@@ -584,7 +585,8 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
             {prendas.map((item, i) => {
               const tieneRep = prendasConRep.has(item.id)
               return (
-                <div key={item.id} className="break-inside-avoid relative overflow-hidden bg-zinc-50 mb-3">
+                <div key={item.id} onClick={() => setSelectedPrenda(item)}
+                  className="break-inside-avoid relative overflow-hidden bg-zinc-50 mb-3 cursor-pointer active:opacity-80 transition-opacity">
                   <img src={item.image_url || fashionImages[i % fashionImages.length]} alt={item.name}
                     className="w-full object-cover" style={{ height: i % 3 === 0 ? "180px" : i % 3 === 1 ? "140px" : "160px" }} />
                   {tieneRep && (
@@ -607,6 +609,72 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
           </div>
         )}
       </section>
+
+      {/* Prenda Detail Modal */}
+      <CenteredModal open={!!selectedPrenda} onClose={() => setSelectedPrenda(null)}>
+        {selectedPrenda && (() => {
+          const m = selectedPrenda.metadata ?? {}
+          const chips = [m.estilo, m.material, m.color_principal].filter(Boolean)
+          return (
+            <div className="flex flex-col">
+              <img
+                src={selectedPrenda.image_url}
+                alt={selectedPrenda.name}
+                className="w-full object-cover"
+                style={{ maxHeight: "320px" }}
+              />
+              <div className="p-5 flex flex-col gap-4">
+                {/* Nombre con tipografía serif */}
+                <div>
+                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">{selectedPrenda.category}</p>
+                  <h2 className="font-serif text-xl text-zinc-900 leading-tight">
+                    {m.nombre || selectedPrenda.name}
+                  </h2>
+                </div>
+
+                {/* Chips de atributos */}
+                {chips.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {chips.map((chip) => (
+                      <span key={chip} className="bg-zinc-900 text-white text-[10px] font-medium px-2.5 py-1 tracking-wide uppercase">
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Ficha técnica */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-zinc-100 pt-4">
+                  {m.descripcion && (
+                    <div className="col-span-2">
+                      <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-0.5">Descripción</p>
+                      <p className="text-xs text-zinc-700 leading-relaxed">{m.descripcion}</p>
+                    </div>
+                  )}
+                  {selectedPrenda.talla && (
+                    <div>
+                      <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-0.5">Talla</p>
+                      <p className="text-sm font-medium text-zinc-900">{selectedPrenda.talla}</p>
+                    </div>
+                  )}
+                  {selectedPrenda.estado_uso && (
+                    <div>
+                      <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-0.5">Estado</p>
+                      <p className="text-sm font-medium text-zinc-900">{selectedPrenda.estado_uso}</p>
+                    </div>
+                  )}
+                  {selectedPrenda.en_venta && selectedPrenda.precio && (
+                    <div>
+                      <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-0.5">Precio</p>
+                      <p className="font-serif text-lg text-zinc-900">${selectedPrenda.precio}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+      </CenteredModal>
 
       {/* Reparaciones */}
       <section className="px-4">
@@ -1037,7 +1105,8 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
     if (!selectedItem || isGuest) return
     setAparting(true)
     try {
-      const { error } = await supabase.from("prendas").insert({
+      // 1. Add prenda to buyer's wardrobe
+      const { error: insertError } = await supabase.from("prendas").insert({
         user_id: userId,
         name: selectedItem.name,
         category: selectedItem.category,
@@ -1045,11 +1114,20 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
         talla: selectedItem.talla,
         estado_uso: selectedItem.estado_uso,
         precio: selectedItem.precio,
+        metadata: selectedItem.metadata,
         en_venta: false,
       })
-      if (error) throw error
+      if (insertError) throw insertError
+      // 2. Mark original listing as no longer available
+      const { error: updateError } = await supabase
+        .from("prendas")
+        .update({ en_venta: false })
+        .eq("id", selectedItem.id)
+      if (updateError) throw updateError
       setApartSuccess(true)
       onApartar() // trigger armario refetch
+      // Remove from local marketplace list immediately
+      setItems((prev) => prev.filter((p) => p.id !== selectedItem.id))
       setTimeout(() => { setApartSuccess(false); setSelectedItem(null) }, 2000)
     } catch (err) { console.error("Error apartando:", err) }
     finally { setAparting(false) }
