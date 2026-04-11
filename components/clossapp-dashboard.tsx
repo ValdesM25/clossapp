@@ -101,7 +101,7 @@ async function fetchPrendas(userId: string): Promise<Prenda[]> {
   return data ?? []
 }
 
-async function resizeImage(file: File, maxWidth = 1000): Promise<Blob> {
+async function resizeImage(file: File, maxWidth = 1000, quality = 0.85): Promise<Blob> {
   return new Promise((resolve) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
@@ -112,7 +112,7 @@ async function resizeImage(file: File, maxWidth = 1000): Promise<Blob> {
       canvas.height = img.height * scale
       canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height)
       URL.revokeObjectURL(url)
-      canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.85)
+      canvas.toBlob((b) => resolve(b!), "image/jpeg", quality)
     }
     img.src = url
   })
@@ -145,7 +145,7 @@ function CenteredModal({ open, onClose, children }: { open: boolean; onClose: ()
           onClick={onClose}>
           <motion.div initial={{ opacity: 0, scale: 0.94, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 10 }} transition={{ type: "spring", damping: 26, stiffness: 320 }}
-            className="w-full max-w-sm bg-white rounded-none shadow-2xl relative max-h-[88vh] overflow-y-auto"
+            className="w-full max-w-lg bg-white rounded-none shadow-2xl relative max-h-[88vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}>
             <button onClick={onClose}
               className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center border border-zinc-200 hover:bg-zinc-50 z-10">
@@ -292,6 +292,7 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
   const [showRepForm, setShowRepForm] = useState(false)
   const [repForm, setRepForm] = useState({ prenda_id: null as string | null, tarea: "", prioridad: "Media" as ReparacionDB["prioridad"] })
   const [savingRep, setSavingRep] = useState(false)
+  const [selectedPrenda, setSelectedPrenda] = useState<Prenda | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const prendasConRep = new Set(reparaciones.map((r) => r.prenda_id).filter(Boolean))
@@ -323,10 +324,15 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
   async function analyzeImage(file: File, userId: string) {
     setAnalyzing(true)
     try {
-      // Convert to base64
-      const arrayBuffer = await file.arrayBuffer()
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
-      const mediaType = file.type || "image/jpeg"
+      // Compress to max 800px / JPEG 0.7 before sending — avoids Vercel 4.5MB payload limit
+      const compressed = await resizeImage(file, 800, 0.7)
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve((reader.result as string).split(",")[1])
+        reader.onerror = reject
+        reader.readAsDataURL(compressed)
+      })
+      const mediaType = "image/jpeg"
 
       const res = await fetch("/api/analyze-prenda", {
         method: "POST",
@@ -343,7 +349,8 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
         estilo: data.estilo ?? "",
         descripcion: data.descripcion ?? "",
       }))
-    } catch {
+    } catch (err) {
+      console.error("[analyzeImage]", err)
       setAnalyzeError("No se pudo analizar la imagen. Puedes completar los campos manualmente.")
     } finally {
       setAnalyzing(false)
@@ -578,7 +585,8 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
             {prendas.map((item, i) => {
               const tieneRep = prendasConRep.has(item.id)
               return (
-                <div key={item.id} className="break-inside-avoid relative overflow-hidden bg-zinc-50 mb-3">
+                <div key={item.id} onClick={() => setSelectedPrenda(item)}
+                  className="break-inside-avoid relative overflow-hidden bg-zinc-50 mb-3 cursor-pointer active:opacity-80 transition-opacity">
                   <img src={item.image_url || fashionImages[i % fashionImages.length]} alt={item.name}
                     className="w-full object-cover" style={{ height: i % 3 === 0 ? "180px" : i % 3 === 1 ? "140px" : "160px" }} />
                   {tieneRep && (
@@ -601,6 +609,72 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
           </div>
         )}
       </section>
+
+      {/* Prenda Detail Modal */}
+      <CenteredModal open={!!selectedPrenda} onClose={() => setSelectedPrenda(null)}>
+        {selectedPrenda && (() => {
+          const m = selectedPrenda.metadata ?? {}
+          const chips = [m.estilo, m.material, m.color_principal].filter(Boolean)
+          return (
+            <div className="flex flex-col">
+              <img
+                src={selectedPrenda.image_url}
+                alt={selectedPrenda.name}
+                className="w-full object-cover"
+                style={{ maxHeight: "320px" }}
+              />
+              <div className="p-5 flex flex-col gap-4">
+                {/* Nombre con tipografía serif */}
+                <div>
+                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">{selectedPrenda.category}</p>
+                  <h2 className="font-serif text-xl text-zinc-900 leading-tight">
+                    {m.nombre || selectedPrenda.name}
+                  </h2>
+                </div>
+
+                {/* Chips de atributos */}
+                {chips.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {chips.map((chip) => (
+                      <span key={chip} className="bg-zinc-900 text-white text-[10px] font-medium px-2.5 py-1 tracking-wide uppercase">
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Ficha técnica */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-zinc-100 pt-4">
+                  {m.descripcion && (
+                    <div className="col-span-2">
+                      <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-0.5">Descripción</p>
+                      <p className="text-xs text-zinc-700 leading-relaxed">{m.descripcion}</p>
+                    </div>
+                  )}
+                  {selectedPrenda.talla && (
+                    <div>
+                      <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-0.5">Talla</p>
+                      <p className="text-sm font-medium text-zinc-900">{selectedPrenda.talla}</p>
+                    </div>
+                  )}
+                  {selectedPrenda.estado_uso && (
+                    <div>
+                      <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-0.5">Estado</p>
+                      <p className="text-sm font-medium text-zinc-900">{selectedPrenda.estado_uso}</p>
+                    </div>
+                  )}
+                  {selectedPrenda.en_venta && selectedPrenda.precio && (
+                    <div>
+                      <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-0.5">Precio</p>
+                      <p className="font-serif text-lg text-zinc-900">${selectedPrenda.precio}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+      </CenteredModal>
 
       {/* Reparaciones */}
       <section className="px-4">
@@ -637,7 +711,7 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
                     <div className="flex items-center gap-2 shrink-0">
                       <span className={cn("text-[10px] px-2 py-0.5 border",
                         rep.prioridad === "Alta" ? "border-zinc-900 text-zinc-900" :
-                        rep.prioridad === "Media" ? "border-zinc-400 text-zinc-500" : "border-zinc-200 text-zinc-400")}>
+                          rep.prioridad === "Media" ? "border-zinc-400 text-zinc-500" : "border-zinc-200 text-zinc-400")}>
                         {rep.prioridad}
                       </span>
                       <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleCompleteRep(rep.id)}
@@ -656,7 +730,7 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
       <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
 
       <motion.button whileTap={{ scale: 0.94 }} onClick={() => !isGuest && fileInputRef.current?.click()} disabled={uploading}
-        className={cn("fixed bottom-28 right-5 w-12 h-12 flex items-center justify-center z-40 shadow-lg",
+        className={cn("fixed bottom-28 z-40 shadow-lg w-12 h-12 flex items-center justify-center fab-right",
           isGuest ? "bg-zinc-200 cursor-default" : "bg-zinc-900 text-white disabled:opacity-50")}>
         {uploading ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : isGuest ? <Lock className="w-4 h-4 text-zinc-400" /> : <Plus className="w-5 h-5 text-white" />}
       </motion.button>
@@ -925,9 +999,9 @@ function OutfitCard({
   const [showDesc, setShowDesc] = useState(false)
 
   // Split prendas into visual layers for the photo grid
-  const tops = outfitPrendas.filter((p) => ["top", "outerwear"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string,string> | null)?.categoria?.toLowerCase().includes(k)))
-  const bottoms = outfitPrendas.filter((p) => ["bottom", "calzado"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string,string> | null)?.categoria?.toLowerCase().includes(k)))
-  const accesorios = outfitPrendas.filter((p) => ["accesorio"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string,string> | null)?.categoria?.toLowerCase().includes(k)))
+  const tops = outfitPrendas.filter((p) => ["top", "outerwear"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string, string> | null)?.categoria?.toLowerCase().includes(k)))
+  const bottoms = outfitPrendas.filter((p) => ["bottom", "calzado"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string, string> | null)?.categoria?.toLowerCase().includes(k)))
+  const accesorios = outfitPrendas.filter((p) => ["accesorio"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string, string> | null)?.categoria?.toLowerCase().includes(k)))
   // Fallback: if no layer matched, show all
   const hasLayers = tops.length + bottoms.length + accesorios.length > 0
   const allPhotos = hasLayers ? [...tops, ...bottoms, ...accesorios] : outfitPrendas
@@ -1041,7 +1115,8 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
     if (!selectedItem || isGuest) return
     setAparting(true)
     try {
-      const { error } = await supabase.from("prendas").insert({
+      // 1. Add prenda to buyer's wardrobe
+      const { error: insertError } = await supabase.from("prendas").insert({
         user_id: userId,
         name: selectedItem.name,
         category: selectedItem.category,
@@ -1049,11 +1124,20 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
         talla: selectedItem.talla,
         estado_uso: selectedItem.estado_uso,
         precio: selectedItem.precio,
+        metadata: selectedItem.metadata,
         en_venta: false,
       })
-      if (error) throw error
+      if (insertError) throw insertError
+      // 2. Mark original listing as no longer available
+      const { error: updateError } = await supabase
+        .from("prendas")
+        .update({ en_venta: false })
+        .eq("id", selectedItem.id)
+      if (updateError) throw updateError
       setApartSuccess(true)
       onApartar() // trigger armario refetch
+      // Remove from local marketplace list immediately
+      setItems((prev) => prev.filter((p) => p.id !== selectedItem.id))
       setTimeout(() => { setApartSuccess(false); setSelectedItem(null) }, 2000)
     } catch (err) { console.error("Error apartando:", err) }
     finally { setAparting(false) }
@@ -1411,8 +1495,8 @@ export function ClossappDashboard() {
   }
 
   return (
-    <div className="flex items-start justify-center min-h-screen bg-zinc-100">
-      <div className="max-w-md w-full mx-auto min-h-screen bg-white shadow-2xl relative">
+    <div className="flex items-start justify-center min-h-screen bg-white">
+      <div className="w-full max-w-2xl mx-auto min-h-screen bg-white relative">
         <AnimatePresence mode="wait">
           {!userMode ? (
             <LoginView key="login" onLogin={handleLogin} />
@@ -1430,8 +1514,8 @@ export function ClossappDashboard() {
                 {!keyboardOpen && (
                   <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}
-                    className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-6 pointer-events-none">
-                    <nav className="w-[92%] max-w-sm bg-white/80 backdrop-blur-xl border border-zinc-200 px-6 py-3 flex justify-between items-center shadow-lg pointer-events-auto">
+                    className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-safe pb-6 pointer-events-none">
+                    <nav className="w-[92%] max-w-2xl bg-white/80 backdrop-blur-xl border border-zinc-200 px-6 py-3 flex justify-between items-center shadow-lg pointer-events-auto">
                       {navItems.map((item) => {
                         const isActive = activeView === item.id
                         const isFlashing = marketFlash && item.id === "marketplace"

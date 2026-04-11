@@ -54,7 +54,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(parsed)
   } catch (err) {
-    console.error("[/api/analyze-prenda]", err)
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error("[/api/analyze-prenda]", msg)
     return NextResponse.json({ error: "Error analizando la prenda" }, { status: 500 })
   }
 }
