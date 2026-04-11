@@ -586,22 +586,36 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
               const tieneRep = prendasConRep.has(item.id)
               return (
                 <div key={item.id} onClick={() => setSelectedPrenda(item)}
-                  className="break-inside-avoid relative overflow-hidden bg-zinc-50 mb-3 cursor-pointer active:opacity-80 transition-opacity">
+                  className={cn(
+                    "break-inside-avoid relative overflow-hidden mb-3 cursor-pointer active:opacity-80 transition-opacity",
+                    item.en_renta ? "bg-zinc-200 opacity-60" : "bg-zinc-50"
+                  )}>
                   <img src={item.image_url || fashionImages[i % fashionImages.length]} alt={item.name}
-                    className="w-full object-cover" style={{ height: i % 3 === 0 ? "180px" : i % 3 === 1 ? "140px" : "160px" }} />
+                    className={cn("w-full object-cover", item.en_renta && "grayscale")}
+                    style={{ height: i % 3 === 0 ? "180px" : i % 3 === 1 ? "140px" : "160px" }} />
                   {tieneRep && (
                     <div className="absolute top-2 right-2 bg-white border border-zinc-200 text-zinc-600 text-[10px] font-medium px-2 py-0.5 flex items-center gap-1">
                       Rep.
                     </div>
                   )}
-                  {item.en_venta && (
+                  {item.en_renta && (
+                    <div className="absolute top-2 left-2 bg-zinc-500 text-white text-[10px] font-medium px-2 py-0.5">
+                      En renta
+                    </div>
+                  )}
+                  {item.en_venta && !item.en_renta && (
                     <div className="absolute top-2 left-2 bg-zinc-900 text-white text-[10px] font-medium px-2 py-0.5">
                       En venta
                     </div>
                   )}
                   <div className="p-2.5">
-                    <p className="text-xs font-medium text-zinc-900 truncate">{item.name}</p>
+                    <p className={cn("text-xs font-medium truncate", item.en_renta ? "text-zinc-400" : "text-zinc-900")}>{item.name}</p>
                     <p className="text-[10px] text-zinc-400">{item.category}{item.talla ? ` · ${item.talla}` : ""}</p>
+                    {item.en_renta && item.fecha_renta && (
+                      <p className="text-[10px] text-zinc-400 mt-0.5">
+                        Renta: {new Date(item.fecha_renta).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}
+                      </p>
+                    )}
                   </div>
                 </div>
               )
@@ -854,7 +868,16 @@ function SimuladorView({ prendas, isGuest, onElegir, userId }: {
   async function handleElegir(outfit: { titulo: string; prenda_ids: string[] }, idx: number) {
     if (isGuest) return
     setEligiendoIdx(idx)
-    await registrarUso(outfit.prenda_ids)
+    await Promise.all([
+      registrarUso(outfit.prenda_ids),
+      // Increment outfits_creados in usuarios_permitidos
+      supabase.rpc("incrementar_outfits", { username_input: userId }).catch(() =>
+        // Fallback manual if RPC not available
+        supabase.from("usuarios_permitidos")
+          .update({ outfits_creados: supabase.rpc as unknown as number })
+          .eq("username", userId)
+      ),
+    ])
     setEligiendoIdx(null)
     setElegidoIdx(idx)
     setTimeout(() => { setElegidoIdx(null); onElegir() }, 2000)
@@ -1107,6 +1130,8 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
   const [sellForm, setSellForm] = useState({ precio: "", talla: "", estado_uso: "" })
   const [selling, setSelling] = useState(false)
   const [rentaError, setRentaError] = useState<string | null>(null)
+  const [showFechaRenta, setShowFechaRenta] = useState(false)
+  const [fechaRenta, setFechaRenta] = useState("")
 
   function handleSelectSellPrenda(p: Prenda) {
     setSellPrenda(p)
@@ -1135,10 +1160,26 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
     setAparting(true)
     try {
       if (marketTab === "rentar") {
+        if (!fechaRenta) { setShowFechaRenta(true); setAparting(false); return }
+        // 1. Add to buyer's wardrobe with fecha_renta
+        const { error: insertError } = await supabase.from("prendas").insert({
+          user_id: userId, name: selectedItem.name, category: selectedItem.category,
+          image_url: selectedItem.image_url, talla: selectedItem.talla,
+          estado_uso: selectedItem.estado_uso, precio_renta: selectedItem.precio_renta,
+          metadata: selectedItem.metadata, en_renta: true, fecha_renta: fechaRenta,
+        })
+        if (insertError) throw insertError
+        // 2. Mark original as no longer available for rent
+        await supabase.from("prendas").update({ en_renta: false }).eq("id", selectedItem.id)
+        setRentaItems((prev) => prev.filter((p) => p.id !== selectedItem.id))
+        onApartar()
         setApartSuccess(true)
+        setShowFechaRenta(false)
+        setFechaRenta("")
         setTimeout(() => { setApartSuccess(false); setSelectedItem(null) }, 2000)
         return
       }
+      // Comprar flow
       const { error: insertError } = await supabase.from("prendas").insert({
         user_id: userId, name: selectedItem.name, category: selectedItem.category,
         image_url: selectedItem.image_url, talla: selectedItem.talla,
@@ -1255,7 +1296,7 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
         </div>
       )}
 
-      <CenteredModal open={!!selectedItem} onClose={() => { setSelectedItem(null); setApartSuccess(false) }}>
+      <CenteredModal open={!!selectedItem} onClose={() => { setSelectedItem(null); setApartSuccess(false); setShowFechaRenta(false); setFechaRenta("") }}>
         {selectedItem && (
           <div className="flex flex-col">
             <img src={selectedItem.image_url} alt={selectedItem.name} className="w-full h-64 object-cover" />
@@ -1289,6 +1330,31 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
               {apartSuccess ? (
                 <div className="w-full py-3 border border-zinc-200 text-zinc-600 text-sm text-center tracking-wide">
                   {marketTab === "rentar" ? "Solicitud enviada" : "Apartado correctamente"}
+                </div>
+              ) : marketTab === "rentar" && showFechaRenta ? (
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">
+                      Fecha de renta
+                    </label>
+                    <Input type="date" value={fechaRenta}
+                      min={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => setFechaRenta(e.target.value)}
+                      className="rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900 text-sm" />
+                  </div>
+                  <div className="flex gap-2">
+                    <motion.button whileTap={{ scale: 0.98 }}
+                      onClick={() => { setShowFechaRenta(false); setFechaRenta("") }}
+                      className="flex-1 py-2.5 border border-zinc-200 text-zinc-500 text-xs tracking-wide">
+                      Cancelar
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.98 }} onClick={handleApartar}
+                      disabled={!fechaRenta || aparting}
+                      className="flex-1 py-2.5 bg-zinc-900 text-white text-xs font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-40">
+                      {aparting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                      Confirmar Renta
+                    </motion.button>
+                  </div>
                 </div>
               ) : (
                 <motion.button whileTap={{ scale: 0.98 }} onClick={handleApartar} disabled={aparting || isGuest}

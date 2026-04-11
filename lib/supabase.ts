@@ -17,6 +17,7 @@ export type Prenda = {
   precio_renta?: number | null
   en_venta?: boolean | null
   en_renta?: boolean | null
+  fecha_renta?: string | null
   metadata?: Record<string, string> | null
   created_at: string
 }
