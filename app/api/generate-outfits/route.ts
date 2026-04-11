@@ -11,7 +11,14 @@ export type GeneratedOutfit = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { contexto, wardrobe } = await req.json()
+    const { contexto, wardrobe, user_id } = await req.json()
+
+    if (!user_id || user_id === "guest") {
+      return NextResponse.json(
+        { error: "Funciones de IA exclusivas para cuentas premium/registradas" },
+        { status: 403 }
+      )
+    }
 
     if (!wardrobe?.length) {
       return NextResponse.json({ error: "Wardrobe vacío" }, { status: 400 })

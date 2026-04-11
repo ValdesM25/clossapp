@@ -317,10 +317,10 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
     setAnalyzeError(null)
     if (fileInputRef.current) fileInputRef.current.value = ""
     // Kick off AI analysis immediately
-    analyzeImage(file)
+    analyzeImage(file, userId)
   }
 
-  async function analyzeImage(file: File) {
+  async function analyzeImage(file: File, userId: string) {
     setAnalyzing(true)
     try {
       // Convert to base64
@@ -331,7 +331,7 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
       const res = await fetch("/api/analyze-prenda", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mediaType }),
+        body: JSON.stringify({ imageBase64: base64, mediaType, user_id: userId }),
       })
       if (!res.ok) throw new Error("Error al analizar")
       const data = await res.json()
@@ -718,10 +718,11 @@ function OutfitVisual({ outfitPrendas }: { outfitPrendas: Prenda[] }) {
 }
 
 // ─── VIEW: SIMULADOR ──────────────────────────────────────────────────────────
-function SimuladorView({ prendas, isGuest, onElegir }: {
+function SimuladorView({ prendas, isGuest, onElegir, userId }: {
   prendas: Prenda[]
   isGuest: boolean
   onElegir: () => void
+  userId: string
 }) {
   const [ocasion, setOcasion] = useState("")
   const [clima, setClima] = useState("")
@@ -766,7 +767,7 @@ function SimuladorView({ prendas, isGuest, onElegir }: {
       const res = await fetch("/api/generate-outfits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contexto, wardrobe }),
+        body: JSON.stringify({ contexto, wardrobe, user_id: userId }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? "Error en la API")
@@ -851,9 +852,18 @@ function SimuladorView({ prendas, isGuest, onElegir }: {
         {errorMsg && <p className="text-xs text-zinc-500">{errorMsg}</p>}
 
         <motion.button whileTap={{ scale: 0.98 }} onClick={handleGenerate}
-          disabled={generating || (!isGuest && prendas.length === 0)}
-          className="w-full py-3 bg-zinc-900 text-white text-sm font-medium tracking-widest uppercase flex items-center justify-center gap-2 disabled:opacity-40">
-          {generating ? <><Loader2 className="w-4 h-4 animate-spin" />Diseñando propuestas...</> : "Generar Propuestas"}
+          disabled={generating || isGuest || (!isGuest && prendas.length === 0)}
+          className={cn(
+            "w-full py-3 text-sm font-medium tracking-widest uppercase flex items-center justify-center gap-2",
+            isGuest
+              ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+              : "bg-zinc-900 text-white disabled:opacity-40"
+          )}>
+          {generating
+            ? <><Loader2 className="w-4 h-4 animate-spin" />Diseñando propuestas...</>
+            : isGuest
+              ? <><Lock className="w-3.5 h-3.5" />Inicia sesión para usar IA</>
+              : "Generar Propuestas"}
         </motion.button>
 
         {!isGuest && prendas.length === 0 && (
@@ -1393,7 +1403,7 @@ export function ClossappDashboard() {
     switch (activeView) {
       case "inicio": return <InicioView userName={userName} isGuest={isGuest} />
       case "armario": return <ArmarioView userId={userId} isGuest={isGuest} />
-      case "simulador": return <SimuladorView prendas={prendas} isGuest={isGuest} onElegir={() => setActiveView("armario")} />
+      case "simulador": return <SimuladorView prendas={prendas} isGuest={isGuest} onElegir={() => setActiveView("armario")} userId={userId} />
       case "marketplace": return <MarketplaceView userId={userId} isGuest={isGuest} userPrendas={prendas} onApartar={() => fetchPrendas(userId).then(setPrendas).catch(console.error)} />
       case "estadisticas": return <EstadisticasView userId={userId} isGuest={isGuest} onSellPrenda={(p) => setActiveView("marketplace")} />
       default: return <InicioView userName={userName} isGuest={isGuest} />
