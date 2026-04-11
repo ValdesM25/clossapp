@@ -1077,66 +1077,78 @@ function OutfitCard({
   )
 }
 
+// ─── RENTA HELPERS ────────────────────────────────────────────────────────────
+const CATEGORIAS_RENTA_PERMITIDAS = ["vestido", "accesorio", "accesorios", "bolsa", "joyería", "lentes"]
+function categoriaPermiteRenta(category: string) {
+  return CATEGORIAS_RENTA_PERMITIDAS.some((c) => category.toLowerCase().includes(c))
+}
+const STATIC_RENTA: Prenda[] = [
+  { id: "r1", user_id: "market", name: "Vestido de Noche Satinado", category: "Vestido", image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80", talla: "S", estado_uso: "Como nuevo", precio_renta: 350, en_renta: true, created_at: "" },
+  { id: "r2", user_id: "market", name: "Bolso Clutch Dorado", category: "Accesorio", image_url: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80", talla: "Única", estado_uso: "Como nuevo", precio_renta: 150, en_renta: true, created_at: "" },
+  { id: "r3", user_id: "market", name: "Vestido Midi Floral", category: "Vestido", image_url: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&q=80", talla: "M", estado_uso: "Poco uso", precio_renta: 280, en_renta: true, created_at: "" },
+]
+
 // ─── VIEW: MARKETPLACE ────────────────────────────────────────────────────────
 const filterChips = ["Todos", "Ropa", "Accesorios", "Zapatos"]
 
 function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: string; isGuest: boolean; userPrendas: Prenda[]; onApartar: () => void }) {
+  const [marketTab, setMarketTab] = useState<"comprar" | "rentar">("comprar")
   const [activeFilter, setActiveFilter] = useState("Todos")
   const [items, setItems] = useState<Prenda[]>([])
+  const [rentaItems, setRentaItems] = useState<Prenda[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedItem, setSelectedItem] = useState<Prenda | null>(null)
   const [aparting, setAparting] = useState(false)
   const [apartSuccess, setApartSuccess] = useState(false)
-  // Sell flow
   const [showSellForm, setShowSellForm] = useState(false)
+  const [sellMode, setSellMode] = useState<"venta" | "renta">("venta")
   const [sellStep, setSellStep] = useState<"select" | "details">("select")
   const [sellPrenda, setSellPrenda] = useState<Prenda | null>(null)
   const [sellForm, setSellForm] = useState({ precio: "", talla: "", estado_uso: "" })
+  const [selling, setSelling] = useState(false)
+  const [rentaError, setRentaError] = useState<string | null>(null)
 
-  // When a prenda is selected for selling, pre-fill talla and estado_uso
   function handleSelectSellPrenda(p: Prenda) {
     setSellPrenda(p)
     setSellForm({ precio: "", talla: p.talla ?? "", estado_uso: p.estado_uso ?? "" })
+    setRentaError(null)
     setSellStep("details")
   }
-  const [selling, setSelling] = useState(false)
 
   useEffect(() => {
-    if (isGuest) { setItems(STATIC_MARKET); setLoading(false); return }
-    // Fetch prendas en_venta from all users
-    supabase.from("prendas").select("*").eq("en_venta", true)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => { setItems(data?.length ? data : STATIC_MARKET); setLoading(false) })
+    if (isGuest) { setItems(STATIC_MARKET); setRentaItems(STATIC_RENTA); setLoading(false); return }
+    Promise.all([
+      supabase.from("prendas").select("*").eq("en_venta", true).order("created_at", { ascending: false }),
+      supabase.from("prendas").select("*").eq("en_renta", true).order("created_at", { ascending: false }),
+    ]).then(([{ data: venta }, { data: renta }]) => {
+      setItems(venta?.length ? venta : STATIC_MARKET)
+      setRentaItems(renta?.length ? renta : STATIC_RENTA)
+      setLoading(false)
+    })
   }, [isGuest])
 
-  const filtered = activeFilter === "Todos" ? items : items.filter((i) => i.category === activeFilter)
+  const currentItems = marketTab === "comprar" ? items : rentaItems
+  const filtered = activeFilter === "Todos" ? currentItems : currentItems.filter((i) => i.category === activeFilter)
 
   async function handleApartar() {
     if (!selectedItem || isGuest) return
     setAparting(true)
     try {
-      // 1. Add prenda to buyer's wardrobe
+      if (marketTab === "rentar") {
+        setApartSuccess(true)
+        setTimeout(() => { setApartSuccess(false); setSelectedItem(null) }, 2000)
+        return
+      }
       const { error: insertError } = await supabase.from("prendas").insert({
-        user_id: userId,
-        name: selectedItem.name,
-        category: selectedItem.category,
-        image_url: selectedItem.image_url,
-        talla: selectedItem.talla,
-        estado_uso: selectedItem.estado_uso,
-        precio: selectedItem.precio,
-        metadata: selectedItem.metadata,
-        en_venta: false,
+        user_id: userId, name: selectedItem.name, category: selectedItem.category,
+        image_url: selectedItem.image_url, talla: selectedItem.talla,
+        estado_uso: selectedItem.estado_uso, precio: selectedItem.precio,
+        metadata: selectedItem.metadata, en_venta: false,
       })
       if (insertError) throw insertError
-      // 2. Mark original listing as no longer available
-      const { error: updateError } = await supabase
-        .from("prendas")
-        .update({ en_venta: false })
-        .eq("id", selectedItem.id)
-      if (updateError) throw updateError
+      await supabase.from("prendas").update({ en_venta: false }).eq("id", selectedItem.id)
       setApartSuccess(true)
-      onApartar() // trigger armario refetch
-      // Remove from local marketplace list immediately
+      onApartar()
       setItems((prev) => prev.filter((p) => p.id !== selectedItem.id))
       setTimeout(() => { setApartSuccess(false); setSelectedItem(null) }, 2000)
     } catch (err) { console.error("Error apartando:", err) }
@@ -1145,46 +1157,65 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
 
   async function handleSell() {
     if (!sellPrenda || !sellForm.precio) return
-    setSelling(true)
+    setSelling(true); setRentaError(null)
     try {
-      await supabase.from("prendas").update({
-        en_venta: true,
-        precio: parseFloat(sellForm.precio),
-        talla: sellForm.talla || null,
-        estado_uso: sellForm.estado_uso || null,
-      }).eq("id", sellPrenda.id)
-      const { data } = await supabase.from("prendas").select("*").eq("en_venta", true).order("created_at", { ascending: false })
-      setItems(data?.length ? data : STATIC_MARKET)
+      if (sellMode === "renta") {
+        if (!categoriaPermiteRenta(sellPrenda.category)) {
+          setRentaError("Solo vestidos y accesorios aplican para renta"); return
+        }
+        const res = await fetch("/api/renta", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prenda_id: sellPrenda.id, precio_renta: sellForm.precio, user_id: userId }),
+        })
+        const data = await res.json()
+        if (!res.ok) { setRentaError(data.error); return }
+        const { data: updated } = await supabase.from("prendas").select("*").eq("en_renta", true).order("created_at", { ascending: false })
+        setRentaItems(updated?.length ? updated : STATIC_RENTA)
+      } else {
+        await supabase.from("prendas").update({
+          en_venta: true, precio: parseFloat(sellForm.precio),
+          talla: sellForm.talla || null, estado_uso: sellForm.estado_uso || null,
+        }).eq("id", sellPrenda.id)
+        const { data } = await supabase.from("prendas").select("*").eq("en_venta", true).order("created_at", { ascending: false })
+        setItems(data?.length ? data : STATIC_MARKET)
+      }
       setShowSellForm(false); setSellStep("select"); setSellPrenda(null); setSellForm({ precio: "", talla: "", estado_uso: "" })
     } catch (err) { console.error("Error publicando:", err) }
     finally { setSelling(false) }
   }
 
-  const myPrendasNotForSale = userPrendas.filter((p) => !p.en_venta)
+  const myPrendasAvailable = userPrendas.filter((p) => !p.en_venta && !p.en_renta)
 
   return (
     <motion.div {...pageProps} className="flex flex-col gap-6 pb-32 pt-8">
-      {/* Header */}
       <div className="px-4 flex items-center justify-between">
         <div>
           <p className="text-xs text-zinc-400 uppercase tracking-widest">Descubre</p>
           <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">Marketplace</h1>
         </div>
         {!isGuest && (
-          <motion.button whileTap={{ scale: 0.96 }} onClick={() => { setShowSellForm(true); setSellStep("select") }}
+          <motion.button whileTap={{ scale: 0.96 }} onClick={() => { setShowSellForm(true); setSellStep("select"); setSellMode("venta") }}
             className="border border-zinc-900 text-zinc-900 text-xs px-3 py-1.5 flex items-center gap-1 tracking-wide">
-            <Tag className="w-3 h-3" /> Vender
+            <Tag className="w-3 h-3" /> Publicar
           </motion.button>
         )}
       </div>
 
-      {/* Search */}
+      <div className="px-4 flex border-b border-zinc-200">
+        {(["comprar", "rentar"] as const).map((tab) => (
+          <button key={tab} onClick={() => { setMarketTab(tab); setActiveFilter("Todos") }}
+            className={cn("flex-1 py-2.5 text-xs font-medium tracking-widest uppercase transition-colors border-b-2 -mb-px",
+              marketTab === tab ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-400")}>
+            {tab === "comprar" ? "Comprar" : "Rentar"}
+          </button>
+        ))}
+      </div>
+
       <div className="px-4 relative">
         <Search className="absolute left-7 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
         <Input placeholder="Buscar prendas..." className="pl-10 rounded-none border-zinc-200 focus-visible:ring-0 focus-visible:border-zinc-900 text-zinc-700 placeholder:text-zinc-400" />
       </div>
 
-      {/* Filters */}
       <div className="flex gap-2 overflow-x-auto pb-1 px-4">
         {filterChips.map((f) => (
           <motion.button key={f} whileTap={{ scale: 0.96 }} onClick={() => setActiveFilter(f)}
@@ -1195,8 +1226,11 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
         ))}
       </div>
 
-      {/* Grid */}
-      {loading ? <PrendaSkeleton /> : (
+      {loading ? <PrendaSkeleton /> : filtered.length === 0 ? (
+        <div className="mx-4 flex flex-col items-center justify-center py-12 gap-2 border border-zinc-100">
+          <p className="text-xs text-zinc-400 uppercase tracking-widest">Sin prendas disponibles</p>
+        </div>
+      ) : (
         <div className="columns-2 gap-3 px-4 space-y-3">
           {filtered.map((item, i) => (
             <motion.div key={item.id} whileTap={{ scale: 0.98 }} onClick={() => setSelectedItem(item)}
@@ -1206,14 +1240,21 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
               <div className="p-2.5">
                 <p className="text-xs font-medium text-zinc-900 truncate">{item.name}</p>
                 <p className="text-[10px] text-zinc-400">{item.estado_uso ?? item.category}</p>
-                <p className="text-xs font-semibold text-zinc-900 mt-1">${item.precio ?? "—"}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs font-semibold text-zinc-900">
+                    ${marketTab === "rentar" ? (item.precio_renta ?? "—") : (item.precio ?? "—")}
+                    {marketTab === "rentar" && <span className="text-[9px] text-zinc-400 font-normal ml-0.5">/día</span>}
+                  </p>
+                  {marketTab === "rentar" && (
+                    <span className="text-[9px] border border-zinc-300 text-zinc-500 px-1.5 py-0.5 uppercase tracking-wide">Renta</span>
+                  )}
+                </div>
               </div>
             </motion.div>
           ))}
         </div>
       )}
 
-      {/* Product detail modal */}
       <CenteredModal open={!!selectedItem} onClose={() => { setSelectedItem(null); setApartSuccess(false) }}>
         {selectedItem && (
           <div className="flex flex-col">
@@ -1225,8 +1266,12 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
               </div>
               <div className="flex gap-6">
                 <div>
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Precio</p>
-                  <p className="font-serif text-2xl text-zinc-900">${selectedItem.precio ?? "—"}</p>
+                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest">
+                    {marketTab === "rentar" ? "Precio / día" : "Precio"}
+                  </p>
+                  <p className="font-serif text-2xl text-zinc-900">
+                    ${marketTab === "rentar" ? (selectedItem.precio_renta ?? "—") : (selectedItem.precio ?? "—")}
+                  </p>
                 </div>
                 {selectedItem.talla && (
                   <div>
@@ -1243,14 +1288,14 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
               </div>
               {apartSuccess ? (
                 <div className="w-full py-3 border border-zinc-200 text-zinc-600 text-sm text-center tracking-wide">
-                  Apartado correctamente
+                  {marketTab === "rentar" ? "Solicitud enviada" : "Apartado correctamente"}
                 </div>
               ) : (
                 <motion.button whileTap={{ scale: 0.98 }} onClick={handleApartar} disabled={aparting || isGuest}
                   className={cn("w-full py-3 text-sm font-medium tracking-wide flex items-center justify-center gap-2",
                     isGuest ? "bg-zinc-100 text-zinc-400 cursor-default" : "bg-zinc-900 text-white disabled:opacity-50")}>
                   {aparting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  {isGuest ? "Solo lectura" : aparting ? "Procesando..." : "Apartar"}
+                  {isGuest ? "Solo lectura" : aparting ? "Procesando..." : marketTab === "rentar" ? "Solicitar Renta" : "Apartar"}
                 </motion.button>
               )}
             </div>
@@ -1258,23 +1303,42 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
         )}
       </CenteredModal>
 
-      {/* Sell flow modal */}
-      <CenteredModal open={showSellForm} onClose={() => { setShowSellForm(false); setSellStep("select"); setSellPrenda(null) }}>
+      <CenteredModal open={showSellForm} onClose={() => { setShowSellForm(false); setSellStep("select"); setSellPrenda(null); setRentaError(null) }}>
         <div className="p-6 flex flex-col gap-4">
           {sellStep === "select" ? (
             <>
-              <p className="font-serif text-zinc-900 text-lg pr-8">¿Qué quieres vender?</p>
-              {myPrendasNotForSale.length === 0 ? (
-                <p className="text-xs text-zinc-400 border border-zinc-100 p-4 text-center">No tienes prendas disponibles para vender.</p>
+              <div className="flex border border-zinc-200 pr-8">
+                {(["venta", "renta"] as const).map((m) => (
+                  <button key={m} onClick={() => { setSellMode(m); setRentaError(null) }}
+                    className={cn("flex-1 py-2 text-xs font-medium tracking-widest uppercase transition-colors",
+                      sellMode === m ? "bg-zinc-900 text-white" : "text-zinc-500")}>
+                    {m === "venta" ? "Vender" : "Rentar"}
+                  </button>
+                ))}
+              </div>
+              {sellMode === "renta" && (
+                <p className="text-[10px] text-zinc-400 border border-zinc-100 px-3 py-2">
+                  Solo vestidos y accesorios aplican para renta
+                </p>
+              )}
+              <p className="font-serif text-zinc-900 text-lg">¿Qué prenda?</p>
+              {myPrendasAvailable.length === 0 ? (
+                <p className="text-xs text-zinc-400 border border-zinc-100 p-4 text-center">No tienes prendas disponibles.</p>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
-                  {myPrendasNotForSale.map((p) => (
-                    <button key={p.id} onClick={() => handleSelectSellPrenda(p)}
-                      className={cn("relative overflow-hidden border-2 transition-all", sellPrenda?.id === p.id ? "border-zinc-900" : "border-transparent")}>
-                      <img src={p.image_url} alt={p.name} className="w-full h-20 object-cover" />
-                      <p className="text-[10px] text-zinc-600 truncate px-1 py-1 bg-white">{p.name}</p>
-                    </button>
-                  ))}
+                  {myPrendasAvailable.map((p) => {
+                    const bloqueada = sellMode === "renta" && !categoriaPermiteRenta(p.category)
+                    return (
+                      <button key={p.id} onClick={() => !bloqueada && handleSelectSellPrenda(p)}
+                        disabled={bloqueada} title={bloqueada ? "Solo vestidos y accesorios aplican para renta" : undefined}
+                        className={cn("relative overflow-hidden border-2 transition-all",
+                          bloqueada ? "opacity-30 cursor-not-allowed border-transparent" :
+                          sellPrenda?.id === p.id ? "border-zinc-900" : "border-transparent")}>
+                        <img src={p.image_url} alt={p.name} className="w-full h-20 object-cover" />
+                        <p className="text-[10px] text-zinc-600 truncate px-1 py-1 bg-white">{p.name}</p>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </>
@@ -1285,7 +1349,6 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
                 <p className="font-serif text-zinc-900 text-lg">{sellPrenda?.name}</p>
               </div>
               {sellPrenda && <img src={sellPrenda.image_url} alt={sellPrenda.name} className="w-full h-40 object-cover" />}
-              {/* Read-only pre-filled fields */}
               <div className="flex gap-4">
                 {sellForm.talla && (
                   <div className="flex-1">
@@ -1301,15 +1364,18 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
                 )}
               </div>
               <div>
-                <label className="text-xs text-zinc-500 uppercase tracking-widest mb-1 block">Precio (MXN) *</label>
+                <label className="text-xs text-zinc-500 uppercase tracking-widest mb-1 block">
+                  {sellMode === "renta" ? "Precio por día (MXN) *" : "Precio (MXN) *"}
+                </label>
                 <Input value={sellForm.precio} onChange={(e) => setSellForm(f => ({ ...f, precio: e.target.value }))}
                   placeholder="Ej. 350" type="number"
                   className="rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900" />
               </div>
+              {rentaError && <p className="text-xs text-zinc-500 border border-zinc-200 px-3 py-2">{rentaError}</p>}
               <motion.button whileTap={{ scale: 0.98 }} onClick={handleSell} disabled={selling || !sellForm.precio}
                 className="w-full py-3 bg-zinc-900 text-white text-sm font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
                 {selling ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {selling ? "Publicando..." : "Publicar en Marketplace"}
+                {selling ? "Publicando..." : sellMode === "renta" ? "Publicar para Renta" : "Publicar en Marketplace"}
               </motion.button>
             </>
           )}

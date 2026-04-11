@@ -14,7 +14,9 @@ export type Prenda = {
   talla?: string | null
   estado_uso?: string | null
   precio?: number | null
+  precio_renta?: number | null
   en_venta?: boolean | null
+  en_renta?: boolean | null
   metadata?: Record<string, string> | null
   created_at: string
 }
