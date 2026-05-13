@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { createClient } from "@/utils/supabase/server"
 
 // Categorías permitidas para renta — solo vestidos y accesorios
 const CATEGORIAS_RENTA = ["vestido", "accesorio", "accesorios", "bolsa", "joyería", "lentes"]
@@ -16,6 +11,7 @@ function categoriaPermiteRenta(category: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = await createClient()
     const { prenda_id, precio_renta, user_id } = await req.json()
 
     if (!user_id || user_id === "guest") {

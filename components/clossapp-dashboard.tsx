@@ -9,7 +9,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { supabase, type Prenda } from "@/lib/supabase"
+import type { Prenda } from "@/lib/supabase"
+import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
+
+// SSR-aware browser client — carries the session cookie on every request
+const supabase = createBrowserSupabaseClient()
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 type UserMode = "VIP" | "GUEST"
@@ -96,10 +100,20 @@ function useKeyboardOpen() {
 }
 
 async function fetchPrendas(userId: string): Promise<Prenda[]> {
-  const { data, error } = await supabase.from("prendas").select("*").eq("user_id", userId).order("created_at", { ascending: false })
+  const { data, error } = await supabase
+    .from("prendas")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
   if (error) throw error
   return data ?? []
 }
+
+
+
+
+
+
 
 async function resizeImage(file: File, maxWidth = 1000, quality = 0.85): Promise<Blob> {
   return new Promise((resolve) => {
@@ -160,20 +174,37 @@ function CenteredModal({ open, onClose, children }: { open: boolean; onClose: ()
 }
 
 // ─── VIEW: LOGIN ──────────────────────────────────────────────────────────────
-function LoginView({ onLogin }: { onLogin: (mode: UserMode, name: string) => void }) {
-  const [code, setCode] = useState("")
+// LoginView now passes both the UUID (for DB queries) and display name (for UI)
+function LoginView({ onLogin }: { onLogin: (mode: UserMode, uuid: string, displayName: string) => void }) {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const supabaseClient = createBrowserSupabaseClient()
+
   async function handleEnter() {
-    if (!code.trim()) return
+    if (!email.trim() || !password.trim()) return
     setLoading(true); setError(null)
     try {
-      const { data, error: err } = await supabase.from("usuarios_permitidos").select("*").eq("username", code.trim()).single()
-      if (err || !data) { setError("Código no reconocido. Intenta de nuevo."); return }
-      onLogin("VIP", data.username ?? code.trim())
-    } catch { setError("Código no reconocido. Intenta de nuevo.") }
-    finally { setLoading(false) }
+      const { data, error: authError } = await supabaseClient.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim(),
+      })
+      if (authError || !data.user) {
+        setError("Código no reconocido. Intenta de nuevo.")
+        return
+      }
+      // uuid = data.user.id (the real UUID Supabase uses for RLS)
+      // displayName = email prefix, only used for the greeting in the UI
+      const uuid = data.user.id
+      const displayName = data.user.email?.split("@")[0] ?? email.trim()
+      onLogin("VIP", uuid, displayName)
+    } catch {
+      setError("Código no reconocido. Intenta de nuevo.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -184,8 +215,12 @@ function LoginView({ onLogin }: { onLogin: (mode: UserMode, name: string) => voi
         <p className="text-xs text-zinc-400 mt-2 tracking-widest uppercase">Tu armario digital</p>
       </div>
       <div className="w-full flex flex-col gap-3">
-        <label className="text-xs text-zinc-500 uppercase tracking-widest text-center block">Código de acceso</label>
-        <Input value={code} onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleEnter()}
+        <label className="text-xs text-zinc-500 uppercase tracking-widest text-center block">Correo electrónico</label>
+        <Input value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleEnter()}
+          placeholder="tu@correo.com" type="email"
+          className="h-12 rounded-none border-zinc-900 text-center text-base tracking-widest focus-visible:ring-0 focus-visible:border-zinc-900" />
+        <label className="text-xs text-zinc-500 uppercase tracking-widest text-center block">Contraseña</label>
+        <Input value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleEnter()}
           placeholder="••••••••" type="password"
           className="h-12 rounded-none border-zinc-900 text-center text-base tracking-widest focus-visible:ring-0 focus-visible:border-zinc-900" />
         {error && <p className="text-xs text-zinc-500 text-center">{error}</p>}
@@ -193,7 +228,7 @@ function LoginView({ onLogin }: { onLogin: (mode: UserMode, name: string) => voi
           className="w-full h-12 bg-zinc-900 text-white text-sm font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Entrar"}
         </motion.button>
-        <motion.button whileTap={{ scale: 0.98 }} onClick={() => onLogin("GUEST", "Invitada")}
+        <motion.button whileTap={{ scale: 0.98 }} onClick={() => onLogin("GUEST", "guest", "Invitada")}
           className="w-full h-12 border border-zinc-300 text-zinc-600 text-sm tracking-wide">
           Explorar como invitada
         </motion.button>
@@ -806,11 +841,12 @@ function OutfitVisual({ outfitPrendas }: { outfitPrendas: Prenda[] }) {
 }
 
 // ─── VIEW: SIMULADOR ──────────────────────────────────────────────────────────
-function SimuladorView({ prendas, isGuest, onElegir, userId }: {
+function SimuladorView({ prendas, isGuest, onElegir, userId, userName }: {
   prendas: Prenda[]
   isGuest: boolean
   onElegir: () => void
-  userId: string
+  userId: string    // UUID — for AI endpoint guard
+  userName: string  // email prefix — for incrementar_outfits RPC
 }) {
   const [ocasion, setOcasion] = useState("")
   const [clima, setClima] = useState("")
@@ -871,12 +907,18 @@ function SimuladorView({ prendas, isGuest, onElegir, userId }: {
     await Promise.all([
       registrarUso(outfit.prenda_ids),
       // Increment outfits_creados in usuarios_permitidos
-      supabase.rpc("incrementar_outfits", { username_input: userId }).catch(() =>
-        // Fallback manual if RPC not available
-        supabase.from("usuarios_permitidos")
-          .update({ outfits_creados: supabase.rpc as unknown as number })
-          .eq("username", userId)
-      ),
+      supabase.rpc("incrementar_outfits", { username_input: userName }).then(({ error }) => {
+        if (error) {
+          // Fallback: manual increment if RPC not available
+          supabase.from("usuarios_permitidos")
+            .select("outfits_creados").eq("username", userName).single()
+            .then(({ data }) =>
+              supabase.from("usuarios_permitidos")
+                .update({ outfits_creados: (data?.outfits_creados ?? 0) + 1 })
+                .eq("username", userName)
+            )
+        }
+      }),
     ])
     setEligiendoIdx(null)
     setElegidoIdx(idx)
@@ -1462,8 +1504,9 @@ function AnimatedNumber({ target }: { target: number }) {
 }
 
 // ─── VIEW: ESTADÍSTICAS ───────────────────────────────────────────────────────
-function EstadisticasView({ userId, isGuest, onSellPrenda }: {
-  userId: string
+function EstadisticasView({ userId, userName, isGuest, onSellPrenda }: {
+  userId: string      // UUID — used for prendas queries (RLS)
+  userName: string    // email prefix — used for usuarios_permitidos lookup
   isGuest: boolean
   onSellPrenda: (p: Prenda) => void
 }) {
@@ -1478,8 +1521,8 @@ function EstadisticasView({ userId, isGuest, onSellPrenda }: {
       const sixMonthsAgo = new Date()
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
       const [{ data: prendas }, { data: userData }] = await Promise.all([
-        supabase.from("prendas").select("*").eq("user_id", userId),
-        supabase.from("usuarios_permitidos").select("outfits_creados").eq("username", userId).single(),
+        supabase.from("prendas").select("*").eq("user_id", userId),          // UUID → RLS passes
+        supabase.from("usuarios_permitidos").select("outfits_creados").eq("username", userName).single(), // email prefix
       ])
       const all = (prendas ?? []) as (Prenda & { usos?: number; ultimo_uso?: string })[]
       const total = all.length
@@ -1588,18 +1631,19 @@ function EstadisticasView({ userId, isGuest, onSellPrenda }: {
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
 export function ClossappDashboard() {
   const [userMode, setUserMode] = useState<UserMode | null>(null)
-  const [userName, setUserName] = useState("Invitada")
+  const [userName, setUserName] = useState("Invitada")   // display only — shown in greeting
+  const [userId, setUserId] = useState("guest")           // UUID from Supabase Auth — used for all DB queries
   const [activeView, setActiveView] = useState<View>("inicio")
   const [prendas, setPrendas] = useState<Prenda[]>([])
   const [marketFlash, setMarketFlash] = useState(false)
   const keyboardOpen = useKeyboardOpen()
 
   const isGuest = userMode === "GUEST"
-  const userId = isGuest ? "guest" : userName
 
-  function handleLogin(mode: UserMode, name: string) {
+  function handleLogin(mode: UserMode, uuid: string, displayName: string) {
     setUserMode(mode)
-    setUserName(name)
+    setUserId(uuid)           // UUID → used for .eq("user_id", userId) in every query
+    setUserName(displayName)  // email prefix → shown in "Hola, {userName}"
   }
 
   // Keep prendas in sync for simulador and marketplace
@@ -1619,9 +1663,9 @@ export function ClossappDashboard() {
     switch (activeView) {
       case "inicio": return <InicioView userName={userName} isGuest={isGuest} />
       case "armario": return <ArmarioView userId={userId} isGuest={isGuest} />
-      case "simulador": return <SimuladorView prendas={prendas} isGuest={isGuest} onElegir={() => setActiveView("armario")} userId={userId} />
+      case "simulador": return <SimuladorView prendas={prendas} isGuest={isGuest} onElegir={() => setActiveView("armario")} userId={userId} userName={userName} />
       case "marketplace": return <MarketplaceView userId={userId} isGuest={isGuest} userPrendas={prendas} onApartar={() => fetchPrendas(userId).then(setPrendas).catch(console.error)} />
-      case "estadisticas": return <EstadisticasView userId={userId} isGuest={isGuest} onSellPrenda={(p) => setActiveView("marketplace")} />
+      case "estadisticas": return <EstadisticasView userId={userId} userName={userName} isGuest={isGuest} onSellPrenda={(p) => setActiveView("marketplace")} />
       default: return <InicioView userName={userName} isGuest={isGuest} />
     }
   }
