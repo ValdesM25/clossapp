@@ -330,7 +330,20 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
   const [selectedPrenda, setSelectedPrenda] = useState<Prenda | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [activeCategory, setActiveCategory] = useState("Todas")
   const prendasConRep = new Set(reparaciones.map((r) => r.prenda_id).filter(Boolean))
+
+  // Derive unique categories from loaded prendas + fixed defaults
+  const FIXED_CATS = ["Todas", "Top", "Bottom", "Outerwear", "Calzado", "Accesorio", "Vestido"]
+  const dynamicCats = Array.from(new Set(prendas.map((p) => p.category).filter(Boolean)))
+  const allCats = Array.from(new Set([...FIXED_CATS, ...dynamicCats]))
+
+  const prendasFiltradas = activeCategory === "Todas"
+    ? prendas
+    : prendas.filter((p) =>
+        p.category?.toLowerCase().includes(activeCategory.toLowerCase()) ||
+        (p.metadata as Record<string, string> | null)?.categoria?.toLowerCase().includes(activeCategory.toLowerCase())
+      )
 
   useEffect(() => {
     if (isGuest) { setPrendas(GUEST_PRENDAS); setLoading(false); return }
@@ -395,7 +408,7 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
   async function handleConfirmUpload() {
     if (!preview) return
     setUploading(true)
-    try {
+    try {    
       const blob = await resizeImage(preview.file)
       const path = `${userId}/${Date.now()}.jpg`
       const { error: uploadError } = await supabase.storage.from("closet-images").upload(path, blob, { contentType: "image/jpeg" })
@@ -415,6 +428,9 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
         image_url: urlData.publicUrl,
         talla: previewForm.talla || null,
         estado_uso: previewForm.estado_uso || null,
+        description: previewForm.descripcion || null,
+        color: previewForm.color_principal || null,
+        style: previewForm.estilo || null,
         metadata,
       })
       if (insertError) throw insertError
@@ -459,6 +475,17 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
           <p className="text-xs text-zinc-400 uppercase tracking-widest">Mi Colección</p>
           <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">Armario Digital</h1>
         </div>
+        {/* Category filter — right side */}
+        <Select value={activeCategory} onValueChange={setActiveCategory}>
+          <SelectTrigger className="w-auto h-8 rounded-none border-zinc-300 text-xs text-zinc-600 focus:ring-0 gap-1 pr-2">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="z-[60]">
+            {allCats.map((cat) => (
+              <SelectItem key={cat} value={cat} className="text-xs">{cat}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Upload preview modal — AI auto-fill */}
@@ -617,7 +644,7 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
           </div>
         ) : (
           <div className="columns-2 gap-3 space-y-3">
-            {prendas.map((item, i) => {
+            {prendasFiltradas.map((item, i) => {
               const tieneRep = prendasConRep.has(item.id)
               return (
                 <div key={item.id} onClick={() => setSelectedPrenda(item)}
