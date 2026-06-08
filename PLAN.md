@@ -391,7 +391,7 @@ Todo lo que **no** es cross-cutting permanece local:
 
 ---
 
-### Fase 1 — Extraer tipos y constantes
+### Fase 1 — Extraer tipos y constantes ✅ COMPLETADA
 
 **Objetivo:** Mover todas las definiciones de tipos y datos estáticos fuera del monolito.
 
@@ -411,6 +411,24 @@ Todo lo que **no** es cross-cutting permanece local:
 **Método:** Extract → import → verify build. El dashboard sigue idéntico funcionalmente.
 
 **Commit:** `refactor: extract types and constants from monolith`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle de cambios:**
+- `types/prenda.ts` — `Prenda`, `PrendaExt`
+- `types/reparacion.ts` — `ReparacionDB`
+- `types/outfit.ts` — `OutfitRec`
+- `types/auth.ts` — `UserMode`
+- `types/views.ts` — `View`
+- `types/index.ts` — re-exports all types
+- `constants/demo-data.ts` — `DEMO_OUTFITS`, `GUEST_PRENDAS`, `GUEST_REPARACIONES`, `STATIC_MARKET`, `STATIC_RENTA`
+- `constants/navigation.ts` — `navItems`, `filterChips`
+- `constants/categories.ts` — `FIXED_CATS`, `CATEGORIAS_RENTA_PERMITIDAS`, `categoriaPermiteRenta()`, `LAYER_ORDER`
+- `constants/images.ts` — `fashionImages`, `outfitImages`
+- `constants/animation.ts` — `pageVariants`, `pageProps`
+- `clossapp-dashboard.tsx`: 1,749 → 1,669 líneas (-80)
+- Cero imports to `@/lib/supabase` en todo el codebase
+- `npm run build` pasa sin errores
 
 ---
 

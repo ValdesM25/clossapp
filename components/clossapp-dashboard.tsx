@@ -1,90 +1,26 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { motion, AnimatePresence, type Variants, useMotionValue, useSpring } from "framer-motion"
+import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion"
 import {
-  Home, Shirt, Sparkles, ShoppingBag, BarChart3,
-  Plus, Search, AlertCircle, TrendingUp, Clock, Check, Loader2, X, Lock, Tag,
+  Shirt, Sparkles, Plus, Search, AlertCircle, TrendingUp, Clock, Check, Loader2, X, Lock, Tag,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import type { Prenda } from "@/lib/supabase"
+import type { Prenda, PrendaExt, ReparacionDB, OutfitRec, UserMode, View } from "@/types"
+import { DEMO_OUTFITS, GUEST_PRENDAS, GUEST_REPARACIONES, STATIC_MARKET, STATIC_RENTA } from "@/constants/demo-data"
+import { navItems, filterChips } from "@/constants/navigation"
+import { FIXED_CATS, CATEGORIAS_RENTA_PERMITIDAS, categoriaPermiteRenta, LAYER_ORDER } from "@/constants/categories"
+import { fashionImages, outfitImages } from "@/constants/images"
+import { pageVariants, pageProps } from "@/constants/animation"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 
 // SSR-aware browser client — carries the session cookie on every request
 const supabase = createBrowserSupabaseClient()
 
-// ─── AUTH ─────────────────────────────────────────────────────────────────────
-type UserMode = "VIP" | "GUEST"
-
 // ─── DEMO TOGGLE ──────────────────────────────────────────────────────────────
 const IS_OFFLINE_DEMO = false
-
-type OutfitRec = { titulo: string; descripcion: string; prendas_usadas: string[] }
-type ReparacionDB = {
-  id: string; user_id: string; prenda_id: string | null; prenda: string
-  tarea: string; prioridad: "Baja" | "Media" | "Alta"; completado: boolean; created_at: string
-}
-type View = "inicio" | "armario" | "simulador" | "marketplace" | "estadisticas"
-
-const DEMO_OUTFITS: OutfitRec[] = [
-  { titulo: "Boho Citadino", descripcion: "Jeans rectos con top de lino y sandalias planas.", prendas_usadas: ["Jeans rectos", "Top de lino", "Sandalias"] },
-  { titulo: "Business Chic", descripcion: "Blazer estructurado con pantalón de pinzas y mocasines.", prendas_usadas: ["Blazer", "Pantalón de pinzas", "Mocasines"] },
-  { titulo: "Gala Nocturna", descripcion: "Vestido satinado midi con abrigo ligero y tacones.", prendas_usadas: ["Vestido satinado", "Abrigo ligero", "Tacones"] },
-]
-
-const GUEST_PRENDAS: Prenda[] = [
-  { id: "g1", user_id: "guest", name: "Camisa Blanca", category: "Tops", image_url: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80", created_at: "" },
-  { id: "g2", user_id: "guest", name: "Jeans Azul", category: "Pantalones", image_url: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&q=80", created_at: "" },
-  { id: "g3", user_id: "guest", name: "Blazer Negro", category: "Chaquetas", image_url: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&q=80", created_at: "" },
-  { id: "g4", user_id: "guest", name: "Vestido Floral", category: "Vestidos", image_url: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&q=80", created_at: "" },
-  { id: "g5", user_id: "guest", name: "Sneakers Blancos", category: "Zapatos", image_url: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=400&q=80", created_at: "" },
-  { id: "g6", user_id: "guest", name: "Bolso Tote", category: "Accesorios", image_url: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=400&q=80", created_at: "" },
-]
-const GUEST_REPARACIONES: ReparacionDB[] = [
-  { id: "r1", user_id: "guest", prenda_id: null, prenda: "Abrigo beige", tarea: "Cambiar botón", prioridad: "Alta", completado: false, created_at: "" },
-  { id: "r2", user_id: "guest", prenda_id: null, prenda: "Pantalón negro", tarea: "Ajustar dobladillo", prioridad: "Media", completado: false, created_at: "" },
-]
-
-// Static marketplace fallback items
-const STATIC_MARKET: Prenda[] = [
-  { id: "m1", user_id: "market", name: "Bufanda Lino", category: "Accesorios", image_url: "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=600&q=80", talla: "Única", estado_uso: "Como nuevo", precio: 80, en_venta: true, created_at: "" },
-  { id: "m2", user_id: "market", name: "Zapatillas Blancas", category: "Zapatos", image_url: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80", talla: "38", estado_uso: "Poco uso", precio: 500, en_venta: true, created_at: "" },
-  { id: "m3", user_id: "market", name: "Bolso Tote Cuero", category: "Accesorios", image_url: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80", talla: "Única", estado_uso: "Como nuevo", precio: 850, en_venta: true, created_at: "" },
-  { id: "m4", user_id: "market", name: "Vestido Verano", category: "Ropa", image_url: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&q=80", talla: "S", estado_uso: "Nuevo con etiqueta", precio: 320, en_venta: true, created_at: "" },
-]
-
-const navItems = [
-  { id: "inicio" as View, label: "Inicio", icon: Home },
-  { id: "armario" as View, label: "Armario", icon: Shirt },
-  { id: "simulador" as View, label: "Outfit", icon: Sparkles },
-  { id: "marketplace" as View, label: "Shop", icon: ShoppingBag },
-  { id: "estadisticas" as View, label: "Stats", icon: BarChart3 },
-]
-
-const fashionImages = [
-  "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80",
-  "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&q=80",
-  "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&q=80",
-  "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&q=80",
-  "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=400&q=80",
-  "https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=400&q=80",
-  "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&q=80",
-  "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=400&q=80",
-]
-const outfitImages = [
-  "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600&q=80",
-  "https://images.unsplash.com/photo-1594938298603-c8148c4b4e5b?w=600&q=80",
-  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
-]
-
-const pageVariants: Variants = {
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.25 } },
-  exit: { opacity: 0, y: -6, transition: { duration: 0.18 } },
-}
-const pageProps = { variants: pageVariants, initial: "initial" as const, animate: "animate" as const, exit: "exit" as const }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function useKeyboardOpen() {
@@ -334,7 +270,6 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
   const prendasConRep = new Set(reparaciones.map((r) => r.prenda_id).filter(Boolean))
 
   // Derive unique categories from loaded prendas + fixed defaults
-  const FIXED_CATS = ["Todas", "Top", "Bottom", "Outerwear", "Calzado", "Accesorio", "Vestido"]
   const dynamicCats = Array.from(new Set(prendas.map((p) => p.category).filter(Boolean)))
   const allCats = Array.from(new Set([...FIXED_CATS, ...dynamicCats]))
 
@@ -832,7 +767,6 @@ async function registrarUso(prendaIds: string[]) {
 
 // ─── VIEW: SIMULADOR ──────────────────────────────────────────────────────────
 // ─── OUTFIT CATEGORY LAYERS ───────────────────────────────────────────────────
-const LAYER_ORDER = ["Outerwear", "Top", "Bottom", "Calzado", "Accesorio"]
 
 function OutfitVisual({ outfitPrendas }: { outfitPrendas: Prenda[] }) {
   const layers = LAYER_ORDER.map((cat) => ({
@@ -1169,19 +1103,7 @@ function OutfitCard({
   )
 }
 
-// ─── RENTA HELPERS ────────────────────────────────────────────────────────────
-const CATEGORIAS_RENTA_PERMITIDAS = ["vestido", "accesorio", "accesorios", "bolsa", "joyería", "lentes"]
-function categoriaPermiteRenta(category: string) {
-  return CATEGORIAS_RENTA_PERMITIDAS.some((c) => category.toLowerCase().includes(c))
-}
-const STATIC_RENTA: Prenda[] = [
-  { id: "r1", user_id: "market", name: "Vestido de Noche Satinado", category: "Vestido", image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80", talla: "S", estado_uso: "Como nuevo", precio_renta: 350, en_renta: true, created_at: "" },
-  { id: "r2", user_id: "market", name: "Bolso Clutch Dorado", category: "Accesorio", image_url: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80", talla: "Única", estado_uso: "Como nuevo", precio_renta: 150, en_renta: true, created_at: "" },
-  { id: "r3", user_id: "market", name: "Vestido Midi Floral", category: "Vestido", image_url: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&q=80", talla: "M", estado_uso: "Poco uso", precio_renta: 280, en_renta: true, created_at: "" },
-]
-
 // ─── VIEW: MARKETPLACE ────────────────────────────────────────────────────────
-const filterChips = ["Todos", "Ropa", "Accesorios", "Zapatos"]
 
 function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: string; isGuest: boolean; userPrendas: Prenda[]; onApartar: () => void }) {
   const [marketTab, setMarketTab] = useState<"comprar" | "rentar">("comprar")
@@ -1584,8 +1506,6 @@ function EstadisticasView({ userId, userName, isGuest, onSellPrenda }: {
   const kpis = isGuest
     ? [{ value: 6, label: "Total Prendas" }, { value: 14, label: "Usos este mes" }, { value: 3, label: "Outfits creados" }, { value: 1, label: "Sin usar (6m)" }]
     : [{ value: stats.total, label: "Total Prendas" }, { value: stats.usos, label: "Usos este mes" }, { value: stats.outfits, label: "Outfits creados" }, { value: stats.sinUsar, label: "Sin usar (6m)" }]
-
-  type PrendaExt = Prenda & { usos?: number; ultimo_uso?: string }
 
   return (
     <motion.div {...pageProps} className="flex flex-col gap-8 pb-32 pt-8">
