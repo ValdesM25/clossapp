@@ -760,9 +760,10 @@ components/views/armario/
 
 ---
 
-### Fase 7 — Adelgazar el shell principal
+### Fase 7 — Adelgazar el shell principal ✅ COMPLETADA
 
 **Objetivo:** `ClossappDashboard` queda como un shell de ~50-60 líneas.
+
 
 ```tsx
 // components/clossapp-dashboard.tsx (final)
@@ -824,7 +825,19 @@ export function ClossappDashboard() {
 }
 ```
 
-**Commit:** `refactor: slim down ClossappDashboard to shell (~50 lines)`
+**Commit:** `refactor: slim down ClossappDashboard to shell (57 lines)`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `views` record reemplaza al switch-case
+- `if (!userMode) return <LoginView />` en vez de AnimatePresence anidado
+- Eliminado `marketFlash`, `motion` import, wrappers duplicados
+- `clossapp-dashboard.tsx`: 73 → 57 líneas (-16)
+
+### Progreso total
+
+`clossapp-dashboard.tsx`: **1,749 → 57 líneas (-96.7%)**
 
 ---
 
@@ -848,7 +861,7 @@ export function ClossappDashboard() {
 
 | Métrica | Antes | Después |
 |---|---|---|
-| `clossapp-dashboard.tsx` | 1,749 líneas | ~50-60 líneas |
+| `clossapp-dashboard.tsx` | 1,749 líneas | 57 líneas |
 | Archivos de lógica de negocio | 0 | 8 servicios |
 | Custom hooks | 1 (mock) | 8 hooks reales |
 | Componentes compartidos | 0 | 7 |
