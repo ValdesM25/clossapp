@@ -12,7 +12,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const isGuest = userMode === "GUEST"
+  const isGuest = userMode !== "VIP"
   const isAuthenticated = userMode !== null
 
   const login = useCallback(async (email: string, password: string) => {

@@ -17,7 +17,7 @@ const PrendasContext = createContext<PrendasContextValue | null>(null)
 export function PrendasProvider({ children }: { children: ReactNode }) {
   const { userId, isGuest } = useAuthContext()
 
-  if (!userId) {
+  if (isGuest || !userId) {
     return <>{children}</>
   }
 
