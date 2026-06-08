@@ -281,9 +281,9 @@ function InicioView({ userName, isGuest }: { userName: string; isGuest: boolean 
       <div className="flex flex-col gap-3">
         <h2 className="font-serif text-lg text-zinc-900">Planes</h2>
         {[
-          { name: "Esencial", price: "$0", desc: "Para empezar", features: ["Outfits básicos", "Hasta 50 prendas", "Marketplace"] },
-          { name: "Plus", price: "$59 MXN/mes", desc: "Para entusiastas", features: ["IA ilimitada", "Prendas ilimitadas", "Estadísticas"], highlight: true },
-          { name: "Elite", price: "$89 MXN/mes", desc: "Para profesionales", features: ["IA avanzada", "Tendencias", "Soporte prioritario"] },
+          { name: "Esencial", price: "$0", desc: "Para empezar", features: ["Outfits básicos", "Hasta 50 prendas"] },
+          { name: "Plus", price: "$59 MXN/mes", desc: "Para entusiastas", features: ["IA ilimitada", "Prendas ilimitadas", "Estadísticas", "Marketplace"], highlight: true },
+          { name: "Elite", price: "$99 MXN/mes", desc: "Para profesionales", features: ["IA avanzada", "Tendencias", "Soporte prioritario", "Marketplace"] },
         ].map((plan) => (
           <div key={plan.name} className={cn("border p-5", plan.highlight ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200")}>
             <div className="flex justify-between items-start mb-3">
