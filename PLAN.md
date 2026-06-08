@@ -550,7 +550,7 @@ export function usePrendas(userId: string, isGuest: boolean) {
 
 ---
 
-### Fase 4 — Crear Context providers
+### Fase 4 — Crear Context providers ✅ COMPLETADA
 
 **Objetivo:** Eliminar prop-drilling y unificar el fetch de prendas.
 
@@ -563,6 +563,19 @@ export function usePrendas(userId: string, isGuest: boolean) {
 **Después de esta fase,** el dashboard principal baja de ~90 líneas de lógica a ~30.
 
 **Commit:** `refactor: add AuthContext and PrendasContext providers`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle de cambios:**
+- `context/auth-context.tsx` — `AuthProvider` + `useAuthContext()`. Envuelve `useAuth()` hook en un React Context. Expone `userMode`, `userId`, `userName`, `isGuest`, `isAuthenticated`, `login`, `loginAsGuest`, `logout`, `loading`, `error`
+- `context/prendas-context.tsx` — `PrendasProvider` + `usePrendasContext()`. Envuelve `usePrendas()` hook. Se monta solo si hay `userId` (dentro de AuthProvider). Expone `prendas`, `loading`, `refresh`, `addPrenda`
+- `ClossappDashboard` separado en `AppShell` (consume contextos) + export wrapper (monta providers)
+- Eliminada la duplicación de `fetchPrendas` en el dashboard principal. Ahora `PrendasContext` es la única fuente de verdad para los datos de prendas
+- Eliminado el `useEffect` condicional que fetcheaba prendas según `activeView`
+- Eliminada la `supabase` module-level ya que no era usada (cada hook crea su propio cliente)
+- `clossapp-dashboard.tsx`: 1,388 → 1,380 líneas (-8)
+- Arquitectura ahora: `ClossappDashboard → AuthProvider → PrendasProvider → AppShell → Views`
+- `npm run build` pasa sin errores
 
 ---
 

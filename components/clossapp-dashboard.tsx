@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion"
 import {
   Shirt, Sparkles, Plus, Search, AlertCircle, TrendingUp, Clock, Check, Loader2, X, Lock, Tag,
@@ -18,16 +18,14 @@ import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/cl
 import { insertPrenda } from "@/services/prendas.service"
 import { resizeImage } from "@/services/image.service"
 import { useKeyboard } from "@/hooks/use-keyboard"
-import { useAuth } from "@/hooks/use-auth"
 import { usePrendas } from "@/hooks/use-prendas"
 import { useReparaciones } from "@/hooks/use-reparaciones"
 import { useImageUpload } from "@/hooks/use-image-upload"
 import { useOutfits } from "@/hooks/use-outfits"
 import { useMarketplace } from "@/hooks/use-marketplace"
 import { useStats } from "@/hooks/use-stats"
-
-// SSR-aware browser client — carries the session cookie on every request
-const supabase = createBrowserSupabaseClient()
+import { AuthProvider, useAuthContext } from "@/context/auth-context"
+import { PrendasProvider, usePrendasContext } from "@/context/prendas-context"
 
 // ─── DEMO TOGGLE ──────────────────────────────────────────────────────────────
 const IS_OFFLINE_DEMO = false
@@ -1292,36 +1290,16 @@ function EstadisticasView({ userId, userName, isGuest, onSellPrenda }: {
 }
 
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
-export function ClossappDashboard() {
-  const { userMode, userId, userName, isGuest, login, loginAsGuest, loading: authLoading, error: authError } = useAuth()
+function AppShell() {
+  const { userMode, userId, userName, isGuest, login, loginAsGuest, loading: authLoading, error: authError } = useAuthContext()
+  const { prendas, refresh: refreshPrendas } = usePrendasContext()
   const [activeView, setActiveView] = useState<View>("inicio")
   const [marketFlash, setMarketFlash] = useState(false)
   const keyboardOpen = useKeyboard()
 
-  // Keep prendas in sync for simulador and marketplace
-  const [prendas, setPrendas] = useState<Prenda[]>([])
-  const supabaseClient = createBrowserSupabaseClient()
-  useEffect(() => {
-    if (activeView === "simulador" || activeView === "marketplace") {
-      if (isGuest) { setPrendas(GUEST_PRENDAS); return }
-      supabaseClient.from("prendas").select("*").eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .then(({ data }) => setPrendas(data ?? []))
-        .catch(console.error)
-    }
-  }, [activeView, userId, isGuest])
-
   function handleSellItem() {
     setMarketFlash(true)
     setTimeout(() => { setActiveView("marketplace"); setMarketFlash(false) }, 600)
-  }
-
-  const refreshPrendas = () => {
-    if (isGuest) { setPrendas(GUEST_PRENDAS); return }
-    supabaseClient.from("prendas").select("*").eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setPrendas(data ?? []))
-      .catch(console.error)
   }
 
   const renderView = () => {
@@ -1382,6 +1360,20 @@ export function ClossappDashboard() {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+    </div>
+  )
+}
+
+export function ClossappDashboard() {
+  return (
+    <div className="flex items-start justify-center min-h-screen bg-white">
+      <div className="w-full max-w-2xl mx-auto min-h-screen bg-white relative">
+        <AuthProvider>
+          <PrendasProvider>
+            <AppShell />
+          </PrendasProvider>
+        </AuthProvider>
       </div>
     </div>
   )
