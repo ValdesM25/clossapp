@@ -616,7 +616,7 @@ export function usePrendas(userId: string, isGuest: boolean) {
 
 > Cada sub-fase es un commit independiente. Si algo falla, solo afecta una vista.
 
-#### 6A — `LoginView` (la más simple)
+#### 6A — `LoginView` (la más simple) ✅ COMPLETADA
 
 ```
 components/views/login-view.tsx
@@ -625,6 +625,14 @@ components/views/login-view.tsx
 ```
 
 **Commit:** `refactor: extract LoginView`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `components/views/login-view.tsx` — LoginView usa `useAuthContext()` directamente en vez de recibir props
+- Eliminados los props `onLogin`, `onLoginAsGuest`, `loading`, `error` del componente
+- `AppShell` ahora solo pasa `<LoginView key="login" />` sin props
+- `clossapp-dashboard.tsx`: 1,303 → 1,258 líneas (-45)
 
 #### 6B — `InicioView`
 

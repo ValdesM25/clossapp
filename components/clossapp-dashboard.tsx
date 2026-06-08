@@ -32,54 +32,10 @@ import { BottomNav } from "@/components/shared/bottom-nav"
 import { PageHeader } from "@/components/shared/page-header"
 import { PrendaCard } from "@/components/shared/prenda-card"
 import { PrendaGrid } from "@/components/shared/prenda-grid"
+import { LoginView } from "@/components/views/login-view"
 
 // ─── DEMO TOGGLE ──────────────────────────────────────────────────────────────
 const IS_OFFLINE_DEMO = false
-
-// ─── VIEW: LOGIN ──────────────────────────────────────────────────────────────
-function LoginView({ onLogin, onLoginAsGuest, loading, error }: {
-  onLogin: (email: string, password: string) => Promise<void>
-  onLoginAsGuest: () => void
-  loading: boolean
-  error: string | null
-}) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-
-  async function handleEnter() {
-    if (!email.trim() || !password.trim()) return
-    try { await onLogin(email, password) } catch {}
-  }
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="min-h-screen bg-white flex flex-col items-center justify-center px-8 gap-10">
-      <div className="text-center">
-        <h1 className="font-serif text-4xl tracking-tight text-zinc-900">Clossapp</h1>
-        <p className="text-xs text-zinc-400 mt-2 tracking-widest uppercase">Tu armario digital</p>
-      </div>
-      <div className="w-full flex flex-col gap-3">
-        <label className="text-xs text-zinc-500 uppercase tracking-widest text-center block">Correo electrónico</label>
-        <Input value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleEnter()}
-          placeholder="tu@correo.com" type="email"
-          className="h-12 rounded-none border-zinc-900 text-center text-base tracking-widest focus-visible:ring-0 focus-visible:border-zinc-900" />
-        <label className="text-xs text-zinc-500 uppercase tracking-widest text-center block">Contraseña</label>
-        <Input value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleEnter()}
-          placeholder="••••••••" type="password"
-          className="h-12 rounded-none border-zinc-900 text-center text-base tracking-widest focus-visible:ring-0 focus-visible:border-zinc-900" />
-        {error && <p className="text-xs text-zinc-500 text-center">{error}</p>}
-        <motion.button whileTap={{ scale: 0.98 }} onClick={handleEnter} disabled={loading}
-          className="w-full h-12 bg-zinc-900 text-white text-sm font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Entrar"}
-        </motion.button>
-        <motion.button whileTap={{ scale: 0.98 }} onClick={onLoginAsGuest}
-          className="w-full h-12 border border-zinc-300 text-zinc-600 text-sm tracking-wide">
-          Explorar como invitada
-        </motion.button>
-      </div>
-    </motion.div>
-  )
-}
 
 // ─── VIEW: INICIO ─────────────────────────────────────────────────────────────
 function InicioView({ userName, isGuest }: { userName: string; isGuest: boolean }) {
@@ -1240,7 +1196,7 @@ function EstadisticasView({ userId, userName, isGuest, onSellPrenda }: {
 
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
 function AppShell() {
-  const { userMode, userId, userName, isGuest, login, loginAsGuest, loading: authLoading, error: authError } = useAuthContext()
+  const { userMode, userId, userName, isGuest } = useAuthContext()
   const { prendas, refresh: refreshPrendas } = usePrendasContext()
   const [activeView, setActiveView] = useState<View>("inicio")
   const [marketFlash, setMarketFlash] = useState(false)
@@ -1267,8 +1223,7 @@ function AppShell() {
       <div className="w-full max-w-2xl mx-auto min-h-screen bg-white relative">
         <AnimatePresence mode="wait">
           {!userMode ? (
-            <LoginView key="login" onLogin={async (email, password) => { try { await login(email, password) } catch {} }} onLoginAsGuest={loginAsGuest}
-              loading={authLoading} error={authError} />
+            <LoginView key="login" />
           ) : (
             <motion.div key="app" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
               className="relative min-h-screen">
