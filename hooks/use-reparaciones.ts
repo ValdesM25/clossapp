@@ -19,7 +19,7 @@ export function useReparaciones(userId: string, isGuest: boolean) {
       const data = await fetchReparaciones(supabase, userId)
       setReparaciones(data)
     } catch (err) {
-      console.error("Error fetching reparaciones:", err)
+      console.error("Error fetching reparaciones:", err instanceof Error ? err.message : JSON.stringify(err))
     } finally {
       setLoading(false)
     }

@@ -35,7 +35,7 @@ export function useMarketplace(userId: string, isGuest: boolean) {
       setItems(venta.length ? venta : STATIC_MARKET)
       setRentaItems(renta.length ? renta : STATIC_RENTA)
     } catch (err) {
-      console.error("Error fetching marketplace:", err)
+      console.error("Error fetching marketplace:", err instanceof Error ? err.message : JSON.stringify(err))
     } finally {
       setLoading(false)
     }
@@ -59,7 +59,7 @@ export function useMarketplace(userId: string, isGuest: boolean) {
       setTimeout(() => setApartSuccess(false), 2000)
       return true
     } catch (err) {
-      console.error("Error apartando:", err)
+      console.error("Error apartando:", err instanceof Error ? err.message : JSON.stringify(err))
       return false
     } finally {
       setAparting(false)
@@ -91,7 +91,7 @@ export function useMarketplace(userId: string, isGuest: boolean) {
       }
       return true
     } catch (err) {
-      console.error("Error publicando:", err)
+      console.error("Error publicando:", err instanceof Error ? err.message : JSON.stringify(err))
       return false
     } finally {
       setSelling(false)

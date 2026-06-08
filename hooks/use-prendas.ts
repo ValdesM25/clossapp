@@ -19,7 +19,8 @@ export function usePrendas(userId: string, isGuest: boolean) {
       const data = await fetchPrendas(supabase, userId)
       setPrendas(data)
     } catch (err) {
-      console.error("Error fetching prendas:", err)
+      const msg = err instanceof Error ? err.message : JSON.stringify(err)
+      console.error("Error fetching prendas:", msg)
     } finally {
       setLoading(false)
     }

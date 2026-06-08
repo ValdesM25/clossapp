@@ -22,7 +22,7 @@ export function useStats(userId: string, userName: string, isGuest: boolean) {
       setTopPrendas(result.topPrendas)
       setOlvidadas(result.olvidadas)
     } catch (err) {
-      console.error("Error fetching stats:", err)
+      console.error("Error fetching stats:", err instanceof Error ? err.message : JSON.stringify(err))
     } finally {
       setLoading(false)
     }

@@ -45,7 +45,7 @@ export function useImageUpload(userId: string, isGuest: boolean) {
         descripcion: data.descripcion ?? "",
       }))
     }).catch((err) => {
-      console.error("[analyzePrenda]", err)
+      console.error("[analyzePrenda]", err instanceof Error ? err.message : JSON.stringify(err))
       setAnalyzeError("No se pudo analizar la imagen. Puedes completar los campos manualmente.")
     }).finally(() => setAnalyzing(false))
   }, [isGuest, userId])
@@ -65,7 +65,7 @@ export function useImageUpload(userId: string, isGuest: boolean) {
       const { data: urlData } = supabase.storage.from("closet-images").getPublicUrl(path)
       return urlData.publicUrl
     } catch (err) {
-      console.error("Error subiendo imagen:", err)
+      console.error("Error subiendo imagen:", err instanceof Error ? err.message : JSON.stringify(err))
       return null
     } finally {
       setUploading(false)
