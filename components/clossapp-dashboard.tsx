@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type ReactElement } from "react"
 import { AnimatePresence } from "framer-motion"
 import type { View } from "@/types"
 import { useKeyboard } from "@/hooks/use-keyboard"
@@ -22,7 +22,7 @@ function AppShell() {
 
   if (!userMode) return <LoginView />
 
-  const views: Record<View, JSX.Element> = {
+  const views: Record<View, ReactElement> = {
     inicio: <InicioView />,
     armario: <ArmarioView />,
     simulador: <SimuladorView onElegir={() => setActiveView("armario")} />,

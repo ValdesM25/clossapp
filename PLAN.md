@@ -750,7 +750,7 @@ components/views/armario/
 
 `clossapp-dashboard.tsx`: **1,749 → 73 líneas (-95.8%)**
 
-22 archivos extractados en `components/views/`:
+20 archivos extraídos en `components/views/`:
 - `login-view.tsx`
 - `inicio/inicio-view.tsx`
 - `armario/` — 5 archivos (armario-view + 4 subcomponentes)
@@ -855,6 +855,22 @@ export function ClossappDashboard() {
 
 **Commit:** `chore: final cleanup and documentation update`
 
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- 8.1: Eliminado `lib/supabase.ts` (tipo `Prenda` duplicado de `types/prenda.ts`)
+- 8.2: Sin imports de `@/lib/supabase` — ya migrados en fases anteriores
+- 8.3: Dashboard confirmado limpio (57 líneas, sin código muerto)
+- 8.4: `npm run build` pasa limpio
+- 8.5: ESLint sin config file — no aplicable (proyecto generado sin eslint.config)
+- 8.6: 20 archivos de vista verificados, imports resuelven, build OK
+- 8.7: `AGENTS.md` actualizado con estructura modular post-refactor
+- Fix: `Record<View, JSX.Element>` → `Record<View, ReactElement>` (compatibilidad TS estricta)
+
+### Refactor completado
+
+`clossapp-dashboard.tsx`: **1,749 → 57 líneas (-96.7%)**
+
 ---
 
 ## Resumen Cuantitativo
@@ -865,7 +881,7 @@ export function ClossappDashboard() {
 | Archivos de lógica de negocio | 0 | 8 servicios |
 | Custom hooks | 1 (mock) | 8 hooks reales |
 | Componentes compartidos | 0 | 7 |
-| Archivos de vista | 1 (todo junto) | 22 (6 vistas × ~3-4 subcomponentes) |
+| Archivos de vista | 1 (todo junto) | 20 (6 vistas × ~3-4 subcomponentes) |
 | Tipos centralizados | parcial (1 archivo) | 5 archivos en `types/` |
 | Portabilidad a React Native | Imposible | Solo se reescribe `components/` |
 

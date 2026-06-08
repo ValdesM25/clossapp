@@ -18,7 +18,77 @@ npm run lint     # eslint
 
 ## Architecture
 
-Single-page app — `ClossappDashboard` (`components/clossapp-dashboard.tsx`) is the only entrypoint. `app/page.tsx` is a thin wrapper with `dynamic = 'force-dynamic'`.
+Single-page app — `ClossappDashboard` (`components/clossapp-dashboard.tsx`) is a thin shell (57 lines). `app/page.tsx` is a wrapper with `dynamic = 'force-dynamic'`.
+
+### Directory Layout (modular post-refactor)
+```
+components/
+├── clossapp-dashboard.tsx    # Shell: AuthProvider → PrendasProvider → AppShell
+├── shared/                   # 7 reusable UI components
+│   ├── bottom-nav.tsx        # Fixed bottom nav with view icons
+│   ├── centered-modal.tsx    # Generic modal wrapper
+│   ├── page-header.tsx       # View title + optional action
+│   ├── prenda-card.tsx       # Single garment card
+│   ├── prenda-grid.tsx       # Grid layout for cards
+│   ├── prenda-skeleton.tsx   # Loading placeholder
+│   └── animated-number.tsx   # Animated counter
+└── views/                    # 20 view components (6 sections)
+    ├── login-view.tsx
+    ├── inicio/inicio-view.tsx
+    ├── armario/{armario-view,upload-modal,prenda-detail-modal,repair-form-modal,repair-list}.tsx
+    ├── simulador/{simulador-view,outfit-form,outfit-card,outfit-visual}.tsx
+    ├── marketplace/{marketplace-view,market-item-card,item-detail-modal,sell-form-modal,rent-date-picker}.tsx
+    └── estadisticas/{estadisticas-view,kpi-grid,top-prendas-list,forgotten-prendas-list}.tsx
+context/
+├── auth-context.tsx          # AuthProvider + useAuthContext (userMode, userId, user, isGuest)
+└── prendas-context.tsx       # PrendasProvider + usePrendasContext (prendas, refresh, loading)
+hooks/
+├── use-auth.ts               # Demo mock + real Supabase auth logic
+├── use-keyboard.ts           # Detects mobile keyboard open/close
+├── use-prendas.ts            # CRUD for prendas (fetch, insert, update, delete)
+├── use-reparaciones.ts       # CRUD for reparaciones
+├── use-image-upload.ts       # Canvas resize + Supabase storage upload
+├── use-outfits.ts            # Outfit generation via /api/generate-outfits
+├── use-marketplace.ts        # Sell/rent mutations via /api/renta
+└── use-stats.ts              # Usage/frequency stats
+services/
+├── image.service.ts          # Canvas compression utilities
+├── prendas.service.ts        # Supabase prendas queries
+├── auth.service.ts           # Sign in/up/signOut + username check
+├── analyze.service.ts        # Claude Sonnet image analysis
+├── outfits.service.ts        # Outfit generation API call
+├── reparaciones.service.ts   # Reparaciones queries
+├── marketplace.service.ts    # Market listings + renta API
+└── stats.service.ts          # Usage stats queries
+types/
+├── prenda.ts                 # Prenda, PrendaExt
+├── reparacion.ts             # ReparacionDB
+├── outfit.ts                 # OutfitRec
+├── auth.ts                   # UserMode
+├── views.ts                  # View (union of view IDs)
+└── index.ts                  # Re-exports all types
+constants/
+├── demo-data.ts              # GUEST_PRENDAS, GUEST_REPARACIONES, DEMO_OUTFITS, etc.
+├── navigation.ts             # navItems, filterChips
+├── categories.ts             # FIXED_CATS, CATEGORIAS_RENTA, LAYER_ORDER
+├── images.ts                 # fashionImages, outfitImages
+└── animation.ts              # pageVariants, pageProps
+```
+
+### Data Flow
+```
+AuthProvider (auth state) → PrendasProvider (wardrobe) → AppShell (routing)
+  ├── LoginView (email/password or demo login)
+  ├── InicioView (welcome, recent adds, AI recommendations)
+  ├── ArmarioView (wardrobe grid, upload, repair management)
+  ├── SimuladorView (outfit generation with Haiku)
+  ├── MarketplaceView (sell/rent items)
+  └── EstadisticasView (usage stats, KPIs)
+```
+
+All views consume context via `useAuthContext()` / `usePrendasContext()` — zero props from AppShell (except callbacks for navigation: `onElegir`, `onApartar`, `onSellPrenda`).
+
+Services take `SupabaseClient` as parameter (dependency injection) for React Native portability.
 
 ### Auth
 - **Two modes coexist**: demo mock (`hooks/use-auth.ts` — hardcoded `DEMO_USER`) and real Supabase email/password login inside `LoginView`.
