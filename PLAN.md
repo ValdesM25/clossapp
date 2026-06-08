@@ -674,7 +674,7 @@ components/views/estadisticas/
 - Solo recibe `onSellPrenda` (callback para navegar a marketplace)
 - `clossapp-dashboard.tsx`: 1,186 → 1,096 líneas (-90)
 
-#### 6D — `SimuladorView`
+#### 6D — `SimuladorView` ✅ COMPLETADA
 
 ```
 components/views/simulador/
@@ -685,6 +685,17 @@ components/views/simulador/
 ```
 
 **Commit:** `refactor: extract SimuladorView and subcomponents`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `components/views/simulador/simulador-view.tsx` — consume `useAuthContext()` + `usePrendasContext()` + `useOutfits()`
+- `components/views/simulador/outfit-form.tsx` — formulario de ocasión/clima/prenda destacada
+- `components/views/simulador/outfit-card.tsx` — card de outfit con foto grid + descripción expandible + CTA
+- `components/views/simulador/outfit-visual.tsx` — visualización por capas (re-usado de dashboard)
+- Eliminados props `prendas`, `isGuest`, `userId`, `userName` (context)
+- Solo recibe `onElegir` callback
+- `clossapp-dashboard.tsx`: 1,096 → 816 líneas (-280)
 
 #### 6E — `MarketplaceView` (la más compleja)
 
