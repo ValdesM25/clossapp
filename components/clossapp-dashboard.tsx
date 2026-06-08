@@ -34,6 +34,7 @@ import { PrendaCard } from "@/components/shared/prenda-card"
 import { PrendaGrid } from "@/components/shared/prenda-grid"
 import { LoginView } from "@/components/views/login-view"
 import { InicioView } from "@/components/views/inicio/inicio-view"
+import { EstadisticasView } from "@/components/views/estadisticas/estadisticas-view"
 
 // ─── DEMO TOGGLE ──────────────────────────────────────────────────────────────
 const IS_OFFLINE_DEMO = false
@@ -1031,97 +1032,6 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
   )
 }
 
-// ─── VIEW: ESTADÍSTICAS ───────────────────────────────────────────────────────
-function EstadisticasView({ userId, userName, isGuest, onSellPrenda }: {
-  userId: string
-  userName: string
-  isGuest: boolean
-  onSellPrenda: (p: Prenda) => void
-}) {
-  const { stats, topPrendas, olvidadas, loading } = useStats(userId, userName, isGuest)
-
-  function fmt(iso?: string | null) {
-    if (!iso) return "Nunca usado"
-    const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
-    if (d === 0) return "Hoy"
-    if (d === 1) return "Ayer"
-    if (d < 30) return `hace ${d} días`
-    if (d < 365) return `hace ${Math.floor(d / 30)} meses`
-    return `hace ${Math.floor(d / 365)} años`
-  }
-
-  const kpis = isGuest
-    ? [{ value: 6, label: "Total Prendas" }, { value: 14, label: "Usos este mes" }, { value: 3, label: "Outfits creados" }, { value: 1, label: "Sin usar (6m)" }]
-    : [{ value: stats.total, label: "Total Prendas" }, { value: stats.usos, label: "Usos este mes" }, { value: stats.outfits, label: "Outfits creados" }, { value: stats.sinUsar, label: "Sin usar (6m)" }]
-
-  return (
-    <motion.div {...pageProps} className="flex flex-col gap-8 pb-32 pt-8">
-      <div className="px-4">
-        <p className="text-xs text-zinc-400 uppercase tracking-widest">Insights</p>
-        <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">Estadísticas</h1>
-      </div>
-      {loading ? (
-        <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 text-zinc-400 animate-spin" /></div>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-3 px-4">
-            {kpis.map((stat) => (
-              <div key={stat.label} className="border border-zinc-100 p-5">
-                <p className="font-serif text-3xl text-zinc-900"><AnimatedNumber target={stat.value} /></p>
-                <p className="text-xs text-zinc-400 mt-1 uppercase tracking-widest">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-          <section className="px-4">
-            <p className="text-xs text-zinc-400 uppercase tracking-widest mb-3">Más Usadas</p>
-            <div className="flex flex-col gap-2">
-              {(isGuest ? GUEST_PRENDAS.slice(0, 3) as PrendaExt[] : topPrendas as PrendaExt[]).map((item, index) => (
-                <div key={item.id} className="flex items-center gap-3 border border-zinc-100 p-4">
-                  <span className="font-mono text-xs text-zinc-400 w-5 shrink-0">{index + 1}</span>
-                  {item.image_url && <img src={item.image_url} alt={item.name} className="w-10 h-10 object-cover shrink-0" />}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-zinc-900 truncate">{item.name}</p>
-                    <p className="text-[10px] text-zinc-400">{isGuest ? "—" : fmt(item.ultimo_uso)}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-serif text-lg text-zinc-900"><AnimatedNumber target={item.usos ?? 0} /></p>
-                    <p className="text-[10px] text-zinc-400">usos</p>
-                  </div>
-                </div>
-              ))}
-              {!isGuest && topPrendas.length === 0 && <p className="text-xs text-zinc-400 text-center py-4">Sin datos de uso aún</p>}
-            </div>
-          </section>
-          <section className="px-4">
-            <p className="text-xs text-zinc-400 uppercase tracking-widest mb-3">Prendas Olvidadas</p>
-            <div className="flex flex-col gap-2">
-              <AnimatePresence>
-                {(isGuest ? [] : olvidadas as PrendaExt[]).map((item) => (
-                  <motion.div key={item.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, x: 60, transition: { duration: 0.25 } }}
-                    className="flex items-center gap-3 border border-zinc-100 p-4">
-                    {item.image_url && <img src={item.image_url} alt={item.name} className="w-10 h-10 object-cover shrink-0" />}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-zinc-900 truncate">{item.name}</p>
-                      <p className="text-[10px] text-zinc-400">{fmt(item.ultimo_uso)}</p>
-                    </div>
-                    <motion.button whileTap={{ scale: 0.96 }} onClick={() => onSellPrenda(item)}
-                      className="shrink-0 text-xs border border-zinc-900 text-zinc-900 px-3 py-1.5 tracking-wide">
-                      Vender
-                    </motion.button>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              {!isGuest && olvidadas.length === 0 && <p className="text-xs text-zinc-400 text-center py-4">Sin prendas olvidadas</p>}
-              {isGuest && <p className="text-xs text-zinc-400 text-center py-4">Inicia sesión para ver tus estadísticas</p>}
-            </div>
-          </section>
-        </>
-      )}
-    </motion.div>
-  )
-}
-
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
 function AppShell() {
   const { userMode, userId, userName, isGuest } = useAuthContext()
@@ -1141,7 +1051,7 @@ function AppShell() {
       case "armario": return <ArmarioView userId={userId} isGuest={isGuest} />
       case "simulador": return <SimuladorView prendas={prendas} isGuest={isGuest} onElegir={() => setActiveView("armario")} userId={userId} userName={userName} />
       case "marketplace": return <MarketplaceView userId={userId} isGuest={isGuest} userPrendas={prendas} onApartar={refreshPrendas} />
-      case "estadisticas": return <EstadisticasView userId={userId} userName={userName} isGuest={isGuest} onSellPrenda={(p) => setActiveView("marketplace")} />
+      case "estadisticas": return <EstadisticasView onSellPrenda={() => setActiveView("marketplace")} />
       default: return <InicioView />
     }
   }

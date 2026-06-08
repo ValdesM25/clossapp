@@ -651,7 +651,7 @@ components/views/inicio/inicio-view.tsx
 - Eliminados los props `userName`, `isGuest`
 - `clossapp-dashboard.tsx`: 1,258 → 1,186 líneas (-72)
 
-#### 6C — `EstadisticasView` (independiente, sin dependencias complejas)
+#### 6C — `EstadisticasView` (independiente, sin dependencias complejas) ✅ COMPLETADA
 
 ```
 components/views/estadisticas/
@@ -662,6 +662,17 @@ components/views/estadisticas/
 ```
 
 **Commit:** `refactor: extract EstadisticasView and subcomponents`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `components/views/estadisticas/estadisticas-view.tsx` — consume `useAuthContext()` + `useStats()`
+- `components/views/estadisticas/kpi-grid.tsx` — grid 2x2 de KPIs con `AnimatedNumber`
+- `components/views/estadisticas/top-prendas-list.tsx` — lista de prendas más usadas
+- `components/views/estadisticas/forgotten-prendas-list.tsx` — lista de prendas olvidadas con CTA "Vender"
+- Eliminados los props `userId`, `userName`, `isGuest` (ahora se obtienen del contexto)
+- Solo recibe `onSellPrenda` (callback para navegar a marketplace)
+- `clossapp-dashboard.tsx`: 1,186 → 1,096 líneas (-90)
 
 #### 6D — `SimuladorView`
 
