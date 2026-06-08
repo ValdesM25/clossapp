@@ -1,4 +1,4 @@
-# Plan de Refactorización Maestro — ClossApp
+# Plan de Refactorización — ClossApp
 
 ## Diagnóstico del Estado Actual
 
@@ -366,7 +366,7 @@ Todo lo que **no** es cross-cutting permanece local:
 
 ---
 
-### Fase 0 — Limpieza y preparación (sin cambios funcionales)
+### Fase 0 — Limpieza y preparación (sin cambios funcionales) ✅ COMPLETADA
 
 **Objetivo:** Eliminar duplicados y crear la estructura de directorios vacía.
 
@@ -379,6 +379,15 @@ Todo lo que **no** es cross-cutting permanece local:
 **Riesgo:** Cero. Solo se borran archivos que no se importan.
 
 **Commit:** `chore: cleanup duplicates and create directory scaffold`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle de cambios:**
+- `hooks/use-mobile.ts` → borrado (imports redirigidos a `@/components/ui/use-mobile` en `sidebar.tsx`)
+- `hooks/use-toast.ts` → borrado (imports redirigidos a `@/components/ui/use-toast` en `toaster.tsx`)
+- `styles/globals.css` → borrado (duplicado de `app/globals.css`, sin imports)
+- Creadas 13 carpetas: `types/`, `constants/`, `services/`, `context/`, `components/shared/`, `components/views/inicio/`, `components/views/armario/`, `components/views/simulador/`, `components/views/marketplace/`, `components/views/estadisticas/`
+- `npm run build` pasa sin errores
 
 ---
 
