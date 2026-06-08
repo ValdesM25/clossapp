@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion"
+import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   Shirt, Sparkles, Plus, Search, AlertCircle, TrendingUp, Clock, Check, Loader2, X, Lock, Tag,
 } from "lucide-react"
@@ -12,11 +12,10 @@ import type { Prenda, PrendaExt, ReparacionDB, View } from "@/types"
 import { DEMO_OUTFITS, GUEST_PRENDAS, GUEST_REPARACIONES, STATIC_MARKET, STATIC_RENTA } from "@/constants/demo-data"
 import { navItems, filterChips } from "@/constants/navigation"
 import { FIXED_CATS, LAYER_ORDER } from "@/constants/categories"
-import { fashionImages } from "@/constants/images"
+import { fashionImages, outfitImages } from "@/constants/images"
 import { pageVariants, pageProps } from "@/constants/animation"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { insertPrenda } from "@/services/prendas.service"
-import { resizeImage } from "@/services/image.service"
 import { useKeyboard } from "@/hooks/use-keyboard"
 import { usePrendas } from "@/hooks/use-prendas"
 import { useReparaciones } from "@/hooks/use-reparaciones"
@@ -26,56 +25,16 @@ import { useMarketplace } from "@/hooks/use-marketplace"
 import { useStats } from "@/hooks/use-stats"
 import { AuthProvider, useAuthContext } from "@/context/auth-context"
 import { PrendasProvider, usePrendasContext } from "@/context/prendas-context"
+import { CenteredModal } from "@/components/shared/centered-modal"
+import { PrendaSkeleton } from "@/components/shared/prenda-skeleton"
+import { AnimatedNumber } from "@/components/shared/animated-number"
+import { BottomNav } from "@/components/shared/bottom-nav"
+import { PageHeader } from "@/components/shared/page-header"
+import { PrendaCard } from "@/components/shared/prenda-card"
+import { PrendaGrid } from "@/components/shared/prenda-grid"
 
 // ─── DEMO TOGGLE ──────────────────────────────────────────────────────────────
 const IS_OFFLINE_DEMO = false
-
-
-
-
-
-
-
-// ─── SKELETON ─────────────────────────────────────────────────────────────────
-function PrendaSkeleton() {
-  return (
-    <div className="columns-2 gap-3 space-y-3">
-      {[180, 140, 160, 180, 140, 160].map((h, i) => (
-        <div key={i} className="break-inside-avoid overflow-hidden bg-zinc-100 mb-3 animate-pulse">
-          <div className="bg-zinc-200" style={{ height: h }} />
-          <div className="p-3 space-y-1.5">
-            <div className="h-3 bg-zinc-200 rounded w-3/4" />
-            <div className="h-2.5 bg-zinc-100 rounded w-1/2" />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ─── SHARED: CENTERED MODAL ───────────────────────────────────────────────────
-function CenteredModal({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center px-4"
-          onClick={onClose}>
-          <motion.div initial={{ opacity: 0, scale: 0.94, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 10 }} transition={{ type: "spring", damping: 26, stiffness: 320 }}
-            className="w-full max-w-lg bg-white rounded-none shadow-2xl relative max-h-[88vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}>
-            <button onClick={onClose}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center border border-zinc-200 hover:bg-zinc-50 z-10">
-              <X className="w-4 h-4 text-zinc-600" />
-            </button>
-            {children}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
 
 // ─── VIEW: LOGIN ──────────────────────────────────────────────────────────────
 function LoginView({ onLogin, onLoginAsGuest, loading, error }: {
@@ -1188,16 +1147,6 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
   )
 }
 
-// ─── ANIMATED NUMBER ──────────────────────────────────────────────────────────
-function AnimatedNumber({ target }: { target: number }) {
-  const motionVal = useMotionValue(0)
-  const spring = useSpring(motionVal, { stiffness: 80, damping: 20 })
-  const [display, setDisplay] = useState(0)
-  useEffect(() => { motionVal.set(target) }, [target, motionVal])
-  useEffect(() => spring.on("change", (v) => setDisplay(Math.round(v))), [spring])
-  return <>{display}</>
-}
-
 // ─── VIEW: ESTADÍSTICAS ───────────────────────────────────────────────────────
 function EstadisticasView({ userId, userName, isGuest, onSellPrenda }: {
   userId: string
@@ -1330,33 +1279,7 @@ function AppShell() {
               </div>
 
               {/* Bottom Nav */}
-              <AnimatePresence>
-                {!keyboardOpen && (
-                  <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}
-                    className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-safe pb-6 pointer-events-none">
-                    <nav className="w-[92%] max-w-2xl bg-white/80 backdrop-blur-xl border border-zinc-200 px-6 py-3 flex justify-between items-center shadow-lg pointer-events-auto">
-                      {navItems.map((item) => {
-                        const isActive = activeView === item.id
-                        const isFlashing = marketFlash && item.id === "marketplace"
-                        return (
-                          <motion.button key={item.id} whileTap={{ scale: 0.82 }} onClick={() => setActiveView(item.id)}
-                            className="flex flex-col items-center gap-0.5 relative">
-                            {isFlashing && (
-                              <motion.span initial={{ scale: 0.5, opacity: 1 }} animate={{ scale: 2.5, opacity: 0 }}
-                                transition={{ duration: 0.6 }} className="absolute inset-0 rounded-full bg-zinc-300" />
-                            )}
-                            <item.icon className={cn("w-5 h-5 transition-colors", isActive ? "text-zinc-900" : "text-zinc-400")} />
-                            <span className={cn("text-[10px] font-medium transition-colors", isActive ? "text-zinc-900" : "text-zinc-400")}>
-                              {item.label}
-                            </span>
-                          </motion.button>
-                        )
-                      })}
-                    </nav>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <BottomNav activeView={activeView} onNavigate={setActiveView} open={!keyboardOpen} flash={marketFlash ? "marketplace" : undefined} />
             </motion.div>
           )}
         </AnimatePresence>

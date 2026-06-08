@@ -579,7 +579,7 @@ export function usePrendas(userId: string, isGuest: boolean) {
 
 ---
 
-### Fase 5 — Extraer componentes compartidos
+### Fase 5 — Extraer componentes compartidos ✅ COMPLETADA
 
 **Objetivo:** Sacar los building blocks reutilizables a archivos propios.
 
@@ -596,6 +596,19 @@ export function usePrendas(userId: string, isGuest: boolean) {
 **Método:** Cut desde dashboard → paste a nuevo archivo → agregar exports → actualizar imports → verify build.
 
 **Commit:** `refactor: extract shared UI components`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle de cambios:**
+- `components/shared/centered-modal.tsx` — componente `<CenteredModal>` con animación spring + backdrop + botón X
+- `components/shared/prenda-skeleton.tsx` — skeleton de masonry grid 2 columnas con alturas variables
+- `components/shared/animated-number.tsx` — número animado con `useMotionValue` + `useSpring` de Framer Motion
+- `components/shared/bottom-nav.tsx` — barra de navegación inferior con flash animation y keyboard-aware
+- `components/shared/page-header.tsx` — header consistente (`subtitle` + título serif + `rightSlot`)
+- `components/shared/prenda-card.tsx` — card de prenda con imagen, nombre, categoría, badge y caption configurables
+- `components/shared/prenda-grid.tsx` — grid masonry con skeleton, mensaje vacío y `PrendaCard` items
+- `clossapp-dashboard.tsx`: 1,380 → 1,303 líneas (-77)
+- `npm run build` pasa sin errores
 
 ---
 
