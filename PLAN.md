@@ -486,7 +486,7 @@ export async function insertPrenda(
 
 ---
 
-### Fase 3 — Extraer custom hooks
+### Fase 3 — Extraer custom hooks ✅ COMPLETADA
 
 **Objetivo:** Crear hooks que encapsulen estado + llamadas a servicios. Los componentes solo verán hooks.
 
@@ -527,6 +527,26 @@ export function usePrendas(userId: string, isGuest: boolean) {
 **Método:** Crear hook → importar en la vista correspondiente → reemplazar `useState`/`useEffect` inline → verify build.
 
 **Commit:** `refactor: extract custom hooks bridging services to React`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle de cambios:**
+- `hooks/use-keyboard.ts` — `useKeyboard()` extraído del helper `useKeyboardOpen` del dashboard
+- `hooks/use-auth.ts` — `useAuth()` reemplaza mock anterior. Expone `login`, `loginAsGuest`, `logout`, `userMode`, `userId`, `userName`, `isGuest`, `isAuthenticated`, `loading`, `error`
+- `hooks/use-prendas.ts` — `usePrendas(userId, isGuest)` → `{prendas, loading, refresh, setPrendas, addPrenda}`
+- `hooks/use-reparaciones.ts` — `useReparaciones(userId, isGuest)` → `{reparaciones, loading, refresh, add, complete}`
+- `hooks/use-image-upload.ts` — `useImageUpload(userId, isGuest)` → `{preview, previewForm, analyzing, analyzeError, uploading, fileInputRef, selectFile, updateForm, upload, cancel}`
+- `hooks/use-outfits.ts` — `useOutfits(prendas, userId, userName, isGuest)` → `{outfits, generating, error, eligiendoIdx, elegidoIdx, generate, elegir, setElegidoIdx}`
+- `hooks/use-marketplace.ts` — `useMarketplace(userId, isGuest)` → `{marketTab, setMarketTab, activeFilter, setActiveFilter, items, rentaItems, loading, aparting, apartSuccess, sellMode, setSellMode, selling, rentaError, refresh, apartar, publish}`
+- `hooks/use-stats.ts` — `useStats(userId, userName, isGuest)` → `{stats, topPrendas, olvidadas, loading, refresh}`
+- `LoginView` actualizado: recibe `onLogin(email, pw)`, `onLoginAsGuest()`, `loading`, `error` (ya no maneja su propio estado de auth)
+- `ClossappDashboard` usa `useAuth()` + `useKeyboard()` en vez de estado inline
+- `ArmarioView` usa `usePrendas()` + `useReparaciones()` + `useImageUpload()` → se eliminaron 3 `useEffect` y ~20 líneas de estado
+- `SimuladorView` usa `useOutfits()` → se eliminaron 5 estados + 2 funciones inline
+- `MarketplaceView` usa `useMarketplace()` → se eliminaron 8 estados + 1 `useEffect` + 2 funciones inline
+- `EstadisticasView` usa `useStats()` → se eliminaron 4 estados + 1 `useEffect`
+- `clossapp-dashboard.tsx`: 1,522 → 1,388 líneas (-134)
+- `npm run build` pasa sin errores
 
 ---
 

@@ -8,40 +8,29 @@ import {
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import type { Prenda, PrendaExt, ReparacionDB, OutfitRec, UserMode, View } from "@/types"
+import type { Prenda, PrendaExt, ReparacionDB, View } from "@/types"
 import { DEMO_OUTFITS, GUEST_PRENDAS, GUEST_REPARACIONES, STATIC_MARKET, STATIC_RENTA } from "@/constants/demo-data"
 import { navItems, filterChips } from "@/constants/navigation"
-import { FIXED_CATS, CATEGORIAS_RENTA_PERMITIDAS, categoriaPermiteRenta, LAYER_ORDER } from "@/constants/categories"
-import { fashionImages, outfitImages } from "@/constants/images"
+import { FIXED_CATS, LAYER_ORDER } from "@/constants/categories"
+import { fashionImages } from "@/constants/images"
 import { pageVariants, pageProps } from "@/constants/animation"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
+import { insertPrenda } from "@/services/prendas.service"
 import { resizeImage } from "@/services/image.service"
-import { fetchPrendas, insertPrenda } from "@/services/prendas.service"
-import { signIn } from "@/services/auth.service"
-import { analyzePrenda } from "@/services/analyze.service"
-import { registrarUso, incrementarOutfits, generateOutfits, mapWardrobe } from "@/services/outfits.service"
-import { fetchReparaciones, createReparacion, completeReparacion } from "@/services/reparaciones.service"
-import { fetchVentaItems, fetchRentaItems, publishForSale, apartarCompra, apartarRenta } from "@/services/marketplace.service"
-import { fetchStats } from "@/services/stats.service"
+import { useKeyboard } from "@/hooks/use-keyboard"
+import { useAuth } from "@/hooks/use-auth"
+import { usePrendas } from "@/hooks/use-prendas"
+import { useReparaciones } from "@/hooks/use-reparaciones"
+import { useImageUpload } from "@/hooks/use-image-upload"
+import { useOutfits } from "@/hooks/use-outfits"
+import { useMarketplace } from "@/hooks/use-marketplace"
+import { useStats } from "@/hooks/use-stats"
 
 // SSR-aware browser client — carries the session cookie on every request
 const supabase = createBrowserSupabaseClient()
 
 // ─── DEMO TOGGLE ──────────────────────────────────────────────────────────────
 const IS_OFFLINE_DEMO = false
-
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-function useKeyboardOpen() {
-  const [open, setOpen] = useState(false)
-  useEffect(() => {
-    const vv = window.visualViewport
-    if (!vv) return
-    const handler = () => setOpen(vv.height < window.innerHeight * 0.75)
-    vv.addEventListener("resize", handler)
-    return () => vv.removeEventListener("resize", handler)
-  }, [])
-  return open
-}
 
 
 
@@ -91,26 +80,18 @@ function CenteredModal({ open, onClose, children }: { open: boolean; onClose: ()
 }
 
 // ─── VIEW: LOGIN ──────────────────────────────────────────────────────────────
-// LoginView now passes both the UUID (for DB queries) and display name (for UI)
-function LoginView({ onLogin }: { onLogin: (mode: UserMode, uuid: string, displayName: string) => void }) {
+function LoginView({ onLogin, onLoginAsGuest, loading, error }: {
+  onLogin: (email: string, password: string) => Promise<void>
+  onLoginAsGuest: () => void
+  loading: boolean
+  error: string | null
+}) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const supabaseClient = createBrowserSupabaseClient()
 
   async function handleEnter() {
     if (!email.trim() || !password.trim()) return
-    setLoading(true); setError(null)
-    try {
-      const { uuid, displayName } = await signIn(supabaseClient, email, password)
-      onLogin("VIP", uuid, displayName)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Código no reconocido. Intenta de nuevo.")
-    } finally {
-      setLoading(false)
-    }
+    try { await onLogin(email, password) } catch {}
   }
 
   return (
@@ -134,7 +115,7 @@ function LoginView({ onLogin }: { onLogin: (mode: UserMode, uuid: string, displa
           className="w-full h-12 bg-zinc-900 text-white text-sm font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Entrar"}
         </motion.button>
-        <motion.button whileTap={{ scale: 0.98 }} onClick={() => onLogin("GUEST", "guest", "Invitada")}
+        <motion.button whileTap={{ scale: 0.98 }} onClick={onLoginAsGuest}
           className="w-full h-12 border border-zinc-300 text-zinc-600 text-sm tracking-wide">
           Explorar como invitada
         </motion.button>
@@ -218,23 +199,17 @@ function InicioView({ userName, isGuest }: { userName: string; isGuest: boolean 
 
 // ─── VIEW: ARMARIO ────────────────────────────────────────────────────────────
 function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) {
-  const [prendas, setPrendas] = useState<Prenda[]>([])
-  const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false)
-  const [preview, setPreview] = useState<{ url: string; file: File } | null>(null)
-  const [previewForm, setPreviewForm] = useState({
-    nombre: "", categoria: "", color_principal: "", estilo: "", descripcion: "",
-    talla: "", estado_uso: "",
-  })
-  const [analyzing, setAnalyzing] = useState(false)
-  const [analyzeError, setAnalyzeError] = useState<string | null>(null)
-  const [reparaciones, setReparaciones] = useState<ReparacionDB[]>([])
-  const [loadingRep, setLoadingRep] = useState(true)
+  const { prendas, loading, refresh: refreshPrendas } = usePrendas(userId, isGuest)
+  const { reparaciones, loading: loadingRep, add: addRep, complete: completeRep } = useReparaciones(userId, isGuest)
+  const {
+    preview, previewForm, analyzing, analyzeError, uploading,
+    fileInputRef, selectFile, updateForm, upload, cancel: cancelUpload,
+  } = useImageUpload(userId, isGuest)
+
   const [showRepForm, setShowRepForm] = useState(false)
   const [repForm, setRepForm] = useState({ prenda_id: null as string | null, tarea: "", prioridad: "Media" as ReparacionDB["prioridad"] })
   const [savingRep, setSavingRep] = useState(false)
   const [selectedPrenda, setSelectedPrenda] = useState<Prenda | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [activeCategory, setActiveCategory] = useState("Todas")
   const prendasConRep = new Set(reparaciones.map((r) => r.prenda_id).filter(Boolean))
@@ -250,87 +225,51 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
         (p.metadata as Record<string, string> | null)?.categoria?.toLowerCase().includes(activeCategory.toLowerCase())
       )
 
-  useEffect(() => {
-    if (isGuest) { setPrendas(GUEST_PRENDAS); setLoading(false); return }
-    fetchPrendas(supabase, userId).then(setPrendas).catch(console.error).finally(() => setLoading(false))
-  }, [userId, isGuest])
-
-  useEffect(() => {
-    if (isGuest) { setReparaciones(GUEST_REPARACIONES); setLoadingRep(false); return }
-    fetchReparaciones(supabase, userId).then((data) => { setReparaciones(data); setLoadingRep(false) })
-  }, [userId, isGuest])
-
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (isGuest) return
     const file = e.target.files?.[0]
     if (!file) return
-    setPreview({ url: URL.createObjectURL(file), file })
-    setPreviewForm({ nombre: "", categoria: "", color_principal: "", estilo: "", descripcion: "", talla: "", estado_uso: "" })
-    setAnalyzeError(null)
-    if (fileInputRef.current) fileInputRef.current.value = ""
-    // Kick off AI analysis immediately
-    setAnalyzing(true)
-    analyzePrenda(file, userId).then((data) => {
-      setPreviewForm((f) => ({
-        ...f,
-        nombre: data.nombre ?? "",
-        categoria: data.categoria ?? "",
-        color_principal: data.color_principal ?? "",
-        estilo: data.estilo ?? "",
-        descripcion: data.descripcion ?? "",
-      }))
-    }).catch((err) => {
-      console.error("[analyzePrenda]", err)
-      setAnalyzeError("No se pudo analizar la imagen. Puedes completar los campos manualmente.")
-    }).finally(() => setAnalyzing(false))
+    selectFile(file)
   }
 
   async function handleConfirmUpload() {
     if (!preview) return
-    setUploading(true)
-    try {    
-      const blob = await resizeImage(preview.file)
-      const path = `${userId}/${Date.now()}.jpg`
-      const { error: uploadError } = await supabase.storage.from("closet-images").upload(path, blob, { contentType: "image/jpeg" })
-      if (uploadError) throw uploadError
-      const { data: urlData } = supabase.storage.from("closet-images").getPublicUrl(path)
-      const metadata = {
-        nombre: previewForm.nombre,
-        categoria: previewForm.categoria,
-        color_principal: previewForm.color_principal,
-        estilo: previewForm.estilo,
-        descripcion: previewForm.descripcion,
-      }
-      await insertPrenda(supabase, {
+    const publicUrl = await upload()
+    if (!publicUrl) return
+    try {
+      const supabaseClient = createBrowserSupabaseClient()
+      await insertPrenda(supabaseClient, {
         user_id: userId,
         name: previewForm.nombre || preview.file.name.replace(/\.[^/.]+$/, ""),
         category: previewForm.categoria || "Sin categoría",
-        image_url: urlData.publicUrl,
+        image_url: publicUrl,
         talla: previewForm.talla || null,
         estado_uso: previewForm.estado_uso || null,
         description: previewForm.descripcion || null,
         color: previewForm.color_principal || null,
         style: previewForm.estilo || null,
-        metadata,
+        metadata: {
+          nombre: previewForm.nombre,
+          categoria: previewForm.categoria,
+          color_principal: previewForm.color_principal,
+          estilo: previewForm.estilo,
+          descripcion: previewForm.descripcion,
+        },
       })
-      const updated = await fetchPrendas(supabase, userId)
-      setPrendas(updated)
+      refreshPrendas()
+      cancelUpload()
     } catch (err) { console.error("Error subiendo prenda:", err) }
-    finally {
-      setUploading(false)
-      URL.revokeObjectURL(preview.url)
-      setPreview(null)
-    }
   }
 
   async function handleSaveRep() {
     if (isGuest || !repForm.prenda_id) return
     setSavingRep(true)
-    const selectedPrenda = prendas.find((p) => p.id === repForm.prenda_id)
-    const payload = { user_id: userId, prenda_id: repForm.prenda_id, prenda: selectedPrenda?.name ?? "", tarea: repForm.tarea, prioridad: repForm.prioridad, completado: false }
+    const selected = prendas.find((p) => p.id === repForm.prenda_id)
     try {
-      const updated = await createReparacion(supabase, payload)
-      setReparaciones(updated)
+      await addRep({
+        user_id: userId, prenda_id: repForm.prenda_id,
+        prenda: selected?.name ?? "", tarea: repForm.tarea,
+        prioridad: repForm.prioridad, completado: false,
+      })
     } catch (err) { console.error("[handleSaveRep] error →", err) }
     setRepForm({ prenda_id: null, tarea: "", prioridad: "Media" })
     setShowRepForm(false)
@@ -339,8 +278,7 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
 
   async function handleCompleteRep(id: string) {
     if (isGuest) return
-    await completeReparacion(supabase, id)
-    setReparaciones((prev) => prev.filter((r) => r.id !== id))
+    await completeRep(id)
   }
 
   return (
@@ -730,53 +668,26 @@ function SimuladorView({ prendas, isGuest, onElegir, userId, userName }: {
   prendas: Prenda[]
   isGuest: boolean
   onElegir: () => void
-  userId: string    // UUID — for AI endpoint guard
-  userName: string  // email prefix — for incrementar_outfits RPC
+  userId: string
+  userName: string
 }) {
   const [ocasion, setOcasion] = useState("")
   const [clima, setClima] = useState("")
   const [destacada, setDestacada] = useState("")
   const [destacadaQuery, setDestacadaQuery] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [outfits, setOutfits] = useState<Array<{ titulo: string; descripcion: string; prenda_ids: string[] }>>([])
-  const [generating, setGenerating] = useState(false)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [eligiendoIdx, setEligiendoIdx] = useState<number | null>(null)
-  const [elegidoIdx, setElegidoIdx] = useState<number | null>(null)
+  const { outfits, generating, error: errorMsg, eligiendoIdx, elegidoIdx, generate, elegir, setElegidoIdx } = useOutfits(prendas, userId, userName, isGuest)
 
   const suggestions = destacadaQuery.length > 0
     ? prendas.filter((p) => p.name.toLowerCase().includes(destacadaQuery.toLowerCase())).slice(0, 5)
     : []
 
   async function handleGenerate() {
-    setGenerating(true); setErrorMsg(null); setOutfits([])
-    try {
-      if (isGuest || IS_OFFLINE_DEMO) {
-        await new Promise((r) => setTimeout(r, 1500))
-        setOutfits(DEMO_OUTFITS.map((o) => ({
-          titulo: o.titulo,
-          descripcion: o.descripcion,
-          prenda_ids: prendas.slice(0, 3).map((p) => p.id),
-        })))
-        return
-      }
-      const wardrobe = mapWardrobe(prendas)
-      const resultados = await generateOutfits({ ocasion, clima, destacada }, wardrobe, userId)
-      setOutfits(resultados)
-    } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : "Error al generar. Intenta de nuevo.")
-    } finally { setGenerating(false) }
+    await generate({ ocasion, clima, destacada })
   }
 
   async function handleElegir(outfit: { titulo: string; prenda_ids: string[] }, idx: number) {
-    if (isGuest) return
-    setEligiendoIdx(idx)
-    await Promise.all([
-      registrarUso(supabase, outfit.prenda_ids),
-      incrementarOutfits(supabase, userName),
-    ])
-    setEligiendoIdx(null)
-    setElegidoIdx(idx)
+    await elegir(outfit, idx)
     setTimeout(() => { setElegidoIdx(null); onElegir() }, 2000)
   }
 
@@ -1000,92 +911,57 @@ function OutfitCard({
 // ─── VIEW: MARKETPLACE ────────────────────────────────────────────────────────
 
 function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: string; isGuest: boolean; userPrendas: Prenda[]; onApartar: () => void }) {
-  const [marketTab, setMarketTab] = useState<"comprar" | "rentar">("comprar")
-  const [activeFilter, setActiveFilter] = useState("Todos")
-  const [items, setItems] = useState<Prenda[]>([])
-  const [rentaItems, setRentaItems] = useState<Prenda[]>([])
-  const [loading, setLoading] = useState(true)
+  const {
+    marketTab, setMarketTab, activeFilter, setActiveFilter,
+    items, rentaItems, loading, aparting, apartSuccess,
+    sellMode, setSellMode, selling, rentaError,
+    apartar, publish,
+  } = useMarketplace(userId, isGuest)
+
   const [selectedItem, setSelectedItem] = useState<Prenda | null>(null)
-  const [aparting, setAparting] = useState(false)
-  const [apartSuccess, setApartSuccess] = useState(false)
   const [showSellForm, setShowSellForm] = useState(false)
-  const [sellMode, setSellMode] = useState<"venta" | "renta">("venta")
   const [sellStep, setSellStep] = useState<"select" | "details">("select")
   const [sellPrenda, setSellPrenda] = useState<Prenda | null>(null)
   const [sellForm, setSellForm] = useState({ precio: "", talla: "", estado_uso: "" })
-  const [selling, setSelling] = useState(false)
-  const [rentaError, setRentaError] = useState<string | null>(null)
   const [showFechaRenta, setShowFechaRenta] = useState(false)
   const [fechaRenta, setFechaRenta] = useState("")
 
   function handleSelectSellPrenda(p: Prenda) {
     setSellPrenda(p)
     setSellForm({ precio: "", talla: p.talla ?? "", estado_uso: p.estado_uso ?? "" })
-    setRentaError(null)
     setSellStep("details")
   }
-
-  useEffect(() => {
-    if (isGuest) { setItems(STATIC_MARKET); setRentaItems(STATIC_RENTA); setLoading(false); return }
-    Promise.all([
-      fetchVentaItems(supabase),
-      fetchRentaItems(supabase),
-    ]).then(([venta, renta]) => {
-      setItems(venta.length ? venta : STATIC_MARKET)
-      setRentaItems(renta.length ? renta : STATIC_RENTA)
-      setLoading(false)
-    })
-  }, [isGuest])
 
   const currentItems = marketTab === "comprar" ? items : rentaItems
   const filtered = activeFilter === "Todos" ? currentItems : currentItems.filter((i) => i.category === activeFilter)
 
   async function handleApartar() {
     if (!selectedItem || isGuest) return
-    setAparting(true)
-    try {
-      if (marketTab === "rentar") {
-        if (!fechaRenta) { setShowFechaRenta(true); setAparting(false); return }
-        await apartarRenta(supabase, selectedItem, userId, fechaRenta)
-        setRentaItems((prev) => prev.filter((p) => p.id !== selectedItem.id))
-        onApartar()
-        setApartSuccess(true)
+    if (marketTab === "rentar") {
+      if (!fechaRenta) { setShowFechaRenta(true); return }
+      const ok = await apartar(selectedItem, "rentar", fechaRenta)
+      if (ok) {
         setShowFechaRenta(false)
         setFechaRenta("")
-        setTimeout(() => { setApartSuccess(false); setSelectedItem(null) }, 2000)
-        return
+        setTimeout(() => setSelectedItem(null), 2000)
+        onApartar()
       }
-      await apartarCompra(supabase, selectedItem, userId)
-      setApartSuccess(true)
+      return
+    }
+    const ok = await apartar(selectedItem, "comprar")
+    if (ok) {
+      setTimeout(() => setSelectedItem(null), 2000)
       onApartar()
-      setItems((prev) => prev.filter((p) => p.id !== selectedItem.id))
-      setTimeout(() => { setApartSuccess(false); setSelectedItem(null) }, 2000)
-    } catch (err) { console.error("Error apartando:", err) }
-    finally { setAparting(false) }
+    }
   }
 
   async function handleSell() {
     if (!sellPrenda || !sellForm.precio) return
-    setSelling(true); setRentaError(null)
-    try {
-      if (sellMode === "renta") {
-        if (!categoriaPermiteRenta(sellPrenda.category)) {
-          setRentaError("Solo vestidos y accesorios aplican para renta"); return
-        }
-        try {
-          await publishForRent(sellPrenda.id, parseFloat(sellForm.precio), userId)
-        } catch (err) {
-          setRentaError(err instanceof Error ? err.message : "Error al publicar para renta"); return
-        }
-        const { data: updated } = await supabase.from("prendas").select("*").eq("en_renta", true).order("created_at", { ascending: false })
-        setRentaItems(updated?.length ? updated : STATIC_RENTA)
-      } else {
-        const updated = await publishForSale(supabase, sellPrenda.id, parseFloat(sellForm.precio), sellForm.talla, sellForm.estado_uso)
-        setItems(updated.length ? updated : STATIC_MARKET)
-      }
-      setShowSellForm(false); setSellStep("select"); setSellPrenda(null); setSellForm({ precio: "", talla: "", estado_uso: "" })
-    } catch (err) { console.error("Error publicando:", err) }
-    finally { setSelling(false) }
+    const ok = await publish(sellPrenda, sellMode, sellForm.precio, sellForm.talla, sellForm.estado_uso)
+    if (ok) {
+      setShowSellForm(false); setSellStep("select"); setSellPrenda(null)
+      setSellForm({ precio: "", talla: "", estado_uso: "" })
+    }
   }
 
   const myPrendasAvailable = userPrendas.filter((p) => !p.en_venta && !p.en_renta)
@@ -1326,25 +1202,12 @@ function AnimatedNumber({ target }: { target: number }) {
 
 // ─── VIEW: ESTADÍSTICAS ───────────────────────────────────────────────────────
 function EstadisticasView({ userId, userName, isGuest, onSellPrenda }: {
-  userId: string      // UUID — used for prendas queries (RLS)
-  userName: string    // email prefix — used for usuarios_permitidos lookup
+  userId: string
+  userName: string
   isGuest: boolean
   onSellPrenda: (p: Prenda) => void
 }) {
-  const [stats, setStats] = useState({ total: 0, usos: 0, outfits: 0, sinUsar: 0 })
-  const [topPrendas, setTopPrendas] = useState<Prenda[]>([])
-  const [olvidadas, setOlvidadas] = useState<Prenda[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (isGuest) { setLoading(false); return }
-    fetchStats(supabase, userId, userName).then(({ total, usos, outfits, sinUsar, topPrendas: top, olvidadas: olv }) => {
-      setStats({ total, usos, outfits, sinUsar })
-      setTopPrendas(top)
-      setOlvidadas(olv)
-      setLoading(false)
-    }).catch(console.error)
-  }, [userId, isGuest])
+  const { stats, topPrendas, olvidadas, loading } = useStats(userId, userName, isGuest)
 
   function fmt(iso?: string | null) {
     if (!iso) return "Nunca usado"
@@ -1430,27 +1293,21 @@ function EstadisticasView({ userId, userName, isGuest, onSellPrenda }: {
 
 // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
 export function ClossappDashboard() {
-  const [userMode, setUserMode] = useState<UserMode | null>(null)
-  const [userName, setUserName] = useState("Invitada")   // display only — shown in greeting
-  const [userId, setUserId] = useState("guest")           // UUID from Supabase Auth — used for all DB queries
+  const { userMode, userId, userName, isGuest, login, loginAsGuest, loading: authLoading, error: authError } = useAuth()
   const [activeView, setActiveView] = useState<View>("inicio")
-  const [prendas, setPrendas] = useState<Prenda[]>([])
   const [marketFlash, setMarketFlash] = useState(false)
-  const keyboardOpen = useKeyboardOpen()
-
-  const isGuest = userMode === "GUEST"
-
-  function handleLogin(mode: UserMode, uuid: string, displayName: string) {
-    setUserMode(mode)
-    setUserId(uuid)           // UUID → used for .eq("user_id", userId) in every query
-    setUserName(displayName)  // email prefix → shown in "Hola, {userName}"
-  }
+  const keyboardOpen = useKeyboard()
 
   // Keep prendas in sync for simulador and marketplace
+  const [prendas, setPrendas] = useState<Prenda[]>([])
+  const supabaseClient = createBrowserSupabaseClient()
   useEffect(() => {
     if (activeView === "simulador" || activeView === "marketplace") {
       if (isGuest) { setPrendas(GUEST_PRENDAS); return }
-      fetchPrendas(userId).then(setPrendas).catch(console.error)
+      supabaseClient.from("prendas").select("*").eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .then(({ data }) => setPrendas(data ?? []))
+        .catch(console.error)
     }
   }, [activeView, userId, isGuest])
 
@@ -1459,12 +1316,20 @@ export function ClossappDashboard() {
     setTimeout(() => { setActiveView("marketplace"); setMarketFlash(false) }, 600)
   }
 
+  const refreshPrendas = () => {
+    if (isGuest) { setPrendas(GUEST_PRENDAS); return }
+    supabaseClient.from("prendas").select("*").eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setPrendas(data ?? []))
+      .catch(console.error)
+  }
+
   const renderView = () => {
     switch (activeView) {
       case "inicio": return <InicioView userName={userName} isGuest={isGuest} />
       case "armario": return <ArmarioView userId={userId} isGuest={isGuest} />
       case "simulador": return <SimuladorView prendas={prendas} isGuest={isGuest} onElegir={() => setActiveView("armario")} userId={userId} userName={userName} />
-      case "marketplace": return <MarketplaceView userId={userId} isGuest={isGuest} userPrendas={prendas} onApartar={() => fetchPrendas(userId).then(setPrendas).catch(console.error)} />
+      case "marketplace": return <MarketplaceView userId={userId} isGuest={isGuest} userPrendas={prendas} onApartar={refreshPrendas} />
       case "estadisticas": return <EstadisticasView userId={userId} userName={userName} isGuest={isGuest} onSellPrenda={(p) => setActiveView("marketplace")} />
       default: return <InicioView userName={userName} isGuest={isGuest} />
     }
@@ -1475,7 +1340,8 @@ export function ClossappDashboard() {
       <div className="w-full max-w-2xl mx-auto min-h-screen bg-white relative">
         <AnimatePresence mode="wait">
           {!userMode ? (
-            <LoginView key="login" onLogin={handleLogin} />
+            <LoginView key="login" onLogin={async (email, password) => { try { await login(email, password) } catch {} }} onLoginAsGuest={loginAsGuest}
+              loading={authLoading} error={authError} />
           ) : (
             <motion.div key="app" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
               className="relative min-h-screen">
