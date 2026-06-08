@@ -15,6 +15,14 @@ import { FIXED_CATS, CATEGORIAS_RENTA_PERMITIDAS, categoriaPermiteRenta, LAYER_O
 import { fashionImages, outfitImages } from "@/constants/images"
 import { pageVariants, pageProps } from "@/constants/animation"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
+import { resizeImage } from "@/services/image.service"
+import { fetchPrendas, insertPrenda } from "@/services/prendas.service"
+import { signIn } from "@/services/auth.service"
+import { analyzePrenda } from "@/services/analyze.service"
+import { registrarUso, incrementarOutfits, generateOutfits, mapWardrobe } from "@/services/outfits.service"
+import { fetchReparaciones, createReparacion, completeReparacion } from "@/services/reparaciones.service"
+import { fetchVentaItems, fetchRentaItems, publishForSale, apartarCompra, apartarRenta } from "@/services/marketplace.service"
+import { fetchStats } from "@/services/stats.service"
 
 // SSR-aware browser client — carries the session cookie on every request
 const supabase = createBrowserSupabaseClient()
@@ -35,38 +43,11 @@ function useKeyboardOpen() {
   return open
 }
 
-async function fetchPrendas(userId: string): Promise<Prenda[]> {
-  const { data, error } = await supabase
-    .from("prendas")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-  if (error) throw error
-  return data ?? []
-}
 
 
 
 
 
-
-
-async function resizeImage(file: File, maxWidth = 1000, quality = 0.85): Promise<Blob> {
-  return new Promise((resolve) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      const scale = Math.min(1, maxWidth / img.width)
-      const canvas = document.createElement("canvas")
-      canvas.width = img.width * scale
-      canvas.height = img.height * scale
-      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height)
-      URL.revokeObjectURL(url)
-      canvas.toBlob((b) => resolve(b!), "image/jpeg", quality)
-    }
-    img.src = url
-  })
-}
 
 // ─── SKELETON ─────────────────────────────────────────────────────────────────
 function PrendaSkeleton() {
@@ -123,21 +104,10 @@ function LoginView({ onLogin }: { onLogin: (mode: UserMode, uuid: string, displa
     if (!email.trim() || !password.trim()) return
     setLoading(true); setError(null)
     try {
-      const { data, error: authError } = await supabaseClient.auth.signInWithPassword({
-        email: email.trim(),
-        password: password.trim(),
-      })
-      if (authError || !data.user) {
-        setError("Código no reconocido. Intenta de nuevo.")
-        return
-      }
-      // uuid = data.user.id (the real UUID Supabase uses for RLS)
-      // displayName = email prefix, only used for the greeting in the UI
-      const uuid = data.user.id
-      const displayName = data.user.email?.split("@")[0] ?? email.trim()
+      const { uuid, displayName } = await signIn(supabaseClient, email, password)
       onLogin("VIP", uuid, displayName)
-    } catch {
-      setError("Código no reconocido. Intenta de nuevo.")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Código no reconocido. Intenta de nuevo.")
     } finally {
       setLoading(false)
     }
@@ -282,14 +252,12 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
 
   useEffect(() => {
     if (isGuest) { setPrendas(GUEST_PRENDAS); setLoading(false); return }
-    fetchPrendas(userId).then(setPrendas).catch(console.error).finally(() => setLoading(false))
+    fetchPrendas(supabase, userId).then(setPrendas).catch(console.error).finally(() => setLoading(false))
   }, [userId, isGuest])
 
   useEffect(() => {
     if (isGuest) { setReparaciones(GUEST_REPARACIONES); setLoadingRep(false); return }
-    supabase.from("reparaciones").select("*").eq("user_id", userId).eq("completado", false)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => { setReparaciones(data ?? []); setLoadingRep(false) })
+    fetchReparaciones(supabase, userId).then((data) => { setReparaciones(data); setLoadingRep(false) })
   }, [userId, isGuest])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -301,29 +269,8 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
     setAnalyzeError(null)
     if (fileInputRef.current) fileInputRef.current.value = ""
     // Kick off AI analysis immediately
-    analyzeImage(file, userId)
-  }
-
-  async function analyzeImage(file: File, userId: string) {
     setAnalyzing(true)
-    try {
-      // Compress to max 800px / JPEG 0.7 before sending — avoids Vercel 4.5MB payload limit
-      const compressed = await resizeImage(file, 800, 0.7)
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve((reader.result as string).split(",")[1])
-        reader.onerror = reject
-        reader.readAsDataURL(compressed)
-      })
-      const mediaType = "image/jpeg"
-
-      const res = await fetch("/api/analyze-prenda", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mediaType, user_id: userId }),
-      })
-      if (!res.ok) throw new Error("Error al analizar")
-      const data = await res.json()
+    analyzePrenda(file, userId).then((data) => {
       setPreviewForm((f) => ({
         ...f,
         nombre: data.nombre ?? "",
@@ -332,12 +279,10 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
         estilo: data.estilo ?? "",
         descripcion: data.descripcion ?? "",
       }))
-    } catch (err) {
-      console.error("[analyzeImage]", err)
+    }).catch((err) => {
+      console.error("[analyzePrenda]", err)
       setAnalyzeError("No se pudo analizar la imagen. Puedes completar los campos manualmente.")
-    } finally {
-      setAnalyzing(false)
-    }
+    }).finally(() => setAnalyzing(false))
   }
 
   async function handleConfirmUpload() {
@@ -356,7 +301,7 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
         estilo: previewForm.estilo,
         descripcion: previewForm.descripcion,
       }
-      const { error: insertError } = await supabase.from("prendas").insert({
+      await insertPrenda(supabase, {
         user_id: userId,
         name: previewForm.nombre || preview.file.name.replace(/\.[^/.]+$/, ""),
         category: previewForm.categoria || "Sin categoría",
@@ -368,8 +313,7 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
         style: previewForm.estilo || null,
         metadata,
       })
-      if (insertError) throw insertError
-      const updated = await fetchPrendas(userId)
+      const updated = await fetchPrendas(supabase, userId)
       setPrendas(updated)
     } catch (err) { console.error("Error subiendo prenda:", err) }
     finally {
@@ -384,14 +328,10 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
     setSavingRep(true)
     const selectedPrenda = prendas.find((p) => p.id === repForm.prenda_id)
     const payload = { user_id: userId, prenda_id: repForm.prenda_id, prenda: selectedPrenda?.name ?? "", tarea: repForm.tarea, prioridad: repForm.prioridad, completado: false }
-    console.log("[handleSaveRep] payload →", JSON.stringify(payload, null, 2))
-    const { data, error } = await supabase.from("reparaciones").insert(payload).select().single()
-    if (error) {
-      console.error("[handleSaveRep] error →", error.message, error.details, error.hint)
-    } else if (data) {
-      const { data: updated } = await supabase.from("reparaciones").select("*").eq("user_id", userId).eq("completado", false).order("created_at", { ascending: false })
-      setReparaciones(updated ?? [])
-    }
+    try {
+      const updated = await createReparacion(supabase, payload)
+      setReparaciones(updated)
+    } catch (err) { console.error("[handleSaveRep] error →", err) }
     setRepForm({ prenda_id: null, tarea: "", prioridad: "Media" })
     setShowRepForm(false)
     setSavingRep(false)
@@ -399,7 +339,7 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
 
   async function handleCompleteRep(id: string) {
     if (isGuest) return
-    await supabase.from("reparaciones").update({ completado: true }).eq("id", id)
+    await completeReparacion(supabase, id)
     setReparaciones((prev) => prev.filter((r) => r.id !== id))
   }
 
@@ -749,22 +689,6 @@ function ArmarioView({ userId, isGuest }: { userId: string; isGuest: boolean }) 
   )
 }
 
-// ─── USAGE TRACKING ───────────────────────────────────────────────────────────
-// Only called when user explicitly confirms an outfit — NOT on generation
-async function registrarUso(prendaIds: string[]) {
-  if (!prendaIds.length) return
-  const now = new Date().toISOString()
-  await Promise.all(
-    prendaIds.map((id) =>
-      supabase.from("prendas").update({ ultimo_uso: now }).eq("id", id)
-        .then(() =>
-          // Increment usos via raw SQL increment — safe without RPC
-          supabase.rpc("incrementar_uso", { prenda_id_input: id })
-        )
-    )
-  )
-}
-
 // ─── VIEW: SIMULADOR ──────────────────────────────────────────────────────────
 // ─── OUTFIT CATEGORY LAYERS ───────────────────────────────────────────────────
 
@@ -836,27 +760,9 @@ function SimuladorView({ prendas, isGuest, onElegir, userId, userName }: {
         })))
         return
       }
-      const contexto = [
-        ocasion && `Ocasión: ${ocasion}`,
-        clima && `Clima: ${clima}`,
-        destacada && `Prenda destacada: ${destacada}`,
-      ].filter(Boolean).join(". ") || "Outfit casual del día"
-
-      const wardrobe = prendas.map((p) => ({
-        id: p.id,
-        name: p.name,
-        category: p.category,
-        metadata: p.metadata ?? null,
-      }))
-
-      const res = await fetch("/api/generate-outfits", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contexto, wardrobe, user_id: userId }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "Error en la API")
-      setOutfits(data.outfits ?? [])
+      const wardrobe = mapWardrobe(prendas)
+      const resultados = await generateOutfits({ ocasion, clima, destacada }, wardrobe, userId)
+      setOutfits(resultados)
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : "Error al generar. Intenta de nuevo.")
     } finally { setGenerating(false) }
@@ -866,20 +772,8 @@ function SimuladorView({ prendas, isGuest, onElegir, userId, userName }: {
     if (isGuest) return
     setEligiendoIdx(idx)
     await Promise.all([
-      registrarUso(outfit.prenda_ids),
-      // Increment outfits_creados in usuarios_permitidos
-      supabase.rpc("incrementar_outfits", { username_input: userName }).then(({ error }) => {
-        if (error) {
-          // Fallback: manual increment if RPC not available
-          supabase.from("usuarios_permitidos")
-            .select("outfits_creados").eq("username", userName).single()
-            .then(({ data }) =>
-              supabase.from("usuarios_permitidos")
-                .update({ outfits_creados: (data?.outfits_creados ?? 0) + 1 })
-                .eq("username", userName)
-            )
-        }
-      }),
+      registrarUso(supabase, outfit.prenda_ids),
+      incrementarOutfits(supabase, userName),
     ])
     setEligiendoIdx(null)
     setElegidoIdx(idx)
@@ -1134,11 +1028,11 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
   useEffect(() => {
     if (isGuest) { setItems(STATIC_MARKET); setRentaItems(STATIC_RENTA); setLoading(false); return }
     Promise.all([
-      supabase.from("prendas").select("*").eq("en_venta", true).order("created_at", { ascending: false }),
-      supabase.from("prendas").select("*").eq("en_renta", true).order("created_at", { ascending: false }),
-    ]).then(([{ data: venta }, { data: renta }]) => {
-      setItems(venta?.length ? venta : STATIC_MARKET)
-      setRentaItems(renta?.length ? renta : STATIC_RENTA)
+      fetchVentaItems(supabase),
+      fetchRentaItems(supabase),
+    ]).then(([venta, renta]) => {
+      setItems(venta.length ? venta : STATIC_MARKET)
+      setRentaItems(renta.length ? renta : STATIC_RENTA)
       setLoading(false)
     })
   }, [isGuest])
@@ -1152,16 +1046,7 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
     try {
       if (marketTab === "rentar") {
         if (!fechaRenta) { setShowFechaRenta(true); setAparting(false); return }
-        // 1. Add to buyer's wardrobe with fecha_renta
-        const { error: insertError } = await supabase.from("prendas").insert({
-          user_id: userId, name: selectedItem.name, category: selectedItem.category,
-          image_url: selectedItem.image_url, talla: selectedItem.talla,
-          estado_uso: selectedItem.estado_uso, precio_renta: selectedItem.precio_renta,
-          metadata: selectedItem.metadata, en_renta: true, fecha_renta: fechaRenta,
-        })
-        if (insertError) throw insertError
-        // 2. Mark original as no longer available for rent
-        await supabase.from("prendas").update({ en_renta: false }).eq("id", selectedItem.id)
+        await apartarRenta(supabase, selectedItem, userId, fechaRenta)
         setRentaItems((prev) => prev.filter((p) => p.id !== selectedItem.id))
         onApartar()
         setApartSuccess(true)
@@ -1170,15 +1055,7 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
         setTimeout(() => { setApartSuccess(false); setSelectedItem(null) }, 2000)
         return
       }
-      // Comprar flow
-      const { error: insertError } = await supabase.from("prendas").insert({
-        user_id: userId, name: selectedItem.name, category: selectedItem.category,
-        image_url: selectedItem.image_url, talla: selectedItem.talla,
-        estado_uso: selectedItem.estado_uso, precio: selectedItem.precio,
-        metadata: selectedItem.metadata, en_venta: false,
-      })
-      if (insertError) throw insertError
-      await supabase.from("prendas").update({ en_venta: false }).eq("id", selectedItem.id)
+      await apartarCompra(supabase, selectedItem, userId)
       setApartSuccess(true)
       onApartar()
       setItems((prev) => prev.filter((p) => p.id !== selectedItem.id))
@@ -1195,21 +1072,16 @@ function MarketplaceView({ userId, isGuest, userPrendas, onApartar }: { userId: 
         if (!categoriaPermiteRenta(sellPrenda.category)) {
           setRentaError("Solo vestidos y accesorios aplican para renta"); return
         }
-        const res = await fetch("/api/renta", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prenda_id: sellPrenda.id, precio_renta: sellForm.precio, user_id: userId }),
-        })
-        const data = await res.json()
-        if (!res.ok) { setRentaError(data.error); return }
+        try {
+          await publishForRent(sellPrenda.id, parseFloat(sellForm.precio), userId)
+        } catch (err) {
+          setRentaError(err instanceof Error ? err.message : "Error al publicar para renta"); return
+        }
         const { data: updated } = await supabase.from("prendas").select("*").eq("en_renta", true).order("created_at", { ascending: false })
         setRentaItems(updated?.length ? updated : STATIC_RENTA)
       } else {
-        await supabase.from("prendas").update({
-          en_venta: true, precio: parseFloat(sellForm.precio),
-          talla: sellForm.talla || null, estado_uso: sellForm.estado_uso || null,
-        }).eq("id", sellPrenda.id)
-        const { data } = await supabase.from("prendas").select("*").eq("en_venta", true).order("created_at", { ascending: false })
-        setItems(data?.length ? data : STATIC_MARKET)
+        const updated = await publishForSale(supabase, sellPrenda.id, parseFloat(sellForm.precio), sellForm.talla, sellForm.estado_uso)
+        setItems(updated.length ? updated : STATIC_MARKET)
       }
       setShowSellForm(false); setSellStep("select"); setSellPrenda(null); setSellForm({ precio: "", talla: "", estado_uso: "" })
     } catch (err) { console.error("Error publicando:", err) }
@@ -1466,31 +1338,12 @@ function EstadisticasView({ userId, userName, isGuest, onSellPrenda }: {
 
   useEffect(() => {
     if (isGuest) { setLoading(false); return }
-    async function load() {
-      const sixMonthsAgo = new Date()
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
-      const [{ data: prendas }, { data: userData }] = await Promise.all([
-        supabase.from("prendas").select("*").eq("user_id", userId),          // UUID → RLS passes
-        supabase.from("usuarios_permitidos").select("outfits_creados").eq("username", userName).single(), // email prefix
-      ])
-      const all = (prendas ?? []) as (Prenda & { usos?: number; ultimo_uso?: string })[]
-      const total = all.length
-      const usos = all.reduce((sum, p) => sum + (p.usos ?? 0), 0)
-      const outfits = (userData as { outfits_creados?: number } | null)?.outfits_creados ?? 0
-      const sinUsar = all.filter((p) =>
-        (p.usos ?? 0) === 0 || (p.ultimo_uso && new Date(p.ultimo_uso) < sixMonthsAgo)
-      ).length
+    fetchStats(supabase, userId, userName).then(({ total, usos, outfits, sinUsar, topPrendas: top, olvidadas: olv }) => {
       setStats({ total, usos, outfits, sinUsar })
-      setTopPrendas([...all].sort((a, b) => (b.usos ?? 0) - (a.usos ?? 0)).slice(0, 3))
-      setOlvidadas(
-        [...all]
-          .filter((p) => (p.usos ?? 0) === 0 || (p.ultimo_uso && new Date(p.ultimo_uso) < sixMonthsAgo))
-          .sort((a, b) => (a.ultimo_uso ? new Date(a.ultimo_uso).getTime() : 0) - (b.ultimo_uso ? new Date(b.ultimo_uso).getTime() : 0))
-          .slice(0, 3)
-      )
+      setTopPrendas(top)
+      setOlvidadas(olv)
       setLoading(false)
-    }
-    load().catch(console.error)
+    }).catch(console.error)
   }, [userId, isGuest])
 
   function fmt(iso?: string | null) {

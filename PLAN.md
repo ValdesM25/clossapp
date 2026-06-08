@@ -432,7 +432,7 @@ Todo lo que **no** es cross-cutting permanece local:
 
 ---
 
-### Fase 2 — Extraer capa de servicios
+### Fase 2 — Extraer capa de servicios ✅ COMPLETADA
 
 **Objetivo:** Mover **TODA** la lógica de negocio (llamadas Supabase, fetch API, Canvas) a funciones puras.
 
@@ -468,6 +468,21 @@ export async function insertPrenda(
 **Después de crear cada servicio:** reemplazar la implementación inline en el dashboard por una llamada al servicio. La función original se elimina del dashboard.
 
 **Commit:** `refactor: extract service layer (zero React, fully portable)`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle de cambios:**
+- `services/image.service.ts` — `resizeImage(file, maxWidth?, quality?)` — Canvas API pura
+- `services/prendas.service.ts` — `fetchPrendas(supabase, userId)`, `insertPrenda(supabase, payload)`
+- `services/auth.service.ts` — `signIn(supabase, email, password)` → `{uuid, displayName}`
+- `services/analyze.service.ts` — `analyzePrenda(file, userId)` — comprime + llama API
+- `services/outfits.service.ts` — `registrarUso(supabase, ids)`, `incrementarOutfits(supabase, userName)`, `generateOutfits(contexto, wardrobe, userId)`, `mapWardrobe(prendas)`
+- `services/reparaciones.service.ts` — `fetchReparaciones(supabase, userId)`, `createReparacion(supabase, payload)`, `completeReparacion(supabase, id)`
+- `services/marketplace.service.ts` — `fetchVentaItems(supabase)`, `fetchRentaItems(supabase)`, `publishForSale(supabase, ...)`, `publishForRent(...)`, `apartarCompra(supabase, ...)`, `apartarRenta(supabase, ...)`
+- `services/stats.service.ts` — `fetchStats(supabase, userId, userName)` → `StatsResult`
+- `clossapp-dashboard.tsx`: 1,669 → 1,522 líneas (-147)
+- Todos los servicios reciben `SupabaseClient` como parámetro (inyección de dependencias)
+- `npm run build` pasa sin errores
 
 ---
 
