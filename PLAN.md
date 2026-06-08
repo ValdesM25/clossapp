@@ -697,7 +697,7 @@ components/views/simulador/
 - Solo recibe `onElegir` callback
 - `clossapp-dashboard.tsx`: 1,096 → 816 líneas (-280)
 
-#### 6E — `MarketplaceView` (la más compleja)
+#### 6E — `MarketplaceView` (la más compleja) ✅ COMPLETADA
 
 ```
 components/views/marketplace/
@@ -709,6 +709,18 @@ components/views/marketplace/
 ```
 
 **Commit:** `refactor: extract MarketplaceView and subcomponents`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `components/views/marketplace/marketplace-view.tsx` — consume `useAuthContext()` + `usePrendasContext()` + `useMarketplace()`
+- `components/views/marketplace/market-item-card.tsx` — card de item en marketplace
+- `components/views/marketplace/item-detail-modal.tsx` — modal detalle con CTA + rent-date-picker
+- `components/views/marketplace/sell-form-modal.tsx` — modal 2-step publicar venta/renta
+- `components/views/marketplace/rent-date-picker.tsx` — selector de fecha de renta
+- Eliminados props `userId`, `isGuest`, `userPrendas` (context)
+- Solo recibe `onApartar` callback
+- `clossapp-dashboard.tsx`: 816 → 535 líneas (-281)
 
 #### 6F — `ArmarioView` (la más pesada — 500+ líneas)
 
