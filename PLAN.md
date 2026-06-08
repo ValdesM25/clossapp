@@ -722,7 +722,7 @@ components/views/marketplace/
 - Solo recibe `onApartar` callback
 - `clossapp-dashboard.tsx`: 816 → 535 líneas (-281)
 
-#### 6F — `ArmarioView` (la más pesada — 500+ líneas)
+#### 6F — `ArmarioView` (la más pesada — 500+ líneas) ✅ COMPLETADA
 
 ```
 components/views/armario/
@@ -734,6 +734,29 @@ components/views/armario/
 ```
 
 **Commit:** `refactor: extract ArmarioView and subcomponents`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `components/views/armario/armario-view.tsx` — consume contexto, sin props
+- `components/views/armario/upload-modal.tsx` — AI auto-fill + campos manuales
+- `components/views/armario/prenda-detail-modal.tsx` — chips + ficha técnica
+- `components/views/armario/repair-form-modal.tsx` — selección + tarea + prioridad
+- `components/views/armario/repair-list.tsx` — lista animada de reparaciones
+- Dashboard final: solo imports + provider wrapper + AppShell
+- `clossapp-dashboard.tsx`: 535 → 73 líneas (-462)
+
+### Progreso final de Fase 6
+
+`clossapp-dashboard.tsx`: **1,749 → 73 líneas (-95.8%)**
+
+22 archivos extractados en `components/views/`:
+- `login-view.tsx`
+- `inicio/inicio-view.tsx`
+- `armario/` — 5 archivos (armario-view + 4 subcomponentes)
+- `simulador/` — 4 archivos (simulador-view + 3 subcomponentes)
+- `marketplace/` — 5 archivos (marketplace-view + 4 subcomponentes)
+- `estadisticas/` — 4 archivos (estadisticas-view + 3 subcomponentes)
 
 ---
 
