@@ -1,4 +1,4 @@
-# Plan de Refactorización Maestro — ClossApp
+# Plan de Refactorización — ClossApp
 
 ## Diagnóstico del Estado Actual
 
@@ -366,7 +366,7 @@ Todo lo que **no** es cross-cutting permanece local:
 
 ---
 
-### Fase 0 — Limpieza y preparación (sin cambios funcionales)
+### Fase 0 — Limpieza y preparación (sin cambios funcionales) ✅ COMPLETADA
 
 **Objetivo:** Eliminar duplicados y crear la estructura de directorios vacía.
 
@@ -380,9 +380,18 @@ Todo lo que **no** es cross-cutting permanece local:
 
 **Commit:** `chore: cleanup duplicates and create directory scaffold`
 
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle de cambios:**
+- `hooks/use-mobile.ts` → borrado (imports redirigidos a `@/components/ui/use-mobile` en `sidebar.tsx`)
+- `hooks/use-toast.ts` → borrado (imports redirigidos a `@/components/ui/use-toast` en `toaster.tsx`)
+- `styles/globals.css` → borrado (duplicado de `app/globals.css`, sin imports)
+- Creadas 13 carpetas: `types/`, `constants/`, `services/`, `context/`, `components/shared/`, `components/views/inicio/`, `components/views/armario/`, `components/views/simulador/`, `components/views/marketplace/`, `components/views/estadisticas/`
+- `npm run build` pasa sin errores
+
 ---
 
-### Fase 1 — Extraer tipos y constantes
+### Fase 1 — Extraer tipos y constantes ✅ COMPLETADA
 
 **Objetivo:** Mover todas las definiciones de tipos y datos estáticos fuera del monolito.
 
@@ -403,9 +412,27 @@ Todo lo que **no** es cross-cutting permanece local:
 
 **Commit:** `refactor: extract types and constants from monolith`
 
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle de cambios:**
+- `types/prenda.ts` — `Prenda`, `PrendaExt`
+- `types/reparacion.ts` — `ReparacionDB`
+- `types/outfit.ts` — `OutfitRec`
+- `types/auth.ts` — `UserMode`
+- `types/views.ts` — `View`
+- `types/index.ts` — re-exports all types
+- `constants/demo-data.ts` — `DEMO_OUTFITS`, `GUEST_PRENDAS`, `GUEST_REPARACIONES`, `STATIC_MARKET`, `STATIC_RENTA`
+- `constants/navigation.ts` — `navItems`, `filterChips`
+- `constants/categories.ts` — `FIXED_CATS`, `CATEGORIAS_RENTA_PERMITIDAS`, `categoriaPermiteRenta()`, `LAYER_ORDER`
+- `constants/images.ts` — `fashionImages`, `outfitImages`
+- `constants/animation.ts` — `pageVariants`, `pageProps`
+- `clossapp-dashboard.tsx`: 1,749 → 1,669 líneas (-80)
+- Cero imports to `@/lib/supabase` en todo el codebase
+- `npm run build` pasa sin errores
+
 ---
 
-### Fase 2 — Extraer capa de servicios
+### Fase 2 — Extraer capa de servicios ✅ COMPLETADA
 
 **Objetivo:** Mover **TODA** la lógica de negocio (llamadas Supabase, fetch API, Canvas) a funciones puras.
 
@@ -442,9 +469,24 @@ export async function insertPrenda(
 
 **Commit:** `refactor: extract service layer (zero React, fully portable)`
 
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle de cambios:**
+- `services/image.service.ts` — `resizeImage(file, maxWidth?, quality?)` — Canvas API pura
+- `services/prendas.service.ts` — `fetchPrendas(supabase, userId)`, `insertPrenda(supabase, payload)`
+- `services/auth.service.ts` — `signIn(supabase, email, password)` → `{uuid, displayName}`
+- `services/analyze.service.ts` — `analyzePrenda(file, userId)` — comprime + llama API
+- `services/outfits.service.ts` — `registrarUso(supabase, ids)`, `incrementarOutfits(supabase, userName)`, `generateOutfits(contexto, wardrobe, userId)`, `mapWardrobe(prendas)`
+- `services/reparaciones.service.ts` — `fetchReparaciones(supabase, userId)`, `createReparacion(supabase, payload)`, `completeReparacion(supabase, id)`
+- `services/marketplace.service.ts` — `fetchVentaItems(supabase)`, `fetchRentaItems(supabase)`, `publishForSale(supabase, ...)`, `publishForRent(...)`, `apartarCompra(supabase, ...)`, `apartarRenta(supabase, ...)`
+- `services/stats.service.ts` — `fetchStats(supabase, userId, userName)` → `StatsResult`
+- `clossapp-dashboard.tsx`: 1,669 → 1,522 líneas (-147)
+- Todos los servicios reciben `SupabaseClient` como parámetro (inyección de dependencias)
+- `npm run build` pasa sin errores
+
 ---
 
-### Fase 3 — Extraer custom hooks
+### Fase 3 — Extraer custom hooks ✅ COMPLETADA
 
 **Objetivo:** Crear hooks que encapsulen estado + llamadas a servicios. Los componentes solo verán hooks.
 
@@ -486,9 +528,29 @@ export function usePrendas(userId: string, isGuest: boolean) {
 
 **Commit:** `refactor: extract custom hooks bridging services to React`
 
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle de cambios:**
+- `hooks/use-keyboard.ts` — `useKeyboard()` extraído del helper `useKeyboardOpen` del dashboard
+- `hooks/use-auth.ts` — `useAuth()` reemplaza mock anterior. Expone `login`, `loginAsGuest`, `logout`, `userMode`, `userId`, `userName`, `isGuest`, `isAuthenticated`, `loading`, `error`
+- `hooks/use-prendas.ts` — `usePrendas(userId, isGuest)` → `{prendas, loading, refresh, setPrendas, addPrenda}`
+- `hooks/use-reparaciones.ts` — `useReparaciones(userId, isGuest)` → `{reparaciones, loading, refresh, add, complete}`
+- `hooks/use-image-upload.ts` — `useImageUpload(userId, isGuest)` → `{preview, previewForm, analyzing, analyzeError, uploading, fileInputRef, selectFile, updateForm, upload, cancel}`
+- `hooks/use-outfits.ts` — `useOutfits(prendas, userId, userName, isGuest)` → `{outfits, generating, error, eligiendoIdx, elegidoIdx, generate, elegir, setElegidoIdx}`
+- `hooks/use-marketplace.ts` — `useMarketplace(userId, isGuest)` → `{marketTab, setMarketTab, activeFilter, setActiveFilter, items, rentaItems, loading, aparting, apartSuccess, sellMode, setSellMode, selling, rentaError, refresh, apartar, publish}`
+- `hooks/use-stats.ts` — `useStats(userId, userName, isGuest)` → `{stats, topPrendas, olvidadas, loading, refresh}`
+- `LoginView` actualizado: recibe `onLogin(email, pw)`, `onLoginAsGuest()`, `loading`, `error` (ya no maneja su propio estado de auth)
+- `ClossappDashboard` usa `useAuth()` + `useKeyboard()` en vez de estado inline
+- `ArmarioView` usa `usePrendas()` + `useReparaciones()` + `useImageUpload()` → se eliminaron 3 `useEffect` y ~20 líneas de estado
+- `SimuladorView` usa `useOutfits()` → se eliminaron 5 estados + 2 funciones inline
+- `MarketplaceView` usa `useMarketplace()` → se eliminaron 8 estados + 1 `useEffect` + 2 funciones inline
+- `EstadisticasView` usa `useStats()` → se eliminaron 4 estados + 1 `useEffect`
+- `clossapp-dashboard.tsx`: 1,522 → 1,388 líneas (-134)
+- `npm run build` pasa sin errores
+
 ---
 
-### Fase 4 — Crear Context providers
+### Fase 4 — Crear Context providers ✅ COMPLETADA
 
 **Objetivo:** Eliminar prop-drilling y unificar el fetch de prendas.
 
@@ -502,9 +564,22 @@ export function usePrendas(userId: string, isGuest: boolean) {
 
 **Commit:** `refactor: add AuthContext and PrendasContext providers`
 
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle de cambios:**
+- `context/auth-context.tsx` — `AuthProvider` + `useAuthContext()`. Envuelve `useAuth()` hook en un React Context. Expone `userMode`, `userId`, `userName`, `isGuest`, `isAuthenticated`, `login`, `loginAsGuest`, `logout`, `loading`, `error`
+- `context/prendas-context.tsx` — `PrendasProvider` + `usePrendasContext()`. Envuelve `usePrendas()` hook. Se monta solo si hay `userId` (dentro de AuthProvider). Expone `prendas`, `loading`, `refresh`, `addPrenda`
+- `ClossappDashboard` separado en `AppShell` (consume contextos) + export wrapper (monta providers)
+- Eliminada la duplicación de `fetchPrendas` en el dashboard principal. Ahora `PrendasContext` es la única fuente de verdad para los datos de prendas
+- Eliminado el `useEffect` condicional que fetcheaba prendas según `activeView`
+- Eliminada la `supabase` module-level ya que no era usada (cada hook crea su propio cliente)
+- `clossapp-dashboard.tsx`: 1,388 → 1,380 líneas (-8)
+- Arquitectura ahora: `ClossappDashboard → AuthProvider → PrendasProvider → AppShell → Views`
+- `npm run build` pasa sin errores
+
 ---
 
-### Fase 5 — Extraer componentes compartidos
+### Fase 5 — Extraer componentes compartidos ✅ COMPLETADA
 
 **Objetivo:** Sacar los building blocks reutilizables a archivos propios.
 
@@ -522,13 +597,26 @@ export function usePrendas(userId: string, isGuest: boolean) {
 
 **Commit:** `refactor: extract shared UI components`
 
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle de cambios:**
+- `components/shared/centered-modal.tsx` — componente `<CenteredModal>` con animación spring + backdrop + botón X
+- `components/shared/prenda-skeleton.tsx` — skeleton de masonry grid 2 columnas con alturas variables
+- `components/shared/animated-number.tsx` — número animado con `useMotionValue` + `useSpring` de Framer Motion
+- `components/shared/bottom-nav.tsx` — barra de navegación inferior con flash animation y keyboard-aware
+- `components/shared/page-header.tsx` — header consistente (`subtitle` + título serif + `rightSlot`)
+- `components/shared/prenda-card.tsx` — card de prenda con imagen, nombre, categoría, badge y caption configurables
+- `components/shared/prenda-grid.tsx` — grid masonry con skeleton, mensaje vacío y `PrendaCard` items
+- `clossapp-dashboard.tsx`: 1,380 → 1,303 líneas (-77)
+- `npm run build` pasa sin errores
+
 ---
 
 ### Fase 6 — Descomponer vistas (una por una)
 
 > Cada sub-fase es un commit independiente. Si algo falla, solo afecta una vista.
 
-#### 6A — `LoginView` (la más simple)
+#### 6A — `LoginView` (la más simple) ✅ COMPLETADA
 
 ```
 components/views/login-view.tsx
@@ -538,7 +626,15 @@ components/views/login-view.tsx
 
 **Commit:** `refactor: extract LoginView`
 
-#### 6B — `InicioView`
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `components/views/login-view.tsx` — LoginView usa `useAuthContext()` directamente en vez de recibir props
+- Eliminados los props `onLogin`, `onLoginAsGuest`, `loading`, `error` del componente
+- `AppShell` ahora solo pasa `<LoginView key="login" />` sin props
+- `clossapp-dashboard.tsx`: 1,303 → 1,258 líneas (-45)
+
+#### 6B — `InicioView` ✅ COMPLETADA
 
 ```
 components/views/inicio/inicio-view.tsx
@@ -548,7 +644,14 @@ components/views/inicio/inicio-view.tsx
 
 **Commit:** `refactor: extract InicioView`
 
-#### 6C — `EstadisticasView` (independiente, sin dependencias complejas)
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `components/views/inicio/inicio-view.tsx` — consume `useAuthContext()` directamente
+- Eliminados los props `userName`, `isGuest`
+- `clossapp-dashboard.tsx`: 1,258 → 1,186 líneas (-72)
+
+#### 6C — `EstadisticasView` (independiente, sin dependencias complejas) ✅ COMPLETADA
 
 ```
 components/views/estadisticas/
@@ -560,7 +663,18 @@ components/views/estadisticas/
 
 **Commit:** `refactor: extract EstadisticasView and subcomponents`
 
-#### 6D — `SimuladorView`
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `components/views/estadisticas/estadisticas-view.tsx` — consume `useAuthContext()` + `useStats()`
+- `components/views/estadisticas/kpi-grid.tsx` — grid 2x2 de KPIs con `AnimatedNumber`
+- `components/views/estadisticas/top-prendas-list.tsx` — lista de prendas más usadas
+- `components/views/estadisticas/forgotten-prendas-list.tsx` — lista de prendas olvidadas con CTA "Vender"
+- Eliminados los props `userId`, `userName`, `isGuest` (ahora se obtienen del contexto)
+- Solo recibe `onSellPrenda` (callback para navegar a marketplace)
+- `clossapp-dashboard.tsx`: 1,186 → 1,096 líneas (-90)
+
+#### 6D — `SimuladorView` ✅ COMPLETADA
 
 ```
 components/views/simulador/
@@ -572,7 +686,18 @@ components/views/simulador/
 
 **Commit:** `refactor: extract SimuladorView and subcomponents`
 
-#### 6E — `MarketplaceView` (la más compleja)
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `components/views/simulador/simulador-view.tsx` — consume `useAuthContext()` + `usePrendasContext()` + `useOutfits()`
+- `components/views/simulador/outfit-form.tsx` — formulario de ocasión/clima/prenda destacada
+- `components/views/simulador/outfit-card.tsx` — card de outfit con foto grid + descripción expandible + CTA
+- `components/views/simulador/outfit-visual.tsx` — visualización por capas (re-usado de dashboard)
+- Eliminados props `prendas`, `isGuest`, `userId`, `userName` (context)
+- Solo recibe `onElegir` callback
+- `clossapp-dashboard.tsx`: 1,096 → 816 líneas (-280)
+
+#### 6E — `MarketplaceView` (la más compleja) ✅ COMPLETADA
 
 ```
 components/views/marketplace/
@@ -585,7 +710,19 @@ components/views/marketplace/
 
 **Commit:** `refactor: extract MarketplaceView and subcomponents`
 
-#### 6F — `ArmarioView` (la más pesada — 500+ líneas)
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `components/views/marketplace/marketplace-view.tsx` — consume `useAuthContext()` + `usePrendasContext()` + `useMarketplace()`
+- `components/views/marketplace/market-item-card.tsx` — card de item en marketplace
+- `components/views/marketplace/item-detail-modal.tsx` — modal detalle con CTA + rent-date-picker
+- `components/views/marketplace/sell-form-modal.tsx` — modal 2-step publicar venta/renta
+- `components/views/marketplace/rent-date-picker.tsx` — selector de fecha de renta
+- Eliminados props `userId`, `isGuest`, `userPrendas` (context)
+- Solo recibe `onApartar` callback
+- `clossapp-dashboard.tsx`: 816 → 535 líneas (-281)
+
+#### 6F — `ArmarioView` (la más pesada — 500+ líneas) ✅ COMPLETADA
 
 ```
 components/views/armario/
@@ -598,11 +735,35 @@ components/views/armario/
 
 **Commit:** `refactor: extract ArmarioView and subcomponents`
 
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `components/views/armario/armario-view.tsx` — consume contexto, sin props
+- `components/views/armario/upload-modal.tsx` — AI auto-fill + campos manuales
+- `components/views/armario/prenda-detail-modal.tsx` — chips + ficha técnica
+- `components/views/armario/repair-form-modal.tsx` — selección + tarea + prioridad
+- `components/views/armario/repair-list.tsx` — lista animada de reparaciones
+- Dashboard final: solo imports + provider wrapper + AppShell
+- `clossapp-dashboard.tsx`: 535 → 73 líneas (-462)
+
+### Progreso final de Fase 6
+
+`clossapp-dashboard.tsx`: **1,749 → 73 líneas (-95.8%)**
+
+20 archivos extraídos en `components/views/`:
+- `login-view.tsx`
+- `inicio/inicio-view.tsx`
+- `armario/` — 5 archivos (armario-view + 4 subcomponentes)
+- `simulador/` — 4 archivos (simulador-view + 3 subcomponentes)
+- `marketplace/` — 5 archivos (marketplace-view + 4 subcomponentes)
+- `estadisticas/` — 4 archivos (estadisticas-view + 3 subcomponentes)
+
 ---
 
-### Fase 7 — Adelgazar el shell principal
+### Fase 7 — Adelgazar el shell principal ✅ COMPLETADA
 
 **Objetivo:** `ClossappDashboard` queda como un shell de ~50-60 líneas.
+
 
 ```tsx
 // components/clossapp-dashboard.tsx (final)
@@ -664,7 +825,19 @@ export function ClossappDashboard() {
 }
 ```
 
-**Commit:** `refactor: slim down ClossappDashboard to shell (~50 lines)`
+**Commit:** `refactor: slim down ClossappDashboard to shell (57 lines)`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `views` record reemplaza al switch-case
+- `if (!userMode) return <LoginView />` en vez de AnimatePresence anidado
+- Eliminado `marketFlash`, `motion` import, wrappers duplicados
+- `clossapp-dashboard.tsx`: 73 → 57 líneas (-16)
+
+### Progreso total
+
+`clossapp-dashboard.tsx`: **1,749 → 57 líneas (-96.7%)**
 
 ---
 
@@ -682,17 +855,33 @@ export function ClossappDashboard() {
 
 **Commit:** `chore: final cleanup and documentation update`
 
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- 8.1: Eliminado `lib/supabase.ts` (tipo `Prenda` duplicado de `types/prenda.ts`)
+- 8.2: Sin imports de `@/lib/supabase` — ya migrados en fases anteriores
+- 8.3: Dashboard confirmado limpio (57 líneas, sin código muerto)
+- 8.4: `npm run build` pasa limpio
+- 8.5: ESLint sin config file — no aplicable (proyecto generado sin eslint.config)
+- 8.6: 20 archivos de vista verificados, imports resuelven, build OK
+- 8.7: `AGENTS.md` actualizado con estructura modular post-refactor
+- Fix: `Record<View, JSX.Element>` → `Record<View, ReactElement>` (compatibilidad TS estricta)
+
+### Refactor completado
+
+`clossapp-dashboard.tsx`: **1,749 → 57 líneas (-96.7%)**
+
 ---
 
 ## Resumen Cuantitativo
 
 | Métrica | Antes | Después |
 |---|---|---|
-| `clossapp-dashboard.tsx` | 1,749 líneas | ~50-60 líneas |
+| `clossapp-dashboard.tsx` | 1,749 líneas | 57 líneas |
 | Archivos de lógica de negocio | 0 | 8 servicios |
 | Custom hooks | 1 (mock) | 8 hooks reales |
 | Componentes compartidos | 0 | 7 |
-| Archivos de vista | 1 (todo junto) | 22 (6 vistas × ~3-4 subcomponentes) |
+| Archivos de vista | 1 (todo junto) | 20 (6 vistas × ~3-4 subcomponentes) |
 | Tipos centralizados | parcial (1 archivo) | 5 archivos en `types/` |
 | Portabilidad a React Native | Imposible | Solo se reescribe `components/` |
 
