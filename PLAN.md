@@ -634,7 +634,7 @@ components/views/login-view.tsx
 - `AppShell` ahora solo pasa `<LoginView key="login" />` sin props
 - `clossapp-dashboard.tsx`: 1,303 → 1,258 líneas (-45)
 
-#### 6B — `InicioView`
+#### 6B — `InicioView` ✅ COMPLETADA
 
 ```
 components/views/inicio/inicio-view.tsx
@@ -643,6 +643,13 @@ components/views/inicio/inicio-view.tsx
 ```
 
 **Commit:** `refactor: extract InicioView`
+
+**Completada:** 2026-06-08 | **Por:** mauri | **Modelo:** DeepSeek V4 Pro (OpenCode)
+
+**Detalle:**
+- `components/views/inicio/inicio-view.tsx` — consume `useAuthContext()` directamente
+- Eliminados los props `userName`, `isGuest`
+- `clossapp-dashboard.tsx`: 1,258 → 1,186 líneas (-72)
 
 #### 6C — `EstadisticasView` (independiente, sin dependencias complejas)
 
