@@ -134,64 +134,271 @@ flowchart TD
     style I fill:#71717a,color:#fff,stroke:none
 ```
 
+Las categorías habilitadas y bloqueadas para renta están definidas en `constants/categories.ts` (`CATEGORIAS_RENTA`) y se validan tanto en el frontend (botón deshabilitado + tooltip) como en el backend (`/api/renta`):
+
+| Permitidas para renta | Bloqueadas para renta |
+|---|---|
+| Vestidos | Calzado |
+| Accesorios | Pantalones |
+| | Blusas |
+| | Ropa interior |
+
 ---
 
 ## 5. Arquitectura Técnica
 
-### Stack y Flujo de Datos
+### Stack Tecnológico
+
+| Capa | Tecnología |
+|---|---|
+| Framework | Next.js 16 (App Router) + React 19 |
+| Lenguaje | TypeScript (strict mode) |
+| Estilos | Tailwind CSS v4 + `tw-animate-css` |
+| Componentes | shadcn/ui (new-york) + Radix UI + Lucide |
+| Animaciones | Framer Motion |
+| Backend | Supabase (PostgreSQL + Storage + Auth) |
+| IA | Anthropic SDK — Claude Sonnet 4.6 (visión) + Claude Haiku (outfits) |
+| Hosting | Vercel (serverless) |
+| Tipografía | Geist + Geist Mono (next/font/google) |
+
+### Estructura del Proyecto
+
+```
+clossapp/
+├── app/                        # App Router — page.tsx + layout + api routes
+│   ├── page.tsx                # Wrapper con dynamic = 'force-dynamic'
+│   └── api/
+│       ├── analyze-prenda/     # Claude Sonnet: imagen → JSON
+│       ├── generate-outfits/   # Claude Haiku: 3 outfits con prenda_ids
+│       ├── recommend/          # Claude Sonnet: recomendaciones contextuales
+│       └── renta/              # Validación de categoría + publicación
+│
+├── components/
+│   ├── clossapp-dashboard.tsx  # Shell: AuthProvider → PrendasProvider → AppShell
+│   ├── shared/                 # 7 componentes UI reutilizables
+│   │   ├── bottom-nav.tsx          # Navegación inferior fija con iconos
+│   │   ├── centered-modal.tsx      # Modal genérico
+│   │   ├── page-header.tsx         # Título de vista + acción opcional
+│   │   ├── prenda-card.tsx         # Tarjeta individual de prenda
+│   │   ├── prenda-grid.tsx         # Grid responsive de tarjetas
+│   │   ├── prenda-skeleton.tsx     # Placeholder de carga
+│   │   └── animated-number.tsx     # Contador animado
+│   └── views/                  # 20 vistas organizadas en 6 secciones
+│       ├── login-view.tsx
+│       ├── inicio/inicio-view.tsx
+│       ├── armario/{armario-view,upload-modal,prenda-detail-modal,repair-form-modal,repair-list}.tsx
+│       ├── simulador/{simulador-view,outfit-form,outfit-card,outfit-visual}.tsx
+│       ├── marketplace/{marketplace-view,market-item-card,item-detail-modal,sell-form-modal,rent-date-picker}.tsx
+│       └── estadisticas/{estadisticas-view,kpi-grid,top-prendas-list,forgotten-prendas-list}.tsx
+│
+├── context/                    # React Context (state management)
+│   ├── auth-context.tsx        # AuthProvider + useAuthContext (userMode, userId, user, isGuest)
+│   └── prendas-context.tsx     # PrendasProvider + usePrendasContext (prendas, refresh, loading)
+│
+├── hooks/                      # 8 hooks personalizados (lógica de negocio)
+│   ├── use-auth.ts             # Demo mock + login real con Supabase
+│   ├── use-keyboard.ts         # Detección de teclado móvil
+│   ├── use-prendas.ts          # CRUD de prendas
+│   ├── use-reparaciones.ts     # CRUD de reparaciones
+│   ├── use-image-upload.ts     # Canvas resize + upload a Supabase Storage
+│   ├── use-outfits.ts          # Generación de outfits vía /api/generate-outfits
+│   ├── use-marketplace.ts      # Mutaciones de venta/renta vía /api/renta
+│   └── use-stats.ts            # Estadísticas de uso y frecuencia
+│
+├── services/                   # 8 servicios (capa de acceso a datos)
+│   ├── image.service.ts        # Compresión de imágenes con Canvas API
+│   ├── prendas.service.ts      # Queries a tabla prendas
+│   ├── auth.service.ts         # Sign in/up/signOut + verificación de username
+│   ├── analyze.service.ts      # Análisis de imagen con Claude Sonnet
+│   ├── outfits.service.ts      # Llamada a API de generación de outfits
+│   ├── reparaciones.service.ts # Queries a tabla reparaciones
+│   ├── marketplace.service.ts  # Listados de mercado + renta API
+│   └── stats.service.ts        # Queries de estadísticas de uso
+│
+├── types/                      # Tipos y interfaces TypeScript
+│   ├── prenda.ts               # Prenda, PrendaExt
+│   ├── reparacion.ts           # ReparacionDB
+│   ├── outfit.ts               # OutfitRec
+│   ├── auth.ts                 # UserMode
+│   ├── views.ts                # View (union type de IDs de vista)
+│   └── index.ts                # Re-exporta todos los tipos
+│
+├── constants/                  # Datos estáticos y de demostración
+│   ├── demo-data.ts            # GUEST_PRENDAS, GUEST_REPARACIONES, DEMO_OUTFITS
+│   ├── navigation.ts           # navItems, filterChips
+│   ├── categories.ts           # FIXED_CATS, CATEGORIAS_RENTA, LAYER_ORDER
+│   ├── images.ts               # fashionImages, outfitImages
+│   └── animation.ts            # pageVariants, pageProps
+│
+├── lib/                        # Utilidades (cn, formatters, etc.)
+├── utils/supabase/             # Clientes Supabase (browser + server)
+├── middleware.ts               # Refresh de sesión en cada navegación
+└── AGENTS.md                   # Documentación interna para agentes de IA
+```
+
+### Flujo de Datos
 
 ```mermaid
 graph TB
-    subgraph CLIENT["📱 Cliente (iOS Mobile)"]
-        UI["Next.js · React 19\nTailwind · Framer Motion"]
-        CANVAS["Canvas API\nCompresión de imágenes"]
+    subgraph CONTEXT["🎯 React Context"]
+        AUTH["AuthProvider\nuserMode · userId · user · isGuest"]
+        PRENDAS["PrendasProvider\nprendas[] · refresh() · loading"]
     end
 
-    subgraph SERVER["⚡ Servidor (Serverless)"]
-        API1["/api/analyze-prenda\nClaude Sonnet"]
-        API2["/api/generate-outfits\nClaude Haiku"]
-        API3["/api/recommend\nClaude Sonnet"]
-        API4["/api/renta\nValidación categoría"]
-        GUARD["🛡️ Guest Guard\nRBAC · user_id check"]
+    subgraph SHELL["🧩 AppShell (routing)"]
+        direction LR
+        LOGIN["LoginView"]
+        INICIO["InicioView"]
+        ARMARIO["ArmarioView"]
+        SIMULADOR["SimuladorView"]
+        MARKET["MarketplaceView"]
+        ESTAD["EstadisticasView"]
     end
 
-    subgraph DB["🗄️ Supabase"]
-        PG["PostgreSQL\nprendas · reparaciones\nusuarios_permitidos"]
-        STORAGE["Storage\ncloset-images bucket"]
+    subgraph HOOKS["🪝 Hooks"]
+        direction LR
+        USE_AUTH["useAuth"]
+        USE_PRENDAS["usePrendas"]
+        USE_OUTFITS["useOutfits"]
+        USE_MARKET["useMarketplace"]
+        USE_STATS["useStats"]
     end
 
-    subgraph AI["🤖 Anthropic API"]
-        SONNET["Claude Sonnet\nVisión · Análisis"]
-        HAIKU["Claude Haiku\nCombinatorias · Outfits"]
+    subgraph SERVICES["📡 Services"]
+        direction LR
+        AUTH_SVC["auth.service"]
+        PRENDAS_SVC["prendas.service"]
+        ANALYZE_SVC["analyze.service"]
+        OUTFITS_SVC["outfits.service"]
+        MARKET_SVC["marketplace.service"]
+        STATS_SVC["stats.service"]
     end
 
-    UI --> CANVAS
-    CANVAS -->|"~200KB JPEG"| STORAGE
-    UI --> GUARD
-    GUARD -->|"user_id válido"| API1
-    GUARD -->|"user_id válido"| API2
-    GUARD -->|"guest → 403"| SERVER
-    API1 --> SONNET
-    API2 --> HAIKU
-    API3 --> SONNET
-    API1 --> PG
-    API4 --> PG
-    UI --> PG
+    subgraph API["⚡ API Routes (App Router)"]
+        API1["/api/analyze-prenda"]
+        API2["/api/generate-outfits"]
+        API3["/api/recommend"]
+        API4["/api/renta"]
+    end
 
-    style CLIENT fill:#18181b,color:#fff,stroke:#3f3f46
-    style SERVER fill:#1e1e2e,color:#fff,stroke:#3f3f46
-    style DB fill:#1a1a2e,color:#fff,stroke:#3f3f46
-    style AI fill:#0f172a,color:#fff,stroke:#3f3f46
+    subgraph EXT["☁️ Externos"]
+        SUPABASE["Supabase\nPostgreSQL + Storage"]
+        CLAUDE["Anthropic\nClaude Sonnet + Haiku"]
+    end
+
+    AUTH --> SHELL
+    PRENDAS --> SHELL
+    HOOKS --> CONTEXT
+    HOOKS --> SERVICES
+    SERVICES --> API
+    SERVICES --> SUPABASE
+    API --> CLAUDE
+    API --> SUPABASE
+
+    style CONTEXT fill:#18181b,color:#fff,stroke:#3f3f46
+    style SHELL fill:#1e1e2e,color:#fff,stroke:#3f3f46
+    style HOOKS fill:#27272a,color:#fff,stroke:#3f3f46
+    style SERVICES fill:#1a1a2e,color:#fff,stroke:#3f3f46
+    style API fill:#0f172a,color:#fff,stroke:#3f3f46
+    style EXT fill:#09090b,color:#fff,stroke:#3f3f46
 ```
 
-### Endpoints de IA
+**Patrón de datos:** Todas las vistas consumen estado vía `useAuthContext()` / `usePrendasContext()` — cero props desde `AppShell` (excepto callbacks de navegación para `onElegir`, `onApartar`, `onSellPrenda`).
 
-| Endpoint | Modelo | Función |
+Los servicios reciben `SupabaseClient` como parámetro (inyección de dependencias) para futura portabilidad a React Native. No hay fetching SSR/RSC — todos los datos se obtienen del lado del cliente vía Supabase browser client.
+
+### API Routes
+
+```mermaid
+graph LR
+    subgraph ROUTES["📋 Endpoints"]
+        A["/api/analyze-prenda\nPOST imagen → JSON"]
+        B["/api/generate-outfits\nPOST contexto + armario → 3 outfits"]
+        C["/api/recommend\nPOST → recomendaciones"]
+        D["/api/renta\nPOST → validación + publicar"]
+    end
+
+    GUARD["🛡️ Guest Guard\nuser_id === 'guest' → 403"]
+
+    A --> GUARD
+    B --> GUARD
+    C --> GUARD
+    D --> GUARD
+
+    style GUARD fill:#ef4444,color:#fff,stroke:none
+```
+
+| Endpoint | Modelo | Input | Output |
+|---|---|---|---|
+| `/api/analyze-prenda` | Claude Sonnet 4.6 | Imagen (JPEG ~200KB) | `{ name, category, color, style, description }` |
+| `/api/generate-outfits` | Claude Haiku | Contexto + `prenda_ids[]` del armario | 3 outfits con combinaciones de prendas |
+| `/api/recommend` | Claude Sonnet | Contexto del usuario | Recomendaciones personalizadas |
+| `/api/renta` | — | `{ prenda_id, category, precio_renta }` | `en_renta = true` en DB |
+
+### Sistema de Autenticación Dual
+
+ClossApp maneja **dos modos de autenticación que coexisten** en el mismo flujo:
+
+| Modo | Descripción | Datos |
 |---|---|---|
-| `/api/analyze-prenda` | Claude Sonnet | Analiza imagen → JSON con nombre, categoría, color, estilo |
-| `/api/generate-outfits` | Claude Haiku | 3 propuestas de outfit con `prenda_ids` del inventario real |
-| `/api/recommend` | Claude Sonnet | Recomendaciones contextuales por clima y ocasión |
-| `/api/renta` | — | Valida categoría y publica prenda para renta |
+| **Guest (invitado)** | Acceso sin registro, datos de demostración precargados | `GUEST_PRENDAS`, `GUEST_REPARACIONES`, `DEMO_OUTFITS` desde `constants/demo-data.ts` |
+| **Real (Supabase Auth)** | Email/password contra Supabase | `use-auth.ts` maneja `signIn`, `signUp`, `signOut` vía `auth.service.ts` |
+
+- El `AuthProvider` (`context/auth-context.tsx`) expone `isGuest: boolean` para que toda la app sepa en qué modo está.
+- El **Guest Guard** en cada API route rechaza `user_id === "guest"` con HTTP 403 — los invitados nunca tocan los endpoints de IA.
+- En modo guest, `LoginView` se salta y se pasa directo a `InicioView` con los datos demo.
+- `LoginView` ya tiene el formulario completo de email/password listo para activarse al abrir el registro.
+
+### Sistema de Navegación
+
+```mermaid
+graph LR
+    SHELL["AppShell"] --> NAV["bottom-nav.tsx"]
+    NAV --> V1["Inicio"]
+    NAV --> V2["Armario"]
+    NAV --> V3["Simulador"]
+    NAV --> V4["Marketplace"]
+    NAV --> V5["Estadísticas"]
+
+    style SHELL fill:#18181b,color:#fff,stroke:#3f3f46
+    style NAV fill:#27272a,color:#fff,stroke:#3f3f46
+```
+
+- `AppShell` (dentro de `clossapp-dashboard.tsx`) es el router central: mantiene un `activeView` en estado local y renderiza condicionalmente la vista activa.
+- `bottom-nav.tsx` (`components/shared/`) es la barra de navegación inferior fija con 5 iconos (Lucide). Cada ícono cambia `activeView` mediante callbacks.
+- Las vistas no reciben props de AppShell — solo consumen `useAuthContext()` y `usePrendasContext()`. Los callbacks de acción (`onElegir`, `onApartar`, `onSellPrenda`) son las únicas props que pasan entre vistas para flujos cruzados (ej: elegir un outfit desde el Simulador y registrarlo en el Armario).
+
+### Vistas / Módulos de la App
+
+| Vista | Archivo(s) | Funcionalidad |
+|---|---|---|
+| **Login** | `login-view.tsx` | Formulario email/password + opción "Entrar como invitada" con datos demo |
+| **Inicio** | `inicio/inicio-view.tsx` | Dashboard: bienvenida, últimas prendas agregadas, recomendaciones IA del día |
+| **Armario** | `armario/` (5 archivos) | Grid del clóset digital con filtros por categoría. Upload de prendas con foto → análisis IA → guardado automático. Detalle de prenda con edición. Gestión de reparaciones (crear tarea, checklist, prioridad) |
+| **Simulador** | `simulador/` (4 archivos) | Generación de outfits: el usuario selecciona ocasión, clima y estilo → Claude Haiku propone 3 combinaciones usando solo prendas del inventario real. Visualización de cada outfit con las prendas que lo componen |
+| **Marketplace** | `marketplace/` (5 archivos) | Feed de prendas en venta/renta de otras usuarias. Publicación de prenda propia (precio, fecha de renta). Date picker para reservar rentas. Solo vestidos y accesorios habilitados para renta |
+| **Estadísticas** | `estadisticas/` (4 archivos) | KPIs (prendas totales, usos este mes, prendas sin usar). Ranking de prendas más usadas. Lista de prendas olvidadas (sin uso en 30+ días). Gráficos de frecuencia por categoría |
+
+### Middleware
+
+`middleware.ts` (raíz del proyecto) se ejecuta en cada navegación del lado del servidor. Su única función es refrescar la sesión de Supabase:
+
+- Usa `createServerClient` con las cookies de `next/headers` para leer la sesión actual.
+- Llama a `supabase.auth.getUser()` para validar y renovar el token si está por expirar.
+- Esto mantiene la sesión viva sin que el frontend tenga que hacer polling.
+
+### Tipos de Datos Principales
+
+Definidos en `types/` y re-exportados desde `types/index.ts`:
+
+| Tipo | Archivo | Campos clave |
+|---|---|---|
+| `Prenda` | `prenda.ts` | `id, user_id, name, category, image_url, talla, estado_uso, precio, precio_renta, en_venta, en_renta, usos, ultimo_uso, metadata` |
+| `PrendaExt` | `prenda.ts` | Extiende `Prenda` con campos calculados: `diasSinUsar`, `estaEnRenta`, etc. |
+| `OutfitRec` | `outfit.ts` | `nombre, ocasion, clima, prenda_ids[], descripcion` — una propuesta de outfit generada por IA |
+| `ReparacionDB` | `reparacion.ts` | `id, user_id, prenda_id, tarea, prioridad, completado` |
+| `UserMode` | `auth.ts` | `"guest" | "authenticated"` — discrimina el modo de autenticación |
+| `View` | `views.ts` | Union type: `"login" | "inicio" | "armario" | "simulador" | "marketplace" | "estadisticas"` |
 
 ---
 
@@ -240,7 +447,7 @@ sequenceDiagram
 
 ---
 
-## 7. Esquema de Base de Datos
+## 7. Esquema de Base de Datos (Supabase PostgreSQL)
 
 ```mermaid
 erDiagram
@@ -282,6 +489,19 @@ erDiagram
     usuarios_permitidos ||--o{ reparaciones : "registra"
     prendas ||--o{ reparaciones : "tiene"
 ```
+
+### Funciones RPC (PostgreSQL)
+
+| Función | Parámetro | Descripción |
+|---|---|---|
+| `incrementar_uso(prenda_id_input)` | `uuid` | Incrementa el contador de usos y actualiza `ultimo_uso` |
+| `incrementar_outfits(username_input)` | `text` | Incrementa el contador de outfits creados del usuario |
+
+### Storage
+
+- **Bucket:** `closet-images` — almacena las imágenes de prendas comprimidas (1000px / JPEG 85%)
+- Las imágenes se comprimen del lado del cliente con Canvas API antes de subir (3–8 MB → 150–300 KB)
+- Las imágenes enviadas a la API de Anthropic se comprimen adicionalmente (800px / JPEG 70%) por el límite de 4.5 MB de Vercel
 
 ---
 
@@ -353,14 +573,24 @@ xychart-beta
 
 ## 11. Estado Actual (Fase MVP) y Roadmap
 
-ClossApp se encuentra actualmente en fase **MVP (Producto Mínimo Viable)** para un grupo de pruebas cerrado (Closed Beta). Para priorizar la validación de las hipótesis más riesgosas del negocio (Auto-etiquetado con IA y Marketplace), algunas funciones periféricas están simuladas temporalmente:
+ClossApp se encuentra en fase **MVP (Producto Mínimo Viable)** para un grupo de pruebas cerrado (Closed Beta). La arquitectura ha sido refactorizada a una estructura modular con separación clara de responsabilidades:
 
-* **Autenticación (Auth):** Actualmente el sistema utiliza un "Mock Login" (asignación directa de `user_id` en el estado de la app) para agilizar el onboarding de las usuarias fundadoras. 
+| Capa | Responsabilidad | Archivos |
+|---|---|---|
+| `components/shared/` | UI reutilizable | 7 componentes (bottom-nav, modals, cards, grid, skeleton) |
+| `components/views/` | Vistas de negocio | 20 componentes en 6 secciones (login, inicio, armario, simulador, marketplace, estadisticas) |
+| `context/` | Estado global | AuthProvider + PrendasProvider |
+| `hooks/` | Lógica de negocio | 8 hooks (auth, prendas, outfits, marketplace, stats, keyboard, image-upload, reparaciones) |
+| `services/` | Acceso a datos | 8 servicios con dependency injection de SupabaseClient (portabilidad React Native) |
+
+Para priorizar la validación de las hipótesis más riesgosas del negocio (Auto-etiquetado con IA y Marketplace), algunas funciones periféricas están simuladas temporalmente:
+
+* **Autenticación (Auth):** El sistema utiliza un "Mock Login" para agilizar el onboarding. La UI de `LoginView` ya incluye el formulario de email/password con Supabase Auth listo para activarse.
 * **Pasarela de Pagos:** Las rentas y ventas se acuerdan dentro de la plataforma, pero la transacción monetaria se procesa fuera de banda.
 
 ### 🚀 Roadmap (Próximas Fases)
-1. **Fase 2:** Integración de Supabase Auth (Email/Password y OAuth) para el registro abierto.
-2. **Fase 3:** Integración de Stripe para procesar los cobros de renta nativamente y automatizar la retención de comisiones.
+1. **Fase 2:** Activación completa de Supabase Auth (Email/Password y OAuth) para registro abierto.
+2. **Fase 3:** Integración de Stripe para procesar cobros de renta nativamente y automatizar la retención de comisiones.
 3. **Fase 4:** Migración de almacenamiento de imágenes a un CDN global para reducir latencia en el feed del Marketplace.
 
 ---
@@ -376,20 +606,32 @@ cd clossapp
 npm install
 
 # Configurar variables de entorno
-cp .env.example .env.local
-# Editar .env.local con tus keys de Supabase y Anthropic
+# Crea .env.local con tus keys (no existe .env.example — ver tabla abajo)
+touch .env.local
 
 # Ejecutar en desarrollo
 npm run dev
+
+# Linting
+npm run lint
+
+# Build de producción
+npm run build
 ```
 
+> **Nota:** `next.config.mjs` tiene `typescript.ignoreBuildErrors: true`, por lo que `npm run build` no falla por errores de TypeScript. Siempre ejecuta `npm run lint` por separado para validar tipos.
+
 ### Variables de Entorno Requeridas
+
+Crea un archivo `.env.local` en la raíz con estas variables:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ANTHROPIC_API_KEY=
 ```
+
+No se requiere ninguna otra variable. No existe `.env.example` en el repositorio.
 
 ---
 
