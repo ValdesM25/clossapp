@@ -16,11 +16,16 @@ import { ArmarioView } from "@/components/views/armario/armario-view"
 
 function AppShell() {
   const { userMode } = useAuthContext()
+
+  if (!userMode) return <LoginView />
+
+  return <AuthenticatedShell />
+}
+
+function AuthenticatedShell() {
   const { refresh } = usePrendasContext()
   const [activeView, setActiveView] = useState<View>("inicio")
   const keyboardOpen = useKeyboard()
-
-  if (!userMode) return <LoginView />
 
   const views: Record<View, ReactElement> = {
     inicio: <InicioView />,
