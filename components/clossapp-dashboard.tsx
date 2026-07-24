@@ -37,9 +37,11 @@ function AuthenticatedShell() {
 
   return (
     <>
-      <div className="overflow-y-auto h-screen pb-36">
+      <div className="overflow-y-auto h-screen pb-40 lg:pb-48">
         <AnimatePresence mode="wait">
-          <div key={activeView}>{views[activeView]}</div>
+          <div key={activeView} className="mx-auto w-full max-w-6xl">
+            {views[activeView]}
+          </div>
         </AnimatePresence>
       </div>
       <BottomNav activeView={activeView} onNavigate={setActiveView} open={!keyboardOpen} />
@@ -49,8 +51,8 @@ function AuthenticatedShell() {
 
 export function ClossappDashboard() {
   return (
-    <div className="flex items-start justify-center min-h-screen bg-white">
-      <div className="w-full max-w-2xl mx-auto min-h-screen bg-white relative">
+    <div className="min-h-screen bg-white">
+      <div className="mx-auto min-h-screen w-full max-w-6xl bg-white relative">
         <AuthProvider>
           <PrendasProvider>
             <AppShell />

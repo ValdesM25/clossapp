@@ -158,13 +158,13 @@ export function ArmarioView() {
             </motion.button>
           </div>
         ) : (
-          <div className="columns-2 gap-3 space-y-3">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-3">
             {prendasFiltradas.map((item, i) => {
               const tieneRep = prendasConRep.has(item.id)
               return (
                 <div key={item.id} onClick={() => setSelectedPrenda(item)}
                   className={cn(
-                    "break-inside-avoid relative overflow-hidden mb-3 cursor-pointer active:opacity-80 transition-opacity",
+                    "relative overflow-hidden cursor-pointer active:opacity-80 transition-opacity",
                     item.en_renta ? "bg-zinc-200 opacity-60" : "bg-zinc-50"
                   )}>
                   <img src={item.image_url || fashionImages[i % fashionImages.length]} alt={item.name}
