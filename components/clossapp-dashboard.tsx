@@ -52,7 +52,7 @@ function AuthenticatedShell() {
 export function ClossappDashboard() {
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto min-h-screen w-full max-w-6xl bg-white relative">
+      <div className="min-h-screen w-full bg-white relative">
         <AuthProvider>
           <PrendasProvider>
             <AppShell />
