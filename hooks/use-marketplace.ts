@@ -10,8 +10,10 @@ import { categoriaPermiteRenta } from "@/constants/categories"
 import { STATIC_MARKET, STATIC_RENTA } from "@/constants/demo-data"
 import type { Prenda } from "@/types"
 
+export type MarketTab = "comprar" | "rentar" | "donar"
+
 export function useMarketplace(userId: string, isGuest: boolean) {
-  const [marketTab, setMarketTab] = useState<"comprar" | "rentar">("comprar")
+  const [marketTab, setMarketTab] = useState<MarketTab>("comprar")
   const [activeFilter, setActiveFilter] = useState("Todos")
   const [items, setItems] = useState<Prenda[]>([])
   const [rentaItems, setRentaItems] = useState<Prenda[]>([])
