@@ -15,6 +15,7 @@ import type { Prenda } from "@/types"
 import { MarketItemCard } from "./market-item-card"
 import { ItemDetailModal } from "./item-detail-modal"
 import { SellFormModal } from "./sell-form-modal"
+import { DonacionPanel } from "./donacion-panel"
 
 interface MarketplaceViewProps {
   onApartar: () => void
@@ -36,6 +37,7 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
   const currentItems = marketTab === "comprar" ? items : rentaItems
   const filtered = activeFilter === "Todos" ? currentItems : currentItems.filter((i) => i.category === activeFilter)
   const isRenta = marketTab === "rentar"
+  const isDonar = marketTab === "donar"
 
   async function handleApartar(fechaRenta?: string) {
     const ok = await apartar(selectedItem!, isRenta ? "rentar" : "comprar", fechaRenta)
@@ -56,7 +58,7 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
           <p className="text-xs text-zinc-400 uppercase tracking-widest">Descubre</p>
           <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">Marketplace</h1>
         </div>
-        {!isGuest && (
+        {!isGuest && !isDonar && (
           <motion.button whileTap={{ scale: 0.96 }} onClick={() => { setShowSellForm(true); setSellMode("venta") }}
             className="border border-zinc-900 text-zinc-900 text-xs px-3 py-1.5 flex items-center gap-1 tracking-wide">
             <Tag className="w-3 h-3" /> Publicar
@@ -65,40 +67,46 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
       </div>
 
       <div className="px-4 flex border-b border-zinc-200">
-        {(["comprar", "rentar"] as const).map((tab) => (
+        {(["comprar", "rentar", "donar"] as const).map((tab) => (
           <button key={tab} onClick={() => { setMarketTab(tab); setActiveFilter("Todos") }}
             className={cn("flex-1 py-2.5 text-xs font-medium tracking-widest uppercase transition-colors border-b-2 -mb-px",
               marketTab === tab ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-400")}>
-            {tab === "comprar" ? "Comprar" : "Rentar"}
+            {tab === "comprar" ? "Comprar" : tab === "rentar" ? "Rentar" : "Donar"}
           </button>
         ))}
       </div>
 
-      <div className="px-4 relative">
-        <Search className="absolute left-7 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-        <Input placeholder="Buscar prendas..." className="pl-10 rounded-none border-zinc-200 focus-visible:ring-0 focus-visible:border-zinc-900 text-zinc-700 placeholder:text-zinc-400" />
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto pb-1 px-4">
-        {filterChips.map((f) => (
-          <motion.button key={f} whileTap={{ scale: 0.96 }} onClick={() => setActiveFilter(f)}
-            className={cn("shrink-0 px-4 py-1.5 text-xs tracking-wide border transition-colors",
-              activeFilter === f ? "bg-zinc-900 text-white border-zinc-900" : "border-zinc-200 text-zinc-600")}>
-            {f}
-          </motion.button>
-        ))}
-      </div>
-
-      {loading ? <PrendaSkeleton /> : filtered.length === 0 ? (
-        <div className="mx-4 flex flex-col items-center justify-center py-12 gap-2 border border-zinc-100">
-          <p className="text-xs text-zinc-400 uppercase tracking-widest">Sin prendas disponibles</p>
-        </div>
+      {isDonar ? (
+        <DonacionPanel prendas={prendas} isGuest={isGuest} />
       ) : (
-        <div className="columns-2 gap-3 px-4 space-y-3">
-          {filtered.map((item, i) => (
-            <MarketItemCard key={item.id} item={item} i={i} isRenta={isRenta} onClick={() => setSelectedItem(item)} />
-          ))}
-        </div>
+        <>
+          <div className="px-4 relative">
+            <Search className="absolute left-7 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+            <Input placeholder="Buscar prendas..." className="pl-10 rounded-none border-zinc-200 focus-visible:ring-0 focus-visible:border-zinc-900 text-zinc-700 placeholder:text-zinc-400" />
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1 px-4">
+            {filterChips.map((f) => (
+              <motion.button key={f} whileTap={{ scale: 0.96 }} onClick={() => setActiveFilter(f)}
+                className={cn("shrink-0 px-4 py-1.5 text-xs tracking-wide border transition-colors",
+                  activeFilter === f ? "bg-zinc-900 text-white border-zinc-900" : "border-zinc-200 text-zinc-600")}>
+                {f}
+              </motion.button>
+            ))}
+          </div>
+
+          {loading ? <PrendaSkeleton /> : filtered.length === 0 ? (
+            <div className="mx-4 flex flex-col items-center justify-center py-12 gap-2 border border-zinc-100">
+              <p className="text-xs text-zinc-400 uppercase tracking-widest">Sin prendas disponibles</p>
+            </div>
+          ) : (
+            <div className="columns-2 gap-3 px-4 space-y-3">
+              {filtered.map((item, i) => (
+                <MarketItemCard key={item.id} item={item} i={i} isRenta={isRenta} onClick={() => setSelectedItem(item)} />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <ItemDetailModal
