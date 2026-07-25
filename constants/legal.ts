@@ -6,7 +6,7 @@
  * obliga a responderlas en 20 días hábiles. Cambiar a support@clossapp.com
  * únicamente cuando el dominio esté registrado y el buzón activo.
  */
-export const LEGAL_CONTACTO = "support@clossapp.dev"
+export const LEGAL_CONTACTO = "support@clossapp.com"
 
 /** Fecha de última actualización del aviso de privacidad y los términos. */
 export const LEGAL_VIGENCIA = "25 de julio de 2026"

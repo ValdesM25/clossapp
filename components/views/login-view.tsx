@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -61,6 +62,14 @@ export function LoginView() {
                 className="w-full h-12 border border-zinc-300 text-zinc-600 text-sm font-medium tracking-wide">
                 Explorar como invitada
               </motion.button>
+
+              <p className="text-[11px] leading-relaxed text-zinc-400 text-center">
+                Al continuar aceptas nuestras{" "}
+                <Link href="/politicas" className="text-zinc-600 underline underline-offset-2 hover:text-zinc-900 transition-colors">
+                  políticas y términos
+                </Link>
+                , incluido el aviso de privacidad.
+              </p>
             </div>
           </div>
         </div>
