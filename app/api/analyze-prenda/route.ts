@@ -3,6 +3,9 @@ import Anthropic from "@anthropic-ai/sdk"
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+/** Máximo de fotos que se envían al modelo en una sola llamada. */
+export const MAX_IMAGENES = 10
+
 export type PrendaAnalysis = {
   nombre: string
   categoria: string
@@ -11,9 +14,56 @@ export type PrendaAnalysis = {
   descripcion: string
 }
 
+export type Defecto = {
+  descripcion: string
+  severidad: "leve" | "moderado" | "notorio"
+}
+
+/**
+ * Análisis extendido para publicar en el marketplace. Reutiliza los campos del
+ * alta y agrega lo que sólo hace falta al vender, en la misma llamada — así
+ * publicar una prenda no cuesta tres peticiones a la API.
+ */
+export type PrendaVentaAnalysis = PrendaAnalysis & {
+  descripcion_venta: string
+  precio_estimado_mxn: { min: number; max: number; sugerido: number }
+  defectos: Defecto[]
+  etiquetas_originalidad: string[]
+}
+
+type Modo = "alta" | "venta"
+type MediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp"
+
+const SISTEMA_ALTA = `Eres un analista de moda experto. Analiza la imagen de esta prenda y devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura: { "nombre": "Nombre descriptivo corto, ej. Blazer de Lino Negro", "categoria": "Top, Bottom, Calzado, Outerwear o Accesorio", "color_principal": "Color predominante", "estilo": "Ej. Minimalista, Business, Casual", "descripcion": "Breve descripción de corte y material" }. No incluyas markdown ni texto adicional.`
+
+const SISTEMA_VENTA = `Eres un analista de moda experto tasando una prenda de segunda mano para un marketplace mexicano. Recibirás una o varias fotos de LA MISMA prenda; úsalas en conjunto.
+
+Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
+{
+  "nombre": "Nombre descriptivo corto, ej. Blazer de Lino Negro",
+  "categoria": "Top, Bottom, Calzado, Outerwear o Accesorio",
+  "color_principal": "Color predominante",
+  "estilo": "Ej. Minimalista, Business, Casual",
+  "descripcion": "Breve descripción de corte y material",
+  "descripcion_venta": "Descripción de 2 a 3 frases orientada a quien va a comprar: material, corte, caída, con qué combina y estado general. Honesta, sin exagerar.",
+  "precio_estimado_mxn": { "min": 0, "max": 0, "sugerido": 0 },
+  "defectos": [ { "descripcion": "Qué se ve y en qué parte de la prenda", "severidad": "leve" } ],
+  "etiquetas_originalidad": ["Texto de etiquetas de marca, talla o composición que alcances a leer en las fotos"]
+}
+
+Reglas de tasación:
+- Todos los precios van en PESOS MEXICANOS (MXN), como números enteros, sin símbolo ni separadores.
+- Estima el precio de reventa realista en México para una prenda usada en ese estado, no el precio de retail nuevo.
+- Los defectos SÍ afectan el precio: descuenta según su severidad. "leve" es desgaste normal, "moderado" se nota de cerca, "notorio" es visible a primera vista.
+- "sugerido" debe quedar entre "min" y "max".
+- Las etiquetas de originalidad son SÓLO informativas: transcríbelas si las ves, pero NO ajustes el precio por ellas.
+- Si no detectas defectos, devuelve un arreglo vacío. Si no ves etiquetas legibles, devuelve un arreglo vacío. Nunca inventes ninguno de los dos.
+
+No incluyas markdown ni texto adicional.`
+
 export async function POST(req: NextRequest) {
   try {
-    const { imageBase64, mediaType, user_id } = await req.json()
+    const { imageBase64, imagesBase64, mediaType, user_id, modo } = await req.json()
 
     if (!user_id || user_id === "guest") {
       return NextResponse.json(
@@ -22,27 +72,45 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!imageBase64) {
+    // Acepta una sola imagen (alta de prenda) o varias (publicación en venta).
+    const imagenes: string[] = Array.isArray(imagesBase64) && imagesBase64.length
+      ? imagesBase64
+      : imageBase64
+        ? [imageBase64]
+        : []
+
+    if (!imagenes.length) {
       return NextResponse.json({ error: "imageBase64 requerido" }, { status: 400 })
     }
 
+    if (imagenes.length > MAX_IMAGENES) {
+      return NextResponse.json(
+        { error: `Máximo ${MAX_IMAGENES} fotos por prenda` },
+        { status: 400 }
+      )
+    }
+
+    const esVenta = (modo as Modo) === "venta"
+    const media = (mediaType ?? "image/jpeg") as MediaType
+
     const message = await client.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 512,
-      system: `Eres un analista de moda experto. Analiza la imagen de esta prenda y devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura: { "nombre": "Nombre descriptivo corto, ej. Blazer de Lino Negro", "categoria": "Top, Bottom, Calzado, Outerwear o Accesorio", "color_principal": "Color predominante", "estilo": "Ej. Minimalista, Business, Casual", "descripcion": "Breve descripción de corte y material" }. No incluyas markdown ni texto adicional.`,
+      max_tokens: esVenta ? 1024 : 512,
+      system: esVenta ? SISTEMA_VENTA : SISTEMA_ALTA,
       messages: [
         {
           role: "user",
           content: [
+            ...imagenes.map((data: string) => ({
+              type: "image" as const,
+              source: { type: "base64" as const, media_type: media, data },
+            })),
             {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: (mediaType ?? "image/jpeg") as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
-                data: imageBase64,
-              },
+              type: "text" as const,
+              text: esVenta
+                ? `Analiza y tasa esta prenda a partir de ${imagenes.length === 1 ? "esta foto" : `estas ${imagenes.length} fotos`}.`
+                : "Analiza esta prenda.",
             },
-            { type: "text", text: "Analiza esta prenda." },
           ],
         },
       ],
@@ -50,12 +118,33 @@ export async function POST(req: NextRequest) {
 
     const raw = message.content[0].type === "text" ? message.content[0].text.trim() : ""
     const clean = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "")
-    const parsed: PrendaAnalysis = JSON.parse(clean)
+    const parsed = JSON.parse(clean)
 
-    return NextResponse.json(parsed)
+    return NextResponse.json(esVenta ? normalizarVenta(parsed) : (parsed as PrendaAnalysis))
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error("[/api/analyze-prenda]", msg)
     return NextResponse.json({ error: "Error analizando la prenda" }, { status: 500 })
+  }
+}
+
+/**
+ * El precio es una sugerencia editable, nunca un avalúo — pero aun así no debe
+ * llegar incoherente a la interfaz. Ordena el rango y encierra el sugerido
+ * dentro de él por si el modelo devuelve valores cruzados.
+ */
+function normalizarVenta(parsed: PrendaVentaAnalysis): PrendaVentaAnalysis {
+  const p = parsed.precio_estimado_mxn ?? { min: 0, max: 0, sugerido: 0 }
+  const min = Math.max(0, Math.round(Number(p.min) || 0))
+  const max = Math.max(min, Math.round(Number(p.max) || 0))
+  const sugerido = Math.min(max, Math.max(min, Math.round(Number(p.sugerido) || 0)))
+
+  return {
+    ...parsed,
+    precio_estimado_mxn: { min, max, sugerido },
+    defectos: Array.isArray(parsed.defectos) ? parsed.defectos : [],
+    etiquetas_originalidad: Array.isArray(parsed.etiquetas_originalidad)
+      ? parsed.etiquetas_originalidad
+      : [],
   }
 }
