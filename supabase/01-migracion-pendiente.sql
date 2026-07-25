@@ -13,10 +13,11 @@
 -- principal y ordenarlas. Máximo 10 fotos por prenda.
 -- ----------------------------------------------------------------------------
 
+-- prendas.id es bigint (no uuid), así que la FK va tipada igual.
 create table if not exists public.prenda_imagenes (
-  id          uuid primary key default gen_random_uuid(),
-  prenda_id   uuid not null references public.prendas(id) on delete cascade,
-  user_id     uuid not null references auth.users(id) on delete cascade,
+  id          bigint generated always as identity primary key,
+  prenda_id   bigint not null references public.prendas(id) on delete cascade,
+  user_id     uuid   not null references auth.users(id) on delete cascade,
   storage_path text not null,
   orden       smallint not null default 0,
   es_principal boolean not null default false,
@@ -71,13 +72,17 @@ using ((select auth.uid()) = user_id);
 
 
 -- ----------------------------------------------------------------------------
--- BLOQUE B — Storage: reabrir lectura sin volver el bucket público
+-- BLOQUE B — Storage: cerrar el bucket sin dejar la app sin imágenes
 --
--- Hoy closet-images está privado y storage.objects no tiene policy de SELECT,
--- así que NADIE puede leer imágenes, ni siquiera su dueño. Esto lo arregla.
+-- Estado verificado: closet-images tiene public = true, o sea que cualquier
+-- objeto que se suba queda descargable por cualquiera vía /object/public/,
+-- sin credencial. El listado devuelve vacío sólo porque falta policy de SELECT.
 --
--- Requiere además cambiar getPublicUrl() por createSignedUrl() en el código
--- (hooks/use-image-upload.ts) — con el bucket privado las URLs públicas dan 400.
+-- El orden importa. Primero estas policies, después desmarcar "Public bucket"
+-- en el dashboard, y sólo entonces cambiar getPublicUrl() por createSignedUrl()
+-- en hooks/use-image-upload.ts — con el bucket privado las URLs públicas dan 400.
+-- Si se desmarca el bucket sin aplicar la policy de SELECT, se rompen TODAS las
+-- imágenes de la app, incluido el clóset propio de cada usuario.
 --
 -- La policy de INSERT actual ("Usuarios logueados pueden subir fotos") permite
 -- escribir en CUALQUIER ruta de CUALQUIER bucket. Se reemplaza por una acotada
