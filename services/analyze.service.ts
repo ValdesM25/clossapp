@@ -1,5 +1,5 @@
 import { resizeImage } from "./image.service"
-import type { PrendaVentaAnalysis } from "@/app/api/analyze-prenda/route"
+import type { PrendaVentaAnalysis } from "@/types/analisis"
 
 async function aBase64(file: File): Promise<string> {
   const compressed = await resizeImage(file, 800, 0.7)

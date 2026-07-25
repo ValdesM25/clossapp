@@ -1,45 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
+import { MAX_IMAGENES, MIN_IMAGENES } from "@/constants/tasacion"
+import type { PrendaAnalysis, PrendaVentaAnalysis } from "@/types/analisis"
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-/** Máximo de fotos que se envían al modelo en una sola llamada. */
-export const MAX_IMAGENES = 10
-
-/** Mínimo para tasar: frente, espalda, lateral y etiqueta. */
-export const MIN_IMAGENES = 4
-
-export type PrendaAnalysis = {
-  nombre: string
-  categoria: string
-  color_principal: string
-  estilo: string
-  descripcion: string
-}
-
-export type Defecto = {
-  descripcion: string
-  severidad: "leve" | "moderado" | "notorio"
-}
-
-/**
- * Análisis extendido para publicar en el marketplace. Reutiliza los campos del
- * alta y agrega lo que sólo hace falta al vender, en la misma llamada — así
- * publicar una prenda no cuesta tres peticiones a la API.
- */
-export type Aptitud = {
-  apto_venta: boolean
-  apto_donacion: boolean
-  motivo: string
-}
-
-export type PrendaVentaAnalysis = PrendaAnalysis & {
-  descripcion_venta: string
-  precio_estimado_mxn: { min: number; max: number; sugerido: number }
-  defectos: Defecto[]
-  etiquetas_originalidad: string[]
-  aptitud: Aptitud
-}
+// Nada de este módulo debe importarse desde un componente cliente: arrastraría
+// el SDK de Anthropic al bundle del navegador. Las constantes viven en
+// @/constants/tasacion y los tipos en @/types/analisis.
 
 type Modo = "alta" | "venta"
 type MediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp"
