@@ -28,7 +28,7 @@ export function LoginView() {
         <div className="flex h-full w-full lg:w-[49%] flex-col justify-center bg-white px-6 py-8 sm:px-10 sm:py-12 lg:px-16">
           <div className="w-full max-w-md mx-auto -mt-10">
             <div className="mb-8 text-center">
-              <img src="/logo_f.png" alt="Clossapp Logo" className="mx-auto h-48 sm:h-56 w-auto object-contain -mt-6 -mb-6 sm:-mb-10 hover:scale-105 transition-transform duration-300 relative z-0" />
+              <img src="/logo.svg" alt="Clossapp" className="mx-auto h-12 sm:h-14 w-auto mt-12 mb-12 sm:mt-14 hover:scale-105 transition-transform duration-300 relative z-0" />
               <p className="text-sm text-zinc-500 relative z-10"> <b>Tu armario digital</b></p>
 
               <p className="mt-8 text-xs text-zinc-500 leading-relaxed text-center">
