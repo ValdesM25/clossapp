@@ -19,3 +19,9 @@ export const EJES_CAPTURA: EjeCaptura[] = [
 ]
 
 export const MIN_FOTOS = EJES_CAPTURA.length
+
+/** Máximo de fotos que se envían al modelo en una sola llamada. */
+export const MAX_IMAGENES = 10
+
+/** Mínimo para tasar: frente, espalda, lateral y etiqueta. */
+export const MIN_IMAGENES = MIN_FOTOS
