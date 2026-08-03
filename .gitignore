@@ -19,3 +19,7 @@ node_modules
 .next/
 .DS_Store
 tsconfig.tsbuildinfo
+
+# Herramientas
+.claude
+.claude/

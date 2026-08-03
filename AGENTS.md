@@ -8,6 +8,7 @@
 - **Supabase** (`@supabase/ssr` + `@supabase/supabase-js`) — PostgreSQL, Storage (bucket: `closet-images`), Auth
 - **Anthropic SDK** — Claude Sonnet 4.6 (vision/analysis) + Claude Haiku (outfit generation)
 - Hosted on Vercel
+- **Using Claude Sonnet 5 - pricing of $2/$10 per million input/output tokens is in effect through August 31, 2026, after which the standard pricing of $3/$15 per million input/output tokens will take effect.**
 
 ## Commands
 ```bash

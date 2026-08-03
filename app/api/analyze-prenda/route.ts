@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     const media = (mediaType ?? "image/jpeg") as MediaType
 
     const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
+      model: "claude-sonnet-5",
       max_tokens: esVenta ? 1024 : 512,
       system: esVenta ? SISTEMA_VENTA : SISTEMA_ALTA,
       messages: [
