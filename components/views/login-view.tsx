@@ -32,7 +32,15 @@ export function LoginView() {
               <p className="text-sm text-zinc-500 relative z-10"> <b>Tu armario digital</b></p>
 
               <p className="mt-8 text-xs text-zinc-500 leading-relaxed text-center">
-                Al continuar navegando, incluso a través de nuestras plataformas asociadas, se aplicarán nuestros <a href="#" className="underline hover:text-zinc-800">Términos y condiciones</a>. Por favor, lee nuestra <a href="#" className="underline hover:text-zinc-800">Política de Privacidad</a> para más detalles sobre cómo gestionamos tus datos.
+                Al continuar navegando, incluso a través de nuestras plataformas asociadas, se aplicarán nuestros{" "}
+                <Link href="/politicas#terminos" className="underline text-zinc-700 hover:text-zinc-900 transition-colors">
+                  Términos y condiciones
+                </Link>
+                . Por favor, lee nuestra{" "}
+                <Link href="/politicas#privacidad" className="underline text-zinc-700 hover:text-zinc-900 transition-colors">
+                  Política de Privacidad
+                </Link>{" "}
+                para más detalles sobre cómo gestionamos tus datos.
               </p>
             </div>
 
@@ -64,11 +72,15 @@ export function LoginView() {
               </motion.button>
 
               <p className="text-[11px] leading-relaxed text-zinc-400 text-center">
-                Al continuar aceptas nuestras{" "}
-                <Link href="/politicas" className="text-zinc-600 underline underline-offset-2 hover:text-zinc-900 transition-colors">
-                  políticas y términos
+                Al continuar aceptas nuestros{" "}
+                <Link href="/politicas#terminos" className="text-zinc-600 underline underline-offset-2 hover:text-zinc-900 transition-colors">
+                  términos y condiciones
+                </Link>{" "}
+                y nuestra{" "}
+                <Link href="/politicas#privacidad" className="text-zinc-600 underline underline-offset-2 hover:text-zinc-900 transition-colors">
+                  política de privacidad
                 </Link>
-                , incluido el aviso de privacidad.
+                .
               </p>
             </div>
           </div>

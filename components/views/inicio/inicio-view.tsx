@@ -5,6 +5,7 @@ import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { pageProps } from "@/constants/animation"
 import { useAuthContext } from "@/context/auth-context"
+import { UserAvatarMenu } from "@/components/shared/user-avatar-menu"
 
 export function InicioView() {
   const { userName, isGuest } = useAuthContext()
@@ -17,9 +18,7 @@ export function InicioView() {
           <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">{userName}</h1>
           {isGuest && <span className="text-[10px] text-zinc-400 uppercase tracking-widest border border-zinc-200 px-2 py-0.5">Solo lectura</span>}
         </div>
-        <div className="w-10 h-10 overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80" alt="avatar" className="w-full h-full object-cover" />
-        </div>
+        <UserAvatarMenu />
       </div>
 
       <div className="relative h-56 overflow-hidden">

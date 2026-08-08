@@ -8,11 +8,21 @@ type AuthContextValue = {
   userMode: UserMode | null
   userId: string
   userName: string
+  userEmail: string
+  userPhone: string
+  userAvatarUrl: string
   isGuest: boolean
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
   loginAsGuest: () => void
   logout: () => void
+  updateProfile: (data: {
+    name?: string
+    email?: string
+    phone?: string
+    avatarUrl?: string
+    password?: string
+  }) => Promise<void>
   loading: boolean
   error: string | null
 }
