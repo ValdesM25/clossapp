@@ -14,6 +14,7 @@ import { EstadisticasView } from "@/components/views/estadisticas/estadisticas-v
 import { SimuladorView } from "@/components/views/simulador/simulador-view"
 import { MarketplaceView } from "@/components/views/marketplace/marketplace-view"
 import { ArmarioView } from "@/components/views/armario/armario-view"
+import { PlanesView } from "@/components/views/planes/planes-view"
 
 function AppShell() {
   const { userMode } = useAuthContext()
@@ -29,11 +30,12 @@ function AuthenticatedShell() {
   const keyboardOpen = useKeyboard()
 
   const views: Record<View, ReactElement> = {
-    inicio: <InicioView />,
+    inicio: <InicioView onNavigate={(view) => setActiveView(view)} />,
     armario: <ArmarioView />,
     simulador: <SimuladorView onElegir={() => setActiveView("armario")} />,
     marketplace: <MarketplaceView onApartar={refresh} />,
     estadisticas: <EstadisticasView onSellPrenda={() => setActiveView("marketplace")} />,
+    planes: <PlanesView />,
   }
 
   return (

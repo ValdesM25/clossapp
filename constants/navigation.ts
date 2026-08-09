@@ -1,5 +1,5 @@
 import type { View } from "@/types"
-import { Home, Shirt, Sparkles, ShoppingBag, BarChart3 } from "lucide-react"
+import { Home, Shirt, Sparkles, ShoppingBag, BarChart3, Crown } from "lucide-react"
 
 export const navItems = [
   { id: "inicio" as View, label: "Inicio", icon: Home },
@@ -7,6 +7,7 @@ export const navItems = [
   { id: "simulador" as View, label: "Outfit", icon: Sparkles },
   { id: "marketplace" as View, label: "Shop", icon: ShoppingBag },
   { id: "estadisticas" as View, label: "Stats", icon: BarChart3 },
+  { id: "planes" as View, label: "Planes", icon: Crown },
 ]
 
 export const filterChips = ["Todos", "Ropa", "Accesorios", "Zapatos"]
