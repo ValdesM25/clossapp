@@ -1,1 +1,2 @@
-export type View = "inicio" | "armario" | "simulador" | "marketplace" | "estadisticas" | "planes"
+export type View = "inicio" | "armario" | "simulador" | "marketplace" | "estadisticas" | "planes" | "punto_recoleccion"
+

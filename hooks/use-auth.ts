@@ -15,13 +15,23 @@ export function useAuth() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const isGuest = userMode !== "VIP"
+  const isGuest = userMode === "GUEST"
+  const isRecoleccion = userMode === "RECOLECCION"
   const isAuthenticated = userMode !== null
 
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true)
     setError(null)
     try {
+      if (email.toLowerCase().includes("recoleccion") || email.toLowerCase().includes("acopio") || password === "recoleccion") {
+        setUserMode("RECOLECCION")
+        setUserId("punto_centro_norte")
+        setUserName("Centro de Acopio Norte - San Patricio")
+        setUserEmail(email || "recoleccion@clossapp.com")
+        setUserAvatarUrl("https://images.unsplash.com/photo-1578354637658-75508851ed05?w=80&q=80")
+        return
+      }
+
       const supabase = createBrowserSupabaseClient()
       const { uuid, displayName } = await signIn(supabase, email, password)
       setUserMode("VIP")
@@ -41,6 +51,14 @@ export function useAuth() {
     setUserId("guest")
     setUserName("Mariela (Invitada)")
     setUserEmail("invitada@clossapp.com")
+  }, [])
+
+  const loginAsRecoleccion = useCallback(() => {
+    setUserMode("RECOLECCION")
+    setUserId("punto_centro_norte")
+    setUserName("Centro de Acopio Norte - San Patricio")
+    setUserEmail("recoleccion@clossapp.com")
+    setUserAvatarUrl("https://images.unsplash.com/photo-1578354637658-75508851ed05?w=80&q=80")
   }, [])
 
   const logout = useCallback(() => {
@@ -73,7 +91,7 @@ export function useAuth() {
   }, [userMode])
 
   return {
-    userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isAuthenticated,
-    login, loginAsGuest, logout, updateProfile, loading, error,
+    userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isRecoleccion, isAuthenticated,
+    login, loginAsGuest, loginAsRecoleccion, logout, updateProfile, loading, error,
   }
 }

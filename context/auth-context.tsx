@@ -12,9 +12,11 @@ type AuthContextValue = {
   userPhone: string
   userAvatarUrl: string
   isGuest: boolean
+  isRecoleccion: boolean
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
   loginAsGuest: () => void
+  loginAsRecoleccion: () => void
   logout: () => void
   updateProfile: (data: {
     name?: string

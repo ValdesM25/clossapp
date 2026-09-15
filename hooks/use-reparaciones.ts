@@ -6,6 +6,8 @@ import { fetchReparaciones, createReparacion, completeReparacion } from "@/servi
 import { GUEST_REPARACIONES } from "@/constants/demo-data"
 import type { ReparacionDB } from "@/types"
 
+const IS_UUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+
 export function useReparaciones(userId: string, isGuest: boolean) {
   const [reparaciones, setReparaciones] = useState<ReparacionDB[]>([])
   const [loading, setLoading] = useState(true)
@@ -13,13 +15,14 @@ export function useReparaciones(userId: string, isGuest: boolean) {
   const supabase = createBrowserSupabaseClient()
 
   const refresh = useCallback(async () => {
-    if (isGuest) { setReparaciones(GUEST_REPARACIONES); setLoading(false); return }
+    if (isGuest || !userId || !IS_UUID(userId)) { setReparaciones(GUEST_REPARACIONES); setLoading(false); return }
     setLoading(true)
     try {
       const data = await fetchReparaciones(supabase, userId)
       setReparaciones(data)
     } catch (err) {
       console.error("Error fetching reparaciones:", err instanceof Error ? err.message : JSON.stringify(err))
+      setReparaciones(GUEST_REPARACIONES)
     } finally {
       setLoading(false)
     }

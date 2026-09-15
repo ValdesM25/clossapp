@@ -3,12 +3,12 @@
 import { useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Loader2 } from "lucide-react"
+import { Loader2, Building2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useAuthContext } from "@/context/auth-context"
 
 export function LoginView() {
-  const { login, loginAsGuest, loading, error } = useAuthContext()
+  const { login, loginAsGuest, loginAsRecoleccion, loading, error } = useAuthContext()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
@@ -44,32 +44,40 @@ export function LoginView() {
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <label className="text-xs text-zinc-500 uppercase tracking-widest">Correo electrónico</label>
                 <Input value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleEnter()}
-                  placeholder="tu@correo.com" type="email"
-                  className="mt-2 h-12 w-full rounded-none border border-zinc-900 text-sm text-zinc-900 focus-visible:ring-0 focus-visible:border-zinc-900" />
+                  placeholder="tu@correo.com (ej. recoleccion@clossapp.com)" type="email"
+                  className="mt-2 h-11 w-full rounded-none border border-zinc-900 text-sm text-zinc-900 focus-visible:ring-0 focus-visible:border-zinc-900" />
               </div>
 
               <div>
                 <label className="text-xs text-zinc-500 uppercase tracking-widest">Contraseña</label>
                 <Input value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleEnter()}
                   placeholder="••••••••" type="password"
-                  className="mt-2 h-12 w-full rounded-none border border-zinc-900 text-sm text-zinc-900 focus-visible:ring-0 focus-visible:border-zinc-900" />
+                  className="mt-2 h-11 w-full rounded-none border border-zinc-900 text-sm text-zinc-900 focus-visible:ring-0 focus-visible:border-zinc-900" />
               </div>
 
               {error && <p className="text-xs text-red-500">{error}</p>}
 
               <motion.button whileTap={{ scale: 0.98 }} onClick={handleEnter} disabled={loading}
-                className="w-full h-12 bg-zinc-900 text-white text-sm font-medium tracking-wide disabled:opacity-50">
+                className="w-full h-11 bg-zinc-900 text-white text-sm font-medium tracking-wide disabled:opacity-50">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Continuar con correo electrónico"}
               </motion.button>
 
-              <motion.button whileTap={{ scale: 0.98 }} onClick={loginAsGuest}
-                className="w-full h-12 border border-zinc-300 text-zinc-600 text-sm font-medium tracking-wide">
-                Explorar como invitada
-              </motion.button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <motion.button whileTap={{ scale: 0.98 }} onClick={loginAsGuest}
+                  className="w-full h-11 border border-zinc-300 text-zinc-600 text-xs font-medium tracking-wide hover:border-zinc-400 transition-colors">
+                  Explorar como invitada
+                </motion.button>
+
+                <motion.button whileTap={{ scale: 0.98 }} onClick={loginAsRecoleccion}
+                  className="w-full h-11 border border-emerald-600 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-900 text-xs font-medium tracking-wide flex items-center justify-center gap-1.5 transition-colors">
+                  <Building2 className="w-4 h-4 text-emerald-700" />
+                  Punto de Recolección
+                </motion.button>
+              </div>
 
               <p className="text-[11px] leading-relaxed text-zinc-400 text-center">
                 Al continuar aceptas nuestros{" "}

@@ -1,1 +1,2 @@
-export type UserMode = "VIP" | "GUEST"
+export type UserMode = "VIP" | "GUEST" | "RECOLECCION"
+

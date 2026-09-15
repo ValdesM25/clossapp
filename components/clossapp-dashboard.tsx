@@ -15,11 +15,21 @@ import { SimuladorView } from "@/components/views/simulador/simulador-view"
 import { MarketplaceView } from "@/components/views/marketplace/marketplace-view"
 import { ArmarioView } from "@/components/views/armario/armario-view"
 import { PlanesView } from "@/components/views/planes/planes-view"
+import { PuntoRecoleccionView } from "@/components/views/punto-recoleccion/punto-recoleccion-view"
 
 function AppShell() {
-  const { userMode } = useAuthContext()
+  const { userMode, isRecoleccion } = useAuthContext()
 
   if (!userMode) return <LoginView />
+
+  // Collection Point / Punto de Recolección isolated portal mode
+  if (isRecoleccion || userMode === "RECOLECCION") {
+    return (
+      <div className="overflow-y-auto h-screen bg-zinc-50">
+        <PuntoRecoleccionView />
+      </div>
+    )
+  }
 
   return <AuthenticatedShell />
 }
@@ -36,6 +46,7 @@ function AuthenticatedShell() {
     marketplace: <MarketplaceView onApartar={refresh} />,
     estadisticas: <EstadisticasView onSellPrenda={() => setActiveView("marketplace")} />,
     planes: <PlanesView />,
+    punto_recoleccion: <PuntoRecoleccionView />,
   }
 
   return (

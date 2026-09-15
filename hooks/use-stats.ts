@@ -5,6 +5,8 @@ import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/cl
 import { fetchStats } from "@/services/stats.service"
 import type { PrendaExt } from "@/types"
 
+const IS_UUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+
 export function useStats(userId: string, userName: string, isGuest: boolean) {
   const [stats, setStats] = useState({ total: 0, usos: 0, outfits: 0, sinUsar: 0 })
   const [topPrendas, setTopPrendas] = useState<PrendaExt[]>([])
@@ -14,7 +16,7 @@ export function useStats(userId: string, userName: string, isGuest: boolean) {
   const supabase = createBrowserSupabaseClient()
 
   const refresh = useCallback(async () => {
-    if (isGuest) { setLoading(false); return }
+    if (isGuest || !userId || !IS_UUID(userId)) { setLoading(false); return }
     setLoading(true)
     try {
       const result = await fetchStats(supabase, userId, userName)
