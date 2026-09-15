@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Building2,
@@ -24,7 +24,9 @@ import {
   ShieldCheck,
   Clock,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Camera,
+  CameraOff
 } from "lucide-react"
 import { useAuthContext } from "@/context/auth-context"
 import { Input } from "@/components/ui/input"
@@ -126,6 +128,55 @@ export function PuntoRecoleccionView() {
   const [manualTicketInput, setManualTicketInput] = useState("")
   const [scannerStatus, setScannerStatus] = useState<"idle" | "scanning" | "success" | "error">("idle")
   const [verifiedPackage, setVerifiedPackage] = useState<{ name: string; count: number; points: number } | null>(null)
+
+  // Camera video stream state & ref
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const [cameraActive, setCameraActive] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isScannerOpen || scannerStatus === "success") {
+      setCameraActive(false)
+      return
+    }
+
+    let activeStream: MediaStream | null = null
+
+    async function startCamera() {
+      setCameraError(null)
+      try {
+        if (typeof window === "undefined" || !navigator?.mediaDevices?.getUserMedia) {
+          throw new Error("El navegador no soporta o bloquea la cámara en vivo.")
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        })
+
+        activeStream = stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          await videoRef.current.play().catch(() => {})
+          setCameraActive(true)
+        }
+      } catch (err) {
+        console.warn("[PuntoRecoleccion Camera] Could not activate stream:", err)
+        setCameraError(
+          err instanceof Error ? err.message : "Cámara no disponible o permiso denegado"
+        )
+        setCameraActive(false)
+      }
+    }
+
+    startCamera()
+
+    return () => {
+      if (activeStream) {
+        activeStream.getTracks().forEach((track) => track.stop())
+      }
+    }
+  }, [isScannerOpen, scannerStatus])
 
   // Manual donation form state
   const [donorNameInput, setDonorNameInput] = useState("")
@@ -578,20 +629,48 @@ export function PuntoRecoleccionView() {
 
           {scannerStatus !== "success" ? (
             <div className="space-y-4">
-              {/* Simulated Camera Viewfinder */}
-              <div className="relative h-48 bg-zinc-950 border-2 border-dashed border-emerald-500/50 flex flex-col items-center justify-center p-4 overflow-hidden">
-                <motion.div
-                  animate={{ y: [-45, 45, -45] }}
-                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute w-full h-0.5 bg-emerald-400 shadow-[0_0_12px_#34d399]"
+              {/* Live Camera Stream Viewfinder */}
+              <div className="relative h-56 bg-zinc-950 border-2 border-emerald-500/60 overflow-hidden flex flex-col items-center justify-center">
+                <video
+                  ref={videoRef}
+                  playsInline
+                  muted
+                  autoPlay
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+                    cameraActive ? "opacity-100" : "opacity-0"
+                  }`}
                 />
-                <Scan className="w-12 h-12 text-emerald-400/70 mb-2" />
-                <p className="text-xs text-zinc-200 font-mono text-center">
-                  Apunte la cámara al código QR del donante
-                </p>
-                <p className="text-[10px] text-zinc-500 font-mono mt-1">
-                  Acepta tickets de 3+ prendas para acreditación de puntos
-                </p>
+
+                {/* Overlaid scanning laser animation */}
+                <motion.div
+                  animate={{ y: [-65, 65, -65] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute w-full h-0.5 bg-emerald-400 shadow-[0_0_14px_#34d399] z-10 pointer-events-none"
+                />
+
+                {/* Status Badges */}
+                <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm px-2.5 py-1 text-[10px] font-mono text-emerald-400 border border-emerald-500/40">
+                  <span className={`w-2 h-2 rounded-full ${cameraActive ? "bg-emerald-400 animate-ping" : "bg-amber-400"}`} />
+                  <span>{cameraActive ? "CÁMARA EN VIVO ACTIVA" : "BUSCANDO DISPOSITIVO DE CÁMARA"}</span>
+                </div>
+
+                {!cameraActive && (
+                  <div className="relative z-10 flex flex-col items-center justify-center p-4 text-center space-y-1 bg-black/40 backdrop-blur-xs w-full h-full">
+                    {cameraError ? (
+                      <CameraOff className="w-10 h-10 text-amber-400 mb-1" />
+                    ) : (
+                      <Camera className="w-10 h-10 text-emerald-400/80 animate-pulse mb-1" />
+                    )}
+                    <p className="text-xs text-zinc-200 font-mono">
+                      {cameraError ? "Sin acceso a cámara física en vivo" : "Iniciando cámara del dispositivo..."}
+                    </p>
+                    <p className="text-[10px] text-zinc-400 font-mono max-w-xs mt-0.5">
+                      {cameraError
+                        ? `${cameraError} — puedes validar usando el código manual abajo`
+                        : "Apunte la cámara al código QR del donante para escanear"}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Manual Token input simulation */}
