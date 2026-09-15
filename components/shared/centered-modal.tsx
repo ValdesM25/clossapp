@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from "framer-motion"
 import { X } from "lucide-react"
 import type { ReactNode } from "react"
 
-export function CenteredModal({ open, onClose, children }: { open: boolean; onClose: () => void; children: ReactNode }) {
+export function CenteredModal({ open, isOpen, onClose, children }: { open?: boolean; isOpen?: boolean; onClose: () => void; children: ReactNode }) {
+  const isVisible = open ?? isOpen ?? false
+
   return (
     <AnimatePresence>
-      {open && (
+      {isVisible && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center px-4"
           onClick={onClose}>

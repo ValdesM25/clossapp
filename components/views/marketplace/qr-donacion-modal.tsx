@@ -19,7 +19,7 @@ export function QRDonacionModal({ ticket, isOpen, onClose, onOpenScanner }: QRDo
   const isCompletado = ticket.status === "completado"
 
   return (
-    <CenteredModal isOpen={isOpen} onClose={onClose} title="Ticket de Donación con QR">
+    <CenteredModal open={isOpen} onClose={onClose}>
       <div className="flex flex-col gap-5 p-1 max-h-[80vh] overflow-y-auto">
         {/* Header Badge */}
         <div className="flex items-center justify-between border-b border-zinc-100 pb-3">

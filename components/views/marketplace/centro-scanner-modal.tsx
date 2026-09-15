@@ -20,6 +20,7 @@ export function CentroScannerModal({ ticket, isOpen, onClose, onVerifyTicket }: 
   if (!ticket) return null
 
   function handleScanSimulation() {
+    if (!ticket) return
     setIsVerifying(true)
     setTimeout(() => {
       onVerifyTicket(ticket.id)
@@ -34,7 +35,7 @@ export function CentroScannerModal({ ticket, isOpen, onClose, onVerifyTicket }: 
   }
 
   return (
-    <CenteredModal isOpen={isOpen} onClose={handleCloseModal} title="Escáner Centro de Acopio (Vista Aliado)">
+    <CenteredModal open={isOpen} onClose={handleCloseModal}>
       <div className="flex flex-col gap-5 p-1 max-h-[80vh] overflow-y-auto">
         {/* Banner de ROL */}
         <div className="bg-zinc-900 text-white p-3 flex items-center justify-between">
