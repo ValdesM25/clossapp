@@ -27,7 +27,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
   const dailyOutfitPrendas = userPrendas.slice(0, 3)
 
   // 2. Prendas que no se han utilizado en un tiempo (baja frecuencia o 0 usos)
-  const olvidadasPrendas = userPrendas.length > 3 ? userPrendas.slice(3) : userPrendas.slice(0, 3)
+  const olvidadasPrendas = userPrendas.length > 3 ? userPrendas.slice(3, 12) : userPrendas.slice(0, 9)
 
   // 3. Prendas utilizadas seguido (recomendadas para venta o donación)
   const frecuentesPrendas = userPrendas.slice(0, 4)

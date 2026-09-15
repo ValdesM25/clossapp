@@ -35,7 +35,7 @@ export async function fetchStats(
   const olvidadas = [...all]
     .filter((p) => (p.usos ?? 0) === 0 || (p.ultimo_uso && new Date(p.ultimo_uso) < sixMonthsAgo))
     .sort((a, b) => (a.ultimo_uso ? new Date(a.ultimo_uso).getTime() : 0) - (b.ultimo_uso ? new Date(b.ultimo_uso).getTime() : 0))
-    .slice(0, 3)
+    .slice(0, 9)
 
   return { total, usos, outfits, sinUsar, topPrendas, olvidadas }
 }
