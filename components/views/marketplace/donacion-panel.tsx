@@ -1,72 +1,60 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Heart, MapPin, Truck, Check, Sparkles, QrCode, Scan, ArrowRight, ShieldCheck, CheckSquare, Square } from "lucide-react"
+import { Heart, MapPin, Truck, Sparkles, QrCode, ArrowRight, ShieldCheck, CheckSquare, Square, Database, RefreshCw, Layers } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
-import { PUNTOS_ACOPIO, CAUSAS, IMPACTO_DEMO, MIN_PRENDAS_PUNTOS, calcularPuntosDonacion, type ModoEntrega } from "@/constants/donaciones"
+import { MIN_PRENDAS_PUNTOS, calcularPuntosDonacion, type ModoEntrega } from "@/constants/donaciones"
 import type { Prenda, DonacionTicket } from "@/types"
+import { useAuthContext } from "@/context/auth-context"
+import { useDonaciones } from "@/hooks/use-donaciones"
 import { QRDonacionModal } from "./qr-donacion-modal"
 import { CentroScannerModal } from "./centro-scanner-modal"
 
-type Paso = "intro" | "seleccion" | "entrega" | "ticket"
+type Paso = "intro" | "seleccion" | "entrega"
 
 interface DonacionPanelProps {
   prendas: Prenda[]
   isGuest: boolean
 }
 
-const STORAGE_PUNTOS_KEY = "clossapp_user_puntos_v1"
-const STORAGE_TICKETS_KEY = "clossapp_donacion_tickets_v1"
-
 export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
+  const { userId, userName, userEmail } = useAuthContext()
+  const {
+    puntos,
+    tickets,
+    puntosAcopio,
+    acopioRegistros,
+    impacto,
+    loading,
+    refresh,
+    handleCreateTicket,
+    handleVerifyTicket,
+  } = useDonaciones(userId, userName, userEmail, isGuest)
+
   const [paso, setPaso] = useState<Paso>("intro")
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [modo, setModo] = useState<ModoEntrega>("acopio")
-  const [puntoId, setPuntoId] = useState(PUNTOS_ACOPIO[0].id)
+  const [puntoId, setPuntoId] = useState<string>(puntosAcopio[0]?.id || "centro")
   const [direccion, setDireccion] = useState("")
 
-  // State for Tickets and Points
-  const [puntos, setPuntos] = useState<number>(150) // demo initial balance
-  const [tickets, setTickets] = useState<DonacionTicket[]>([])
   const [activeTicket, setActiveTicket] = useState<DonacionTicket | null>(null)
   const [isQRModalOpen, setIsQRModalOpen] = useState(false)
   const [scannerTicket, setScannerTicket] = useState<DonacionTicket | null>(null)
   const [isScannerOpen, setIsScannerOpen] = useState(false)
-
-  // Load persisted state
-  useEffect(() => {
-    try {
-      const savedPuntos = localStorage.getItem(STORAGE_PUNTOS_KEY)
-      if (savedPuntos !== null) setPuntos(parseInt(savedPuntos, 10))
-
-      const savedTickets = localStorage.getItem(STORAGE_TICKETS_KEY)
-      if (savedTickets) setTickets(JSON.parse(savedTickets))
-    } catch {
-      // fallback to initial state
-    }
-  }, [])
-
-  // Save state
-  function updatePuntos(newPuntos: number) {
-    setPuntos(newPuntos)
-    try {
-      localStorage.setItem(STORAGE_PUNTOS_KEY, newPuntos.toString())
-    } catch {}
-  }
-
-  function saveTickets(newTickets: DonacionTicket[]) {
-    setTickets(newTickets)
-    try {
-      localStorage.setItem(STORAGE_TICKETS_KEY, JSON.stringify(newTickets))
-    } catch {}
-  }
+  const [verifying, setVerifying] = useState(false)
+  const [verifyingSuccess, setVerifyingSuccess] = useState<string | null>(null)
 
   const disponibles = prendas.filter((p) => !p.en_venta && !p.en_renta)
   const cantidadSeleccionada = selectedIds.length
   const puntosEstimados = calcularPuntosDonacion(cantidadSeleccionada)
-  const puntoSeleccionado = PUNTOS_ACOPIO.find((p) => p.id === puntoId) ?? PUNTOS_ACOPIO[0]
+  const puntoSeleccionado = puntosAcopio.find((p) => p.id === puntoId) ?? puntosAcopio[0] ?? {
+    id: "centro",
+    nombre: "Punto de acopio Centro",
+    zona: "Saltillo Centro",
+    horario: "Lun a Vie · 9:00 a 18:00"
+  }
   const puedeConfirmar = modo === "acopio" || direccion.trim().length > 0
 
   function togglePrenda(id: string) {
@@ -75,88 +63,68 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
     )
   }
 
-  function handleCrearTicket() {
+  async function handleCrearTicketSubmit() {
     if (selectedIds.length === 0) return
 
     const prendasSeleccionadas = disponibles.filter((p) => selectedIds.includes(p.id))
-    const token = `TKT-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
 
-    const nuevoTicket: DonacionTicket = {
-      id: `don_${Date.now()}`,
-      qrToken: token,
-      userId: isGuest ? "guest" : "user_active",
-      puntoAcopioId: puntoId,
+    const nuevoTicket = await handleCreateTicket({
+      puntoAcopioId: puntoSeleccionado.id,
       puntoAcopioNombre: puntoSeleccionado.nombre,
-      status: "pendiente",
       prendas: prendasSeleccionadas,
-      cantidadPrendas: prendasSeleccionadas.length,
-      puntosOtorgados: puntosEstimados,
-      createdAt: new Date().toISOString(),
-    }
+      puntosEstimados,
+    })
 
-    const updated = [nuevoTicket, ...tickets]
-    saveTickets(updated)
-    setActiveTicket(nuevoTicket)
-    setIsQRModalOpen(true)
-    setPaso("intro")
-    setSelectedIds([])
-  }
-
-  function handleVerifyTicket(ticketId: string) {
-    const target = tickets.find((t) => t.id === ticketId)
-    if (!target || target.status === "completado") return
-
-    // Add points
-    const newTotalPuntos = puntos + target.puntosOtorgados
-    updatePuntos(newTotalPuntos)
-
-    // Mark ticket completed
-    const updatedTickets = tickets.map((t) =>
-      t.id === ticketId
-        ? {
-            ...t,
-            status: "completado" as const,
-            validatedAt: new Date().toISOString(),
-            validatedBy: t.puntoAcopioNombre,
-          }
-        : t
-    )
-    saveTickets(updatedTickets)
-
-    if (activeTicket?.id === ticketId) {
-      setActiveTicket({
-        ...activeTicket,
-        status: "completado",
-        validatedAt: new Date().toISOString(),
-      })
+    if (nuevoTicket) {
+      setActiveTicket(nuevoTicket)
+      setIsQRModalOpen(true)
+      setPaso("intro")
+      setSelectedIds([])
     }
   }
 
-  function reiniciar() {
-    setPaso("intro")
-    setSelectedIds([])
-    setModo("acopio")
-    setPuntoId(PUNTOS_ACOPIO[0].id)
-    setDireccion("")
+  async function handleVerify(ticketId: string) {
+    const target = tickets.find((t) => t.id === ticketId) || scannerTicket
+    if (!target) return
+
+    setVerifying(true)
+    setVerifyingSuccess(null)
+    try {
+      const res = await handleVerifyTicket(target.qrToken, target.puntoAcopioId, target.puntoAcopioNombre)
+      if (res.success) {
+        setVerifyingSuccess(`Donación registrada exitosamente en base de datos (+${res.puntos} pts)`)
+      }
+    } catch (err) {
+      console.error("Error al verificar:", err)
+    } finally {
+      setVerifying(false)
+    }
   }
 
   return (
     <div className="px-4 flex flex-col gap-5 pb-8">
-      {/* Top Banner: User Puntos ClossApp Balance */}
+      {/* Top Banner: User Puntos ClossApp Balance from Database */}
       <div className="bg-zinc-900 text-white p-4 border border-zinc-800 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-amber-400/20 border border-amber-400/40 flex items-center justify-center">
             <Sparkles className="w-5 h-5 text-amber-400" />
           </div>
           <div>
-            <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-medium">Tus Puntos ClossApp</p>
+            <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-medium">Tus Puntos ClossApp (Base de datos)</p>
             <p className="font-serif text-xl text-amber-300 font-medium">{puntos} pts</p>
           </div>
         </div>
 
-        <div className="text-right">
-          <span className="text-[10px] bg-zinc-800 text-amber-300 border border-amber-400/30 px-2.5 py-1 font-mono uppercase tracking-wide">
-            Canjeables en Suscripciones
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => refresh()}
+            title="Sincronizar con Supabase"
+            className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-sm transition-colors"
+          >
+            <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
+          </button>
+          <span className="text-[10px] bg-zinc-800 text-amber-300 border border-amber-400/30 px-2.5 py-1 font-mono uppercase tracking-wide hidden sm:inline-block">
+            Suscripciones
           </span>
         </div>
       </div>
@@ -176,47 +144,34 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
               <div className="flex items-center justify-between">
                 <Heart className="w-5 h-5 text-zinc-900" />
                 <span className="text-[10px] font-mono uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-0.5 border border-emerald-200 flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> Verificación por QR
+                  <ShieldCheck className="w-3 h-3" /> Verificación QR & DB Live
                 </span>
               </div>
               <p className="font-serif text-xl text-zinc-900 leading-snug">
-                Dona ropa, gana puntos y obtén descuentos en ClossApp
+                Dona ropa, gana puntos y apoya en Puntos de Acopio
               </p>
               <p className="text-sm text-zinc-600 leading-relaxed">
-                Por cada donación de <strong>3 o más prendas</strong> en nuestros puntos de acopio aliados,
-                recibes un código QR. Al ser escaneado por el centro, obtienes <strong>Puntos ClossApp</strong> canjeables por meses gratis o descuentos en tu suscripción.
+                Cada prenda procesada se registra directamente en la tabla de la base de datos de <strong>Centro de Acopio</strong>.
+                Por 3 o más prendas recibes puntos acumulables en tu perfil.
               </p>
             </div>
 
-            {/* Impact Metric Cards */}
+            {/* Impact Metric Cards from DB */}
             <div className="grid grid-cols-2 gap-3">
               <div className="border border-zinc-200 p-4 bg-zinc-50">
-                <p className="font-serif text-2xl text-zinc-900">{IMPACTO_DEMO.prendasDonadas}</p>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Prendas donadas</p>
+                <p className="font-serif text-2xl text-zinc-900">{impacto.prendasDonadas}</p>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Prendas donadas (DB)</p>
               </div>
               <div className="border border-zinc-200 p-4 bg-zinc-50">
-                <p className="font-serif text-2xl text-zinc-900">{IMPACTO_DEMO.familiasApoyadas}</p>
+                <p className="font-serif text-2xl text-zinc-900">{impacto.familiasApoyadas}</p>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Familias apoyadas</p>
               </div>
-            </div>
-
-            {/* Rules Banner */}
-            <div className="bg-amber-50/70 border border-amber-200 p-4 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-amber-900 text-xs font-semibold">
-                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>¿Cómo funciona la recompensa?</span>
-              </div>
-              <ul className="text-xs text-amber-800/90 list-disc list-inside space-y-1">
-                <li><strong>Donación básica (3 prendas):</strong> 100 Puntos base</li>
-                <li><strong>Prenda extra (&gt;3):</strong> +20 Puntos adicionales por cada una</li>
-                <li><strong>Canje:</strong> Usa tus puntos en la pestaña "Planes" para tus mensualidades.</li>
-              </ul>
             </div>
 
             {/* Action button */}
             {isGuest ? (
               <p className="text-xs text-zinc-400 border border-zinc-100 p-4 text-center">
-                Crea una cuenta para registrar tus donaciones y ganar puntos.
+                Crea una cuenta para registrar tus donaciones en la base de datos y ganar puntos.
               </p>
             ) : (
               <motion.button
@@ -229,12 +184,15 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
               </motion.button>
             )}
 
-            {/* Active Tickets Section */}
+            {/* Active Tickets Section from Supabase DB */}
             {tickets.length > 0 && (
               <div className="flex flex-col gap-3 mt-2 border-t border-zinc-200 pt-5">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs uppercase tracking-widest text-zinc-500 font-semibold">Mis Tickets de Donación</p>
-                  <span className="text-xs font-mono text-zinc-400">{tickets.length} total</span>
+                  <p className="text-xs uppercase tracking-widest text-zinc-500 font-semibold flex items-center gap-1.5">
+                    <Database className="w-3.5 h-3.5 text-zinc-700" />
+                    Mis Tickets de Donación en BD
+                  </p>
+                  <span className="text-xs font-mono text-zinc-400">{tickets.length} registradas</span>
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -256,7 +214,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
                             {t.cantidadPrendas} prendas · {t.puntoAcopioNombre}
                           </p>
                           <p className="text-[10px] font-mono text-zinc-400 mt-0.5">
-                            ID: {t.qrToken.slice(0, 10)}...
+                            QR Token: {t.qrToken}
                           </p>
                         </div>
                       </div>
@@ -280,6 +238,68 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
                 </div>
               </div>
             )}
+
+            {/* LIVE DATABASE TABLE: Bitácora de Registros de Centro de Acopio */}
+            <div className="flex flex-col gap-3 mt-4 border-t border-zinc-200 pt-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-emerald-600" />
+                  <p className="text-xs uppercase tracking-widest text-zinc-900 font-bold">
+                    Bitácora en Vivo: Registros de Centro de Acopio (Tabla SQL)
+                  </p>
+                </div>
+                <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 font-semibold">
+                  {acopioRegistros.length} registros
+                </span>
+              </div>
+
+              {acopioRegistros.length === 0 ? (
+                <div className="border border-dashed border-zinc-300 p-6 text-center text-xs text-zinc-500 bg-zinc-50/50">
+                  Aún no hay registros de acopio en la base de datos.
+                  Genera una donación y escanéala desde el portal del Centro de Acopio para ir llenando la tabla.
+                </div>
+              ) : (
+                <div className="overflow-x-auto border border-zinc-200 bg-white">
+                  <table className="w-full text-left text-xs font-sans">
+                    <thead className="bg-zinc-100 text-zinc-700 border-b border-zinc-200 text-[10px] uppercase font-mono tracking-wider">
+                      <tr>
+                        <th className="p-2.5">Fecha</th>
+                        <th className="p-2.5">Punto Acopio</th>
+                        <th className="p-2.5 text-center">Prendas</th>
+                        <th className="p-2.5 text-center">Puntos</th>
+                        <th className="p-2.5">Estado / Obs.</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100">
+                      {acopioRegistros.map((reg) => (
+                        <tr key={reg.id} className="hover:bg-zinc-50 transition-colors">
+                          <td className="p-2.5 font-mono text-[11px] text-zinc-500 whitespace-nowrap">
+                            {new Date(reg.fecha_registro).toLocaleString("es-MX", {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                          <td className="p-2.5 font-medium text-zinc-900">
+                            {reg.punto_acopio_nombre}
+                          </td>
+                          <td className="p-2.5 text-center font-semibold text-zinc-800">
+                            {reg.cantidad_prendas}
+                          </td>
+                          <td className="p-2.5 text-center text-emerald-700 font-semibold bg-emerald-50/50">
+                            +{reg.puntos_otorgados}
+                          </td>
+                          <td className="p-2.5 text-[11px] text-zinc-600 truncate max-w-[150px]">
+                            {reg.observaciones || "Verificado"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
 
@@ -298,8 +318,8 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-serif text-lg text-zinc-900">Selecciona las prendas a donar</p>
-                <p className="text-xs text-zinc-500">Puedes seleccionar múltiples prendas</p>
+                <p className="font-serif text-lg text-zinc-900">Selecciona prendas de tu armario</p>
+                <p className="text-xs text-zinc-500">Puedes elegir múltiples prendas para donar</p>
               </div>
 
               {cantidadSeleccionada > 0 && (
@@ -310,13 +330,19 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
             </div>
 
             {/* Live points badge */}
-            <div className={`p-3 border text-xs flex items-center justify-between transition-all ${
-              cantidadSeleccionada >= MIN_PRENDAS_PUNTOS
-                ? "bg-amber-50 border-amber-300 text-amber-900"
-                : "bg-zinc-50 border-zinc-200 text-zinc-600"
-            }`}>
+            <div
+              className={`p-3 border text-xs flex items-center justify-between transition-all ${
+                cantidadSeleccionada >= MIN_PRENDAS_PUNTOS
+                  ? "bg-amber-50 border-amber-300 text-amber-900"
+                  : "bg-zinc-50 border-zinc-200 text-zinc-600"
+              }`}
+            >
               <div className="flex items-center gap-2">
-                <Sparkles className={`w-4 h-4 ${cantidadSeleccionada >= MIN_PRENDAS_PUNTOS ? "text-amber-600" : "text-zinc-400"}`} />
+                <Sparkles
+                  className={`w-4 h-4 ${
+                    cantidadSeleccionada >= MIN_PRENDAS_PUNTOS ? "text-amber-600" : "text-zinc-400"
+                  }`}
+                />
                 <span>
                   {cantidadSeleccionada >= MIN_PRENDAS_PUNTOS
                     ? `¡Calificas para ganar +${puntosEstimados} Puntos ClossApp!`
@@ -339,7 +365,9 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
                       onClick={() => togglePrenda(p.id)}
                       className={cn(
                         "relative overflow-hidden border-2 text-left transition-all bg-white",
-                        isSelected ? "border-zinc-900 ring-2 ring-zinc-900/10" : "border-zinc-200 hover:border-zinc-400"
+                        isSelected
+                          ? "border-zinc-900 ring-2 ring-zinc-900/10"
+                          : "border-zinc-200 hover:border-zinc-400"
                       )}
                     >
                       <div className="absolute top-1.5 right-1.5 z-10 bg-white/90 p-0.5 rounded-sm">
@@ -350,7 +378,9 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
                         )}
                       </div>
                       <img src={p.image_url} alt={p.name} className="w-full h-24 object-cover" />
-                      <p className="text-[10px] text-zinc-700 font-medium truncate px-1.5 py-1">{p.name}</p>
+                      <p className="text-[10px] text-zinc-700 font-medium truncate px-1.5 py-1">
+                        {p.name}
+                      </p>
                     </button>
                   )
                 })}
@@ -405,8 +435,10 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
               >
                 <MapPin className="w-4 h-4 text-zinc-900 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-medium text-zinc-900">Punto de acopio (Genera QR y Puntos)</p>
-                  <p className="text-[11px] text-zinc-500 mt-0.5">Lleva tu paquete y muestra tu QR para acreditar puntos</p>
+                  <p className="text-xs font-medium text-zinc-900">Punto de acopio (Genera QR y Puntos DB)</p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">
+                    Muestra tu QR al llegar para registrar la recepción en el sistema
+                  </p>
                 </div>
               </button>
 
@@ -427,8 +459,10 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
 
             {modo === "acopio" ? (
               <div className="flex flex-col gap-2">
-                <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-medium">Selecciona el Punto de Acopio</p>
-                {PUNTOS_ACOPIO.map((p) => (
+                <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-medium">
+                  Selecciona el Punto de Acopio (Cargados desde BD)
+                </p>
+                {puntosAcopio.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => setPuntoId(p.id)}
@@ -437,8 +471,10 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
                       puntoId === p.id ? "border-zinc-900 font-medium" : "border-zinc-200 text-zinc-700"
                     )}
                   >
-                    <p className="text-xs text-zinc-900">{p.nombre}</p>
-                    <p className="text-[10px] text-zinc-500 mt-0.5">{p.zona} · {p.horario}</p>
+                    <p className="text-xs text-zinc-900 font-semibold">{p.nombre}</p>
+                    <p className="text-[10px] text-zinc-500 mt-0.5">
+                      {p.zona} · {p.horario}
+                    </p>
                   </button>
                 ))}
               </div>
@@ -459,11 +495,11 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
             <motion.button
               whileTap={{ scale: 0.98 }}
               disabled={!puedeConfirmar}
-              onClick={handleCrearTicket}
+              onClick={handleCrearTicketSubmit}
               className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold tracking-wide disabled:opacity-50 transition-colors shadow-sm flex items-center justify-center gap-2 mt-2"
             >
               <QrCode className="w-4 h-4 text-amber-400" />
-              <span>Generar Código QR de Donación</span>
+              <span>Generar Código QR e Insertar Ticket en BD</span>
             </motion.button>
           </motion.div>
         )}
@@ -486,7 +522,8 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
         ticket={scannerTicket}
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
-        onVerifyTicket={(tId) => handleVerifyTicket(tId)}
+        onVerifyTicket={(tId) => handleVerify(tId)}
+        acopioRegistros={acopioRegistros}
       />
     </div>
   )

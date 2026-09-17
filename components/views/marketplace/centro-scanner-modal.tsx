@@ -1,17 +1,24 @@
 import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { Scan, CheckCircle2, Building2, Shirt, Sparkles, AlertCircle, Camera, CameraOff } from "lucide-react"
+import { Scan, CheckCircle2, Building2, Shirt, Sparkles, AlertCircle, Camera, CameraOff, Database, History } from "lucide-react"
 import { CenteredModal } from "@/components/shared/centered-modal"
-import type { DonacionTicket } from "@/types/donaciones"
+import type { DonacionTicket, AcopioRegistroDB } from "@/types/donaciones"
 
 interface CentroScannerModalProps {
   ticket: DonacionTicket | null
   isOpen: boolean
   onClose: () => void
   onVerifyTicket: (ticketId: string) => void
+  acopioRegistros?: AcopioRegistroDB[]
 }
 
-export function CentroScannerModal({ ticket, isOpen, onClose, onVerifyTicket }: CentroScannerModalProps) {
+export function CentroScannerModal({
+  ticket,
+  isOpen,
+  onClose,
+  onVerifyTicket,
+  acopioRegistros = [],
+}: CentroScannerModalProps) {
   const [scanned, setScanned] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
 
@@ -66,14 +73,17 @@ export function CentroScannerModal({ ticket, isOpen, onClose, onVerifyTicket }: 
 
   if (!ticket) return null
 
-  function handleScanSimulation() {
+  async function handleScanSimulation() {
     if (!ticket) return
     setIsVerifying(true)
-    setTimeout(() => {
-      onVerifyTicket(ticket.id)
-      setIsVerifying(false)
+    try {
+      await onVerifyTicket(ticket.id)
       setScanned(true)
-    }, 600)
+    } catch (err) {
+      console.error("Verification failed:", err)
+    } finally {
+      setIsVerifying(false)
+    }
   }
 
   function handleCloseModal() {
@@ -90,8 +100,8 @@ export function CentroScannerModal({ ticket, isOpen, onClose, onVerifyTicket }: 
             <Building2 className="w-4 h-4 text-emerald-400" />
             <span className="font-medium">{ticket.puntoAcopioNombre}</span>
           </div>
-          <span className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 bg-zinc-800 px-2 py-0.5">
-            Portal Verificador
+          <span className="text-[10px] uppercase font-mono tracking-widest text-emerald-400 bg-zinc-800 px-2 py-0.5 border border-emerald-500/30 flex items-center gap-1">
+            <Database className="w-3 h-3" /> Verificador DB
           </span>
         </div>
 
@@ -118,8 +128,12 @@ export function CentroScannerModal({ ticket, isOpen, onClose, onVerifyTicket }: 
 
               {/* Camera Badges */}
               <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm px-2.5 py-1 text-[10px] font-mono text-emerald-400 border border-emerald-500/40">
-                <span className={`w-2 h-2 rounded-full ${cameraActive ? "bg-emerald-400 animate-ping" : "bg-amber-400"}`} />
-                <span>{cameraActive ? "CÁMARA EN VIVO ACTIVA" : "BUSCANDO CÁMARA"}</span>
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    cameraActive ? "bg-emerald-400 animate-ping" : "bg-amber-400"
+                  }`}
+                />
+                <span>{cameraActive ? "CÁMARA EN VIVO ACTIVA" : "MODO ESCÁNER EN VIVO"}</span>
               </div>
 
               {!cameraActive && (
@@ -130,10 +144,10 @@ export function CentroScannerModal({ ticket, isOpen, onClose, onVerifyTicket }: 
                     <Camera className="w-10 h-10 text-emerald-400/80 animate-pulse mb-1" />
                   )}
                   <p className="text-xs text-zinc-300 font-mono">
-                    {cameraError ? "Sin acceso a cámara en vivo" : "Iniciando cámara del dispositivo..."}
+                    {cameraError ? "Sin acceso a cámara física" : "Iniciando visor del escáner..."}
                   </p>
                   <p className="text-[10px] text-zinc-500 font-mono mt-1">
-                    Token: {ticket.qrToken.slice(0, 16)}...
+                    QR Token: {ticket.qrToken}
                   </p>
                 </div>
               )}
@@ -142,8 +156,10 @@ export function CentroScannerModal({ ticket, isOpen, onClose, onVerifyTicket }: 
             {/* Ticket Information preview */}
             <div className="border border-zinc-200 bg-zinc-50 p-4 flex flex-col gap-3">
               <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
-                <span className="text-xs text-zinc-500">Ticket ID:</span>
-                <span className="text-xs font-mono font-medium text-zinc-900">#{ticket.id.slice(0, 8)}</span>
+                <span className="text-xs text-zinc-500">QR Token:</span>
+                <span className="text-xs font-mono font-bold text-zinc-900 bg-zinc-200 px-2 py-0.5">
+                  {ticket.qrToken}
+                </span>
               </div>
 
               <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
@@ -155,7 +171,7 @@ export function CentroScannerModal({ ticket, isOpen, onClose, onVerifyTicket }: 
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500">Puntos a otorgar al donante:</span>
+                <span className="text-xs text-zinc-500">Puntos a otortgar al donante:</span>
                 <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1 bg-emerald-100 px-2 py-0.5">
                   <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                   +{ticket.puntosOtorgados} Puntos ClossApp
@@ -166,7 +182,7 @@ export function CentroScannerModal({ ticket, isOpen, onClose, onVerifyTicket }: 
             {ticket.cantidadPrendas < 3 && (
               <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>Nota: Esta donación tiene menos de 3 prendas, por lo que no otorga puntos.</span>
+                <span>Nota: Esta donación tiene menos de 3 prendas (no genera puntos extra).</span>
               </div>
             )}
 
@@ -178,11 +194,11 @@ export function CentroScannerModal({ ticket, isOpen, onClose, onVerifyTicket }: 
               className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold tracking-wide flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 transition-colors"
             >
               {isVerifying ? (
-                <span>Validando QR en servidor...</span>
+                <span>Escribiendo registro en la base de datos...</span>
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
-                  Confirmar Recepción de Paquete y Entregar Puntos
+                  Validar QR e Insertar Registro en acopio_registros BD
                 </>
               )}
             </motion.button>
@@ -197,15 +213,30 @@ export function CentroScannerModal({ ticket, isOpen, onClose, onVerifyTicket }: 
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
-            <p className="font-serif text-xl text-zinc-900">¡Donación Verificada!</p>
+            <p className="font-serif text-xl text-zinc-900">¡Donación Verificada e Insertada!</p>
 
             <p className="text-xs text-zinc-600 max-w-xs leading-relaxed">
-              Has verificado la recepción de <strong>{ticket.cantidadPrendas} prendas</strong> en {ticket.puntoAcopioNombre}.
+              Se ha insertado exitosamente una nueva fila en la tabla <strong>acopio_registros</strong> para <strong>{ticket.cantidadPrendas} prendas</strong> en {ticket.puntoAcopioNombre}.
             </p>
 
-            <div className="bg-white border border-emerald-200 px-4 py-2.5 flex items-center gap-2 text-xs font-semibold text-emerald-800">
+            <div className="bg-white border border-emerald-300 px-4 py-2.5 flex items-center gap-2 text-xs font-semibold text-emerald-800 shadow-xs">
               <Sparkles className="w-4 h-4 text-emerald-600" />
-              <span>+{ticket.puntosOtorgados} Puntos acreditados al donante</span>
+              <span>+{ticket.puntosOtorgados} Puntos acreditados al usuario</span>
+            </div>
+
+            <div className="w-full text-left bg-white border border-zinc-200 p-3 mt-2">
+              <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-2">
+                <History className="w-3.5 h-3.5 text-emerald-600" />
+                Bitácora de Registros Recientes en BD
+              </div>
+              <div className="max-h-32 overflow-y-auto space-y-1.5 text-xs font-mono">
+                {acopioRegistros.slice(0, 3).map((r) => (
+                  <div key={r.id} className="p-1.5 bg-zinc-50 border border-zinc-100 flex justify-between items-center text-[11px]">
+                    <span className="truncate max-w-[140px]">{r.punto_acopio_nombre}</span>
+                    <span className="text-emerald-700 font-bold">+{r.puntos_otorgados} pts</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <button

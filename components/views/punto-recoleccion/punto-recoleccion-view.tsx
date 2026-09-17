@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useState, useEffect, useRef, useCallback } from "react"
+import { motion } from "framer-motion"
 import {
   Building2,
   MapPin,
@@ -15,25 +15,26 @@ import {
   TrendingUp,
   PackageCheck,
   Users,
-  Award,
   Calendar,
   Plus,
   Search,
-  Filter,
-  ArrowUpRight,
   ShieldCheck,
   Clock,
-  ChevronRight,
-  AlertCircle,
   Camera,
-  CameraOff
+  CameraOff,
+  RefreshCw
 } from "lucide-react"
 import { useAuthContext } from "@/context/auth-context"
 import { Input } from "@/components/ui/input"
 import { CenteredModal } from "@/components/shared/centered-modal"
-import type { DonacionTicket } from "@/types/donaciones"
+import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
+import {
+  fetchAcopioRegistros,
+  validarTicketQR,
+  registrarDonacionPresencial,
+} from "@/services/donaciones.service"
+import type { AcopioRegistroDB } from "@/types/donaciones"
 
-// Types for Collection Point Metrics
 interface CategoriaMeta {
   categoria: string
   meta: number
@@ -42,83 +43,23 @@ interface CategoriaMeta {
   prioridad: "alta" | "media" | "normal"
 }
 
-interface DonacionReciente {
-  id: string
-  donorName: string
-  donorEmail: string
-  prendasCount: number
-  puntos: number
-  status: "completado" | "pendiente"
-  timestamp: string
-  qrToken: string
-  prendasResumen: string
-}
-
 const METAS_CATEGORIAS_INICIALES: CategoriaMeta[] = [
-  { categoria: "Abrigos e Invierno", meta: 150, actual: 124, icono: "🧥", prioridad: "alta" },
-  { categoria: "Ropa Infantil y Bebé", meta: 120, actual: 110, icono: "👶", prioridad: "alta" },
-  { categoria: "Calzado y Zapatos", meta: 130, actual: 85, icono: "👟", prioridad: "media" },
-  { categoria: "Ropa Casual / Pantalones", meta: 100, actual: 72, icono: "👕", prioridad: "normal" },
+  { categoria: "Abrigos e Invierno", meta: 150, actual: 0, icono: "🧥", prioridad: "alta" },
+  { categoria: "Ropa Infantil y Bebé", meta: 120, actual: 0, icono: "👶", prioridad: "alta" },
+  { categoria: "Calzado y Zapatos", meta: 130, actual: 0, icono: "👟", prioridad: "media" },
+  { categoria: "Ropa Casual / Pantalones", meta: 100, actual: 0, icono: "👕", prioridad: "normal" },
 ]
-
-const DONACIONES_DEMO_INICIALES: DonacionReciente[] = [
-  {
-    id: "rec_101",
-    donorName: "Sofia Ramírez",
-    donorEmail: "sofia.r@gmail.com",
-    prendasCount: 4,
-    puntos: 120,
-    status: "completado",
-    timestamp: "Hace 20 min",
-    qrToken: "TKT-SR8829X",
-    prendasResumen: "2 abrigos, 1 chamarra, 1 bufanda",
-  },
-  {
-    id: "rec_102",
-    donorName: "Carlos Mendoza",
-    donorEmail: "carlos.m@hotmail.com",
-    prendasCount: 6,
-    puntos: 160,
-    status: "completado",
-    timestamp: "Hace 1 hora",
-    qrToken: "TKT-CM4410K",
-    prendasResumen: "3 camisetas, 2 jeans, 1 suéter",
-  },
-  {
-    id: "rec_103",
-    donorName: "Lucía Fernández",
-    donorEmail: "lucia.f@outlook.com",
-    prendasCount: 3,
-    puntos: 100,
-    status: "completado",
-    timestamp: "Hace 3 horas",
-    qrToken: "TKT-LF1092P",
-    prendasResumen: "3 vestidos infantiles",
-  },
-  {
-    id: "rec_104",
-    donorName: "Andrea Garza",
-    donorEmail: "andrea.g@gmail.com",
-    prendasCount: 5,
-    puntos: 140,
-    status: "completado",
-    timestamp: "Ayer, 16:45",
-    qrToken: "TKT-AG5531M",
-    prendasResumen: "2 par de tenis, 3 chamarras",
-  },
-]
-
-const STORAGE_PUNTO_METRICS_KEY = "clossapp_punto_recoleccion_metrics_v1"
 
 export function PuntoRecoleccionView() {
   const { userName, userEmail, logout } = useAuthContext()
+  const supabase = createBrowserSupabaseClient()
 
-  // Dynamic state for garments collected this month
-  const [targetMonthlyGoal, setTargetMonthlyGoal] = useState<number>(500)
-  const [garmentsCollectedMonth, setGarmentsCollectedMonth] = useState<number>(391)
-  const [ticketsValidatedCount, setTicketsValidatedCount] = useState<number>(46)
-  const [pointsDistributed, setPointsDistributed] = useState<number>(13280)
-  const [recentDonations, setRecentDonations] = useState<DonacionReciente[]>(DONACIONES_DEMO_INICIALES)
+  // Real DB state
+  const [acopioRegistros, setAcopioRegistros] = useState<AcopioRegistroDB[]>([])
+  const [loadingDB, setLoadingDB] = useState(true)
+
+  // Goal state
+  const targetMonthlyGoal = 500
   const [categoriasMetas, setCategoriasMetas] = useState<CategoriaMeta[]>(METAS_CATEGORIAS_INICIALES)
 
   // Modals state
@@ -127,13 +68,59 @@ export function PuntoRecoleccionView() {
   const [searchQuery, setSearchQuery] = useState("")
   const [manualTicketInput, setManualTicketInput] = useState("")
   const [scannerStatus, setScannerStatus] = useState<"idle" | "scanning" | "success" | "error">("idle")
-  const [verifiedPackage, setVerifiedPackage] = useState<{ name: string; count: number; points: number } | null>(null)
+  const [scannerErrorMsg, setScannerErrorMsg] = useState<string | null>(null)
+  const [verifiedPackage, setVerifiedPackage] = useState<{ name: string; count: number; points: number; prendasResumen?: string } | null>(null)
 
   // Camera video stream state & ref
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [cameraActive, setCameraActive] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
 
+  // Manual donation form state
+  const [donorNameInput, setDonorNameInput] = useState("")
+  const [donorPrendasCount, setDonorPrendasCount] = useState<number>(3)
+  const [donorCategoriaInput, setDonorCategoriaInput] = useState("Abrigos e Invierno")
+  const [manualSuccessMsg, setManualSuccessMsg] = useState(false)
+
+  // Fetch real database records from Supabase `acopio_registros`
+  const loadDBRecords = useCallback(async () => {
+    setLoadingDB(true)
+    try {
+      const data = await fetchAcopioRegistros(supabase)
+      setAcopioRegistros(data)
+
+      // Calculate category breakdown from real DB data
+      let abrigos = 0
+      let infantil = 0
+      let calzado = 0
+      let casual = 0
+
+      data.forEach((r) => {
+        const obs = (r.observaciones || "").toLowerCase()
+        if (obs.includes("abrigo") || obs.includes("invierno")) abrigos += r.cantidad_prendas
+        else if (obs.includes("infantil") || obs.includes("bebé") || obs.includes("niño")) infantil += r.cantidad_prendas
+        else if (obs.includes("calzado") || obs.includes("zapato")) calzado += r.cantidad_prendas
+        else casual += r.cantidad_prendas
+      })
+
+      setCategoriasMetas([
+        { categoria: "Abrigos e Invierno", meta: 150, actual: abrigos, icono: "🧥", prioridad: "alta" },
+        { categoria: "Ropa Infantil y Bebé", meta: 120, actual: infantil, icono: "👶", prioridad: "alta" },
+        { categoria: "Calzado y Zapatos", meta: 130, actual: calzado, icono: "👟", prioridad: "media" },
+        { categoria: "Ropa Casual / Pantalones", meta: 100, actual: casual, icono: "👕", prioridad: "normal" },
+      ])
+    } catch (err) {
+      console.error("Error loading acopio_registros:", err)
+    } finally {
+      setLoadingDB(false)
+    }
+  }, [supabase])
+
+  useEffect(() => {
+    loadDBRecords()
+  }, [loadDBRecords])
+
+  // Camera handling
   useEffect(() => {
     if (!isScannerOpen || scannerStatus === "success") {
       setCameraActive(false)
@@ -178,134 +165,90 @@ export function PuntoRecoleccionView() {
     }
   }, [isScannerOpen, scannerStatus])
 
-  // Manual donation form state
-  const [donorNameInput, setDonorNameInput] = useState("")
-  const [donorPrendasCount, setDonorPrendasCount] = useState<number>(3)
-  const [donorCategoriaInput, setDonorCategoriaInput] = useState("Abrigos e Invierno")
-  const [manualSuccessMsg, setManualSuccessMsg] = useState(false)
-
-  // Load metrics from storage if available
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_PUNTO_METRICS_KEY)
-      if (stored) {
-        const data = JSON.parse(stored)
-        if (data.garmentsCollectedMonth) setGarmentsCollectedMonth(data.garmentsCollectedMonth)
-        if (data.ticketsValidatedCount) setTicketsValidatedCount(data.ticketsValidatedCount)
-        if (data.pointsDistributed) setPointsDistributed(data.pointsDistributed)
-        if (data.recentDonations) setRecentDonations(data.recentDonations)
-      }
-    } catch {}
-  }, [])
-
-  // Save metrics helper
-  function saveMetrics(newGarmentsCount: number, newTicketsCount: number, newPoints: number, newDonations: DonacionReciente[]) {
-    setGarmentsCollectedMonth(newGarmentsCount)
-    setTicketsValidatedCount(newTicketsCount)
-    setPointsDistributed(newPoints)
-    setRecentDonations(newDonations)
-
-    try {
-      localStorage.setItem(
-        STORAGE_PUNTO_METRICS_KEY,
-        JSON.stringify({
-          garmentsCollectedMonth: newGarmentsCount,
-          ticketsValidatedCount: newTicketsCount,
-          pointsDistributed: newPoints,
-          recentDonations: newDonations,
-        })
-      )
-    } catch {}
-  }
-
-  // Handle QR scanning or manual ticket confirmation
-  function handleConfirmTicketValidation(token: string, count: number = 4, donor: string = "Donante Verificado") {
-    setScannerStatus("scanning")
-    setTimeout(() => {
-      const points = count >= 3 ? 100 + (count - 3) * 20 : 0
-      const newGarmentsTotal = garmentsCollectedMonth + count
-      const newTicketsTotal = ticketsValidatedCount + 1
-      const newPointsTotal = pointsDistributed + points
-
-      const newDonation: DonacionReciente = {
-        id: `rec_${Date.now()}`,
-        donorName: donor,
-        donorEmail: `${donor.toLowerCase().replace(/\s+/g, ".")}@gmail.com`,
-        prendasCount: count,
-        puntos: points,
-        status: "completado",
-        timestamp: "Ahora mismo",
-        qrToken: token || `TKT-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
-        prendasResumen: `${count} prendas clasificadas y verificadas`,
-      }
-
-      const updatedList = [newDonation, ...recentDonations]
-      saveMetrics(newGarmentsTotal, newTicketsTotal, newPointsTotal, updatedList)
-
-      // Also update category goals count
-      setCategoriasMetas((prev) =>
-        prev.map((c) =>
-          c.categoria === "Abrigos e Invierno"
-            ? { ...c, actual: c.actual + Math.ceil(count / 2) }
-            : c
-        )
-      )
-
-      setVerifiedPackage({ name: donor, count, points })
-      setScannerStatus("success")
-    }, 750)
-  }
-
-  // Handle direct walk-in donation registration
-  function handleRegisterWalkInDonation() {
-    if (donorPrendasCount <= 0) return
-
-    const points = donorPrendasCount >= 3 ? 100 + (donorPrendasCount - 3) * 20 : 0
-    const name = donorNameInput.trim() || "Donante Presencial"
-    const newGarmentsTotal = garmentsCollectedMonth + donorPrendasCount
-    const newTicketsTotal = ticketsValidatedCount + 1
-    const newPointsTotal = pointsDistributed + points
-
-    const newDonation: DonacionReciente = {
-      id: `rec_walkin_${Date.now()}`,
-      donorName: name,
-      donorEmail: "registro.presencial@acopio.org",
-      prendasCount: donorPrendasCount,
-      puntos: points,
-      status: "completado",
-      timestamp: "Ahora mismo (Presencial)",
-      qrToken: `PRES-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-      prendasResumen: `${donorPrendasCount} prendas - ${donorCategoriaInput}`,
-    }
-
-    const updatedList = [newDonation, ...recentDonations]
-    saveMetrics(newGarmentsTotal, newTicketsTotal, newPointsTotal, updatedList)
-
-    setCategoriasMetas((prev) =>
-      prev.map((c) =>
-        c.categoria === donorCategoriaInput
-          ? { ...c, actual: c.actual + donorPrendasCount }
-          : c
-      )
-    )
-
-    setManualSuccessMsg(true)
-    setTimeout(() => {
-      setManualSuccessMsg(false)
-      setIsManualModalOpen(false)
-      setDonorNameInput("")
-      setDonorPrendasCount(3)
-    }, 1200)
-  }
+  // Compute metrics dynamically from Supabase database rows
+  const garmentsCollectedMonth = acopioRegistros.reduce((sum, r) => sum + (r.cantidad_prendas || 0), 0)
+  const ticketsValidatedCount = acopioRegistros.length
+  const pointsDistributed = acopioRegistros.reduce((sum, r) => sum + (r.puntos_otorgados || 0), 0)
+  const familiasBeneficiadas = Math.ceil(garmentsCollectedMonth / 4)
 
   const percentGoal = Math.min(100, Math.round((garmentsCollectedMonth / targetMonthlyGoal) * 100))
   const remainingPrendas = Math.max(0, targetMonthlyGoal - garmentsCollectedMonth)
 
-  const filteredDonations = recentDonations.filter(
-    (d) =>
-      d.donorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.qrToken.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.prendasResumen.toLowerCase().includes(searchQuery.toLowerCase())
+  // Handle QR scanning or ticket verification automatically
+  async function handleConfirmTicketValidation(token: string) {
+    if (!token.trim()) return
+    setScannerStatus("scanning")
+    setScannerErrorMsg(null)
+
+    try {
+      const res = await validarTicketQR(
+        supabase,
+        token.trim(),
+        "norte",
+        userName || "Centro de Acopio Norte"
+      )
+
+      if (res.success) {
+        setVerifiedPackage({
+          name: res.donorName || "Donante ClossApp",
+          count: res.cantidadPrendas,
+          points: res.puntos,
+          prendasResumen: res.prendasResumen,
+        })
+
+        // Sincronizar en localStorage el saldo local de puntos para pruebas inmediatas
+        try {
+          const currentStr = localStorage.getItem("clossapp_user_puntos_v1")
+          const current = currentStr ? parseInt(currentStr, 10) : 150
+          localStorage.setItem("clossapp_user_puntos_v1", (current + res.puntos).toString())
+        } catch {}
+
+        setScannerStatus("success")
+        await loadDBRecords()
+      } else {
+        setScannerErrorMsg("Ticket no válido o ya procesado.")
+        setScannerStatus("error")
+      }
+    } catch (err) {
+      console.error("Verification error:", err)
+      setScannerErrorMsg(err instanceof Error ? err.message : "Error al validar el ticket.")
+      setScannerStatus("error")
+    }
+  }
+
+  // Handle direct walk-in donation registration
+  async function handleRegisterWalkInDonation() {
+    if (donorPrendasCount <= 0) return
+
+    const points = donorPrendasCount >= 3 ? 100 + (donorPrendasCount - 3) * 20 : 0
+    const name = donorNameInput.trim() || "Donante Presencial"
+
+    const created = await registrarDonacionPresencial(supabase, {
+      puntoAcopioId: "norte",
+      puntoAcopioNombre: userName || "Centro de Acopio Norte",
+      donorName: name,
+      cantidadPrendas: donorPrendasCount,
+      puntos: points,
+      categoria: donorCategoriaInput,
+    })
+
+    if (created) {
+      setManualSuccessMsg(true)
+      await loadDBRecords()
+      setTimeout(() => {
+        setManualSuccessMsg(false)
+        setIsManualModalOpen(false)
+        setDonorNameInput("")
+        setDonorPrendasCount(3)
+      }, 1200)
+    }
+  }
+
+  const filteredRegistros = acopioRegistros.filter(
+    (r) =>
+      (r.donor_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (r.punto_acopio_nombre || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (r.observaciones || "").toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   return (
@@ -335,6 +278,14 @@ export function PuntoRecoleccionView() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => loadDBRecords()}
+              className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition-colors"
+              title="Actualizar datos"
+            >
+              <RefreshCw className={`w-4 h-4 ${loadingDB ? "animate-spin text-emerald-400" : ""}`} />
+            </button>
+
             <div className="hidden sm:flex flex-col items-end text-xs text-zinc-300">
               <span className="font-medium text-white">{userEmail || "recoleccion@clossapp.com"}</span>
               <span className="text-[10px] text-zinc-400">Operador Autorizado</span>
@@ -354,7 +305,6 @@ export function PuntoRecoleccionView() {
 
       {/* Main Content Area */}
       <main className="max-w-6xl mx-auto px-4 pt-6 space-y-6">
-        
         {/* Banner: Operación de Donaciones e Identificación */}
         <div className="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-white p-5 border border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
           <div className="space-y-1">
@@ -375,6 +325,7 @@ export function PuntoRecoleccionView() {
               onClick={() => {
                 setScannerStatus("idle")
                 setVerifiedPackage(null)
+                setScannerErrorMsg(null)
                 setIsScannerOpen(true)
               }}
               className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm"
@@ -468,14 +419,18 @@ export function PuntoRecoleccionView() {
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {categoriasMetas.map((cat) => {
-                const pct = Math.min(100, Math.round((cat.actual / cat.meta) * 100))
+                const pct = cat.meta > 0 ? Math.min(100, Math.round((cat.actual / cat.meta) * 100)) : 0
                 return (
                   <div key={cat.categoria} className="border border-zinc-200 p-3.5 bg-white space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-lg">{cat.icono}</span>
-                      <span className={`text-[10px] font-mono px-2 py-0.5 uppercase font-medium ${
-                        cat.prioridad === "alta" ? "bg-red-50 text-red-700 border border-red-200" : "bg-zinc-100 text-zinc-600"
-                      }`}>
+                      <span
+                        className={`text-[10px] font-mono px-2 py-0.5 uppercase font-medium ${
+                          cat.prioridad === "alta"
+                            ? "bg-red-50 text-red-700 border border-red-200"
+                            : "bg-zinc-100 text-zinc-600"
+                        }`}
+                      >
                         {cat.prioridad === "alta" ? "Alta demanda" : "Normal"}
                       </span>
                     </div>
@@ -497,7 +452,7 @@ export function PuntoRecoleccionView() {
           </div>
         </section>
 
-        {/* SECTION 2: CUÁNTA ROPA LLEVAN DONADA EN EL MES (KPI CARDS & IMPACT) */}
+        {/* SECTION 2: MÉTRICAS DE RECOLECCIÓN DE ESTE MES */}
         <section className="space-y-3">
           <h3 className="font-serif text-lg font-semibold text-zinc-900 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-emerald-600" />
@@ -509,7 +464,7 @@ export function PuntoRecoleccionView() {
               <div className="flex items-center justify-between text-zinc-400">
                 <Shirt className="w-4 h-4 text-emerald-600" />
                 <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5">
-                  +18% vs mes ant.
+                  Registradas
                 </span>
               </div>
               <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">{garmentsCollectedMonth}</p>
@@ -539,7 +494,7 @@ export function PuntoRecoleccionView() {
                 <Users className="w-4 h-4 text-indigo-600" />
                 <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5">Comunidad</span>
               </div>
-              <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">128</p>
+              <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">{familiasBeneficiadas}</p>
               <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Familias beneficiadas</p>
             </div>
           </div>
@@ -563,21 +518,27 @@ export function PuntoRecoleccionView() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar donante o token QR..."
+                placeholder="Buscar por donante o detalle..."
                 className="pl-9 h-9 text-xs rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900"
               />
             </div>
           </div>
 
-          {filteredDonations.length === 0 ? (
+          {filteredRegistros.length === 0 ? (
             <div className="p-8 text-center border border-dashed border-zinc-200 text-zinc-400">
               <QrCode className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-xs">No se encontraron registros de donación.</p>
+              <p className="text-xs">No hay registros de donación aún.</p>
+              <p className="text-[11px] text-zinc-500 mt-1">
+                Usa el escáner o el botón de registro presencial para recibir prendas.
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-zinc-100 border border-zinc-200">
-              {filteredDonations.map((item) => (
-                <div key={item.id} className="p-4 hover:bg-zinc-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
+              {filteredRegistros.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-4 hover:bg-zinc-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white"
+                >
                   <div className="flex items-start gap-3">
                     <div className="w-9 h-9 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0 mt-0.5">
                       <ShieldCheck className="w-5 h-5" />
@@ -585,16 +546,22 @@ export function PuntoRecoleccionView() {
 
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-zinc-900">{item.donorName}</span>
+                        <span className="text-sm font-semibold text-zinc-900">{item.donor_name}</span>
                         <span className="text-[10px] font-mono text-zinc-400 bg-zinc-100 px-2 py-0.5 border border-zinc-200">
-                          {item.qrToken}
+                          {item.punto_acopio_nombre}
                         </span>
                       </div>
 
-                      <p className="text-xs text-zinc-600 mt-0.5">{item.prendasResumen}</p>
+                      <p className="text-xs text-zinc-600 mt-0.5">{item.observaciones || "Verificado"}</p>
                       <p className="text-[10px] text-zinc-400 font-mono mt-1 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {item.timestamp} · {item.donorEmail}
+                        {new Date(item.fecha_registro).toLocaleString("es-MX", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </p>
                     </div>
                   </div>
@@ -602,10 +569,10 @@ export function PuntoRecoleccionView() {
                   <div className="flex sm:flex-col items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-zinc-100">
                     <span className="text-xs font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-1 border border-emerald-200 font-mono flex items-center gap-1">
                       <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                      +{item.puntos} Puntos acreditados
+                      +{item.puntos_otorgados} Puntos acreditados
                     </span>
                     <span className="text-[11px] text-zinc-700 font-medium mt-1">
-                      {item.prendasCount} prendas verificadas
+                      {item.cantidad_prendas} prendas verificadas
                     </span>
                   </div>
                 </div>
@@ -613,10 +580,9 @@ export function PuntoRecoleccionView() {
             </div>
           )}
         </section>
-
       </main>
 
-      {/* MODAL 1: LIVE QR SCANNER SIMULATION FOR OPERATOR */}
+      {/* MODAL 1: LIVE QR SCANNER FOR OPERATOR */}
       <CenteredModal open={isScannerOpen} onClose={() => setIsScannerOpen(false)}>
         <div className="p-1 space-y-4 max-h-[85vh] overflow-y-auto">
           <div className="bg-zinc-900 text-white p-3 flex items-center justify-between">
@@ -650,8 +616,10 @@ export function PuntoRecoleccionView() {
 
                 {/* Status Badges */}
                 <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm px-2.5 py-1 text-[10px] font-mono text-emerald-400 border border-emerald-500/40">
-                  <span className={`w-2 h-2 rounded-full ${cameraActive ? "bg-emerald-400 animate-ping" : "bg-amber-400"}`} />
-                  <span>{cameraActive ? "CÁMARA EN VIVO ACTIVA" : "BUSCANDO DISPOSITIVO DE CÁMARA"}</span>
+                  <span
+                    className={`w-2 h-2 rounded-full ${cameraActive ? "bg-emerald-400 animate-ping" : "bg-amber-400"}`}
+                  />
+                  <span>{cameraActive ? "CÁMARA EN VIVO ACTIVA" : "VISOR DE ESCÁNER"}</span>
                 </div>
 
                 {!cameraActive && (
@@ -662,21 +630,25 @@ export function PuntoRecoleccionView() {
                       <Camera className="w-10 h-10 text-emerald-400/80 animate-pulse mb-1" />
                     )}
                     <p className="text-xs text-zinc-200 font-mono">
-                      {cameraError ? "Sin acceso a cámara física en vivo" : "Iniciando cámara del dispositivo..."}
+                      {cameraError ? "Sin acceso a cámara física" : "Iniciando visor del escáner..."}
                     </p>
                     <p className="text-[10px] text-zinc-400 font-mono max-w-xs mt-0.5">
-                      {cameraError
-                        ? `${cameraError} — puedes validar usando el código manual abajo`
-                        : "Apunte la cámara al código QR del donante para escanear"}
+                      Apunte la cámara al código QR del donante para registrar las prendas
                     </p>
                   </div>
                 )}
               </div>
 
-              {/* Manual Token input simulation */}
+              {scannerErrorMsg && (
+                <div className="p-3 bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+                  {scannerErrorMsg}
+                </div>
+              )}
+
+              {/* Token Input */}
               <div className="space-y-2 border-t border-zinc-200 pt-3">
                 <label className="text-[10px] text-zinc-500 uppercase font-mono tracking-wider font-semibold">
-                  O ingrese el código del ticket manualmente:
+                  Ingrese o pegue el código del ticket QR:
                 </label>
                 <div className="flex gap-2">
                   <Input
@@ -686,34 +658,14 @@ export function PuntoRecoleccionView() {
                     className="h-10 text-xs rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900 font-mono uppercase"
                   />
                   <button
+                    disabled={scannerStatus === "scanning"}
                     onClick={() => {
-                      const token = manualTicketInput.trim() || `TKT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
-                      handleConfirmTicketValidation(token, 4, "Donante Presencial")
+                      const token = manualTicketInput.trim()
+                      handleConfirmTicketValidation(token)
                     }}
-                    className="px-4 bg-zinc-900 text-white text-xs font-semibold shrink-0"
+                    className="px-4 bg-zinc-900 text-white text-xs font-semibold shrink-0 disabled:opacity-50"
                   >
-                    Validar
-                  </button>
-                </div>
-              </div>
-
-              {/* Simulation Quick Buttons */}
-              <div className="bg-zinc-50 border border-zinc-200 p-3 space-y-2">
-                <p className="text-[10px] text-zinc-500 uppercase font-mono">Simular escaneo de prueba rápido:</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => handleConfirmTicketValidation("TKT-SIM-4P", 4, "María Elena Ruiz")}
-                    className="p-2 border border-zinc-300 bg-white hover:border-zinc-900 text-left text-xs"
-                  >
-                    <p className="font-semibold text-zinc-900">4 prendas (120 pts)</p>
-                    <p className="text-[10px] text-zinc-500">María Elena Ruiz</p>
-                  </button>
-                  <button
-                    onClick={() => handleConfirmTicketValidation("TKT-SIM-6P", 6, "Roberto Sánchez")}
-                    className="p-2 border border-zinc-300 bg-white hover:border-zinc-900 text-left text-xs"
-                  >
-                    <p className="font-semibold text-zinc-900">6 prendas (160 pts)</p>
-                    <p className="text-[10px] text-zinc-500">Roberto Sánchez</p>
+                    {scannerStatus === "scanning" ? "Procesando..." : "Validar Ticket"}
                   </button>
                 </div>
               </div>
@@ -733,8 +685,13 @@ export function PuntoRecoleccionView() {
               </h4>
 
               <p className="text-xs text-zinc-600 max-w-xs leading-relaxed">
-                Se han verificado <strong>{verifiedPackage?.count} prendas</strong> entregadas por <strong>{verifiedPackage?.name}</strong>.
+                Donación de <strong>{verifiedPackage?.count} prendas</strong> entregadas por <strong>{verifiedPackage?.name}</strong>.
               </p>
+              {verifiedPackage?.prendasResumen && (
+                <p className="text-[11px] text-zinc-600 font-mono bg-white border border-emerald-200 px-3 py-1.5 text-center max-w-xs">
+                  📦 {verifiedPackage.prendasResumen}
+                </p>
+              )}
 
               <div className="bg-white border border-emerald-300 px-4 py-2 font-mono text-xs text-emerald-800 font-bold flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-emerald-600" />
@@ -769,7 +726,7 @@ export function PuntoRecoleccionView() {
           {!manualSuccessMsg ? (
             <div className="space-y-4">
               <p className="text-xs text-zinc-600">
-                Usa este formulario para registrar prendas entregadas por donantes que acuden directamente al punto de acopio sin haber generado ticket digital en la app.
+                Usa este formulario para registrar prendas entregadas directamente en el punto de acopio por un donante presencial.
               </p>
 
               <div className="space-y-3">
@@ -830,14 +787,14 @@ export function PuntoRecoleccionView() {
                 onClick={handleRegisterWalkInDonation}
                 className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold tracking-wide transition-colors"
               >
-                Confirmar e Ingresar a la Meta del Mes
+                Confirmar e Ingresar Donación
               </button>
             </div>
           ) : (
             <div className="py-6 text-center space-y-2 bg-emerald-50 border border-emerald-200 p-6">
               <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
               <p className="font-serif text-lg font-semibold text-zinc-900">¡Donación Presencial Registrada!</p>
-              <p className="text-xs text-zinc-600">Sumada exitosamente al contador mensual.</p>
+              <p className="text-xs text-zinc-600">Sumada exitosamente al historial de recolección.</p>
             </div>
           )}
         </div>

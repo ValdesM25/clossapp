@@ -317,7 +317,7 @@ export function PlanesView() {
       )}
 
       {/* Modal de confirmación de plan */}
-      <CenteredModal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Confirmar Membresía">
+      <CenteredModal open={modalOpen} onClose={() => setModalOpen(false)}>
         <div className="p-2 flex flex-col gap-4 text-center max-w-sm w-full">
           <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto text-zinc-900">
             <Sparkles className="w-6 h-6" />
@@ -348,7 +348,7 @@ export function PlanesView() {
       </CenteredModal>
 
       {/* Modal de Canje de Puntos */}
-      <CenteredModal isOpen={canjeModalOpen} onClose={() => setCanjeModalOpen(false)} title="Canjear Puntos ClossApp">
+      <CenteredModal open={canjeModalOpen} onClose={() => setCanjeModalOpen(false)}>
         <div className="p-1 flex flex-col gap-4 max-h-[75vh] overflow-y-auto">
           {!canjeExitoso ? (
             <>
