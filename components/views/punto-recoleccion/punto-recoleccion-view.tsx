@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion } from "framer-motion"
+import jsQR from "jsqr"
 import {
   Building2,
   MapPin,
@@ -22,7 +23,8 @@ import {
   Clock,
   Camera,
   CameraOff,
-  RefreshCw
+  RefreshCw,
+  Upload
 } from "lucide-react"
 import { useAuthContext } from "@/context/auth-context"
 import { Input } from "@/components/ui/input"
@@ -71,8 +73,10 @@ export function PuntoRecoleccionView() {
   const [scannerErrorMsg, setScannerErrorMsg] = useState<string | null>(null)
   const [verifiedPackage, setVerifiedPackage] = useState<{ name: string; count: number; points: number; prendasResumen?: string } | null>(null)
 
-  // Camera video stream state & ref
+  // Camera video stream state & refs
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [cameraActive, setCameraActive] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
 
@@ -165,6 +169,50 @@ export function PuntoRecoleccionView() {
     }
   }, [isScannerOpen, scannerStatus])
 
+  // Real-time jsQR detection loop from video stream
+  useEffect(() => {
+    if (!isScannerOpen || scannerStatus === "success" || scannerStatus === "scanning" || !cameraActive) {
+      return
+    }
+
+    let animationFrameId: number
+    let isScanning = true
+
+    const scanFrame = () => {
+      if (!isScanning) return
+      const video = videoRef.current
+      const canvas = canvasRef.current
+
+      if (video && canvas && video.readyState === video.HAVE_ENOUGH_DATA) {
+        const ctx = canvas.getContext("2d", { willReadFrequently: true })
+        if (ctx) {
+          canvas.width = video.videoWidth
+          canvas.height = video.videoHeight
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          })
+
+          if (code && code.data && code.data.trim().length > 0) {
+            isScanning = false
+            handleConfirmTicketValidation(code.data.trim())
+            return
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(scanFrame)
+    }
+
+    animationFrameId = requestAnimationFrame(scanFrame)
+
+    return () => {
+      isScanning = false
+      cancelAnimationFrame(animationFrameId)
+    }
+  }, [isScannerOpen, scannerStatus, cameraActive])
+
   // Compute metrics dynamically from Supabase database rows
   const garmentsCollectedMonth = acopioRegistros.reduce((sum, r) => sum + (r.cantidad_prendas || 0), 0)
   const ticketsValidatedCount = acopioRegistros.length
@@ -214,6 +262,36 @@ export function PuntoRecoleccionView() {
       setScannerErrorMsg(err instanceof Error ? err.message : "Error al validar el ticket.")
       setScannerStatus("error")
     }
+  }
+
+  // Handle image upload QR scan
+  function handleImageQRUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement("canvas")
+        const ctx = canvas.getContext("2d")
+        if (!ctx) return
+        canvas.width = img.width
+        canvas.height = img.height
+        ctx.drawImage(img, 0, 0)
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const code = jsQR(imageData.data, imageData.width, imageData.height)
+
+        if (code && code.data) {
+          handleConfirmTicketValidation(code.data)
+        } else {
+          setScannerErrorMsg("No se detectó un código QR válido en la imagen cargada.")
+          setScannerStatus("error")
+        }
+      }
+      img.src = event.target?.result as string
+    }
+    reader.readAsDataURL(file)
   }
 
   // Handle direct walk-in donation registration
@@ -415,7 +493,7 @@ export function PuntoRecoleccionView() {
           {/* Breakdown by Priority Categories */}
           <div>
             <h4 className="text-xs uppercase font-mono tracking-wider text-zinc-500 mb-3 font-semibold">
-              Metas por Categoria Prioritaria
+              Metas por Categoría Prioritaria
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {categoriasMetas.map((cat) => {
@@ -588,15 +666,15 @@ export function PuntoRecoleccionView() {
           <div className="bg-zinc-900 text-white p-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs">
               <Scan className="w-4 h-4 text-emerald-400" />
-              <span className="font-medium">Escáner Oficial de Punto de Recolección</span>
+              <span className="font-medium">Escáner de Donación</span>
             </div>
             <span className="text-[10px] font-mono text-zinc-400 uppercase">San Patricio</span>
           </div>
 
           {scannerStatus !== "success" ? (
             <div className="space-y-4">
-              {/* Live Camera Stream Viewfinder */}
-              <div className="relative h-56 bg-zinc-950 border-2 border-emerald-500/60 overflow-hidden flex flex-col items-center justify-center">
+              {/* Clean Camera Viewfinder with Centered Square Focus Frame */}
+              <div className="relative h-64 bg-zinc-950 overflow-hidden flex flex-col items-center justify-center border border-zinc-800">
                 <video
                   ref={videoRef}
                   playsInline
@@ -606,34 +684,29 @@ export function PuntoRecoleccionView() {
                     cameraActive ? "opacity-100" : "opacity-0"
                   }`}
                 />
+                <canvas ref={canvasRef} className="hidden" />
 
-                {/* Overlaid scanning laser animation */}
-                <motion.div
-                  animate={{ y: [-65, 65, -65] }}
-                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute w-full h-0.5 bg-emerald-400 shadow-[0_0_14px_#34d399] z-10 pointer-events-none"
-                />
-
-                {/* Status Badges */}
-                <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm px-2.5 py-1 text-[10px] font-mono text-emerald-400 border border-emerald-500/40">
-                  <span
-                    className={`w-2 h-2 rounded-full ${cameraActive ? "bg-emerald-400 animate-ping" : "bg-amber-400"}`}
-                  />
-                  <span>{cameraActive ? "CÁMARA EN VIVO ACTIVA" : "VISOR DE ESCÁNER"}</span>
+                {/* Centered Square Viewfinder Frame */}
+                <div className="relative w-48 h-48 sm:w-52 sm:h-52 border-2 border-emerald-400 rounded-lg z-10 flex items-center justify-center shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] pointer-events-none">
+                  {/* Corner Accents */}
+                  <div className="absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 border-emerald-400" />
+                  <div className="absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 border-emerald-400" />
+                  <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 border-emerald-400" />
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 border-emerald-400" />
                 </div>
 
                 {!cameraActive && (
-                  <div className="relative z-10 flex flex-col items-center justify-center p-4 text-center space-y-1 bg-black/40 backdrop-blur-xs w-full h-full">
+                  <div className="relative z-20 flex flex-col items-center justify-center p-4 text-center space-y-2 bg-black/60 w-full h-full">
                     {cameraError ? (
-                      <CameraOff className="w-10 h-10 text-amber-400 mb-1" />
+                      <CameraOff className="w-9 h-9 text-amber-400 mb-1" />
                     ) : (
-                      <Camera className="w-10 h-10 text-emerald-400/80 animate-pulse mb-1" />
+                      <Camera className="w-9 h-9 text-emerald-400/80 animate-pulse mb-1" />
                     )}
                     <p className="text-xs text-zinc-200 font-mono">
-                      {cameraError ? "Sin acceso a cámara física" : "Iniciando visor del escáner..."}
+                      {cameraError ? "Sin acceso a cámara" : "Iniciando cámara..."}
                     </p>
-                    <p className="text-[10px] text-zinc-400 font-mono max-w-xs mt-0.5">
-                      Apunte la cámara al código QR del donante para registrar las prendas
+                    <p className="text-[10px] text-zinc-400 font-mono max-w-xs">
+                      Enfoque el código QR en el recuadro central o ingrese el código manualmente abajo
                     </p>
                   </div>
                 )}
@@ -645,11 +718,29 @@ export function PuntoRecoleccionView() {
                 </div>
               )}
 
-              {/* Token Input */}
-              <div className="space-y-2 border-t border-zinc-200 pt-3">
-                <label className="text-[10px] text-zinc-500 uppercase font-mono tracking-wider font-semibold">
-                  Ingrese o pegue el código del ticket QR:
-                </label>
+              {/* Upload Image or Manual Token Input */}
+              <div className="space-y-3 border-t border-zinc-200 pt-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] text-zinc-500 uppercase font-mono tracking-wider font-semibold">
+                    Código del ticket QR:
+                  </label>
+
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-[11px] text-emerald-700 font-medium hover:underline flex items-center gap-1"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Subir imagen con QR</span>
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageQRUpload}
+                  />
+                </div>
+
                 <div className="flex gap-2">
                   <Input
                     value={manualTicketInput}
@@ -663,7 +754,7 @@ export function PuntoRecoleccionView() {
                       const token = manualTicketInput.trim()
                       handleConfirmTicketValidation(token)
                     }}
-                    className="px-4 bg-zinc-900 text-white text-xs font-semibold shrink-0 disabled:opacity-50"
+                    className="px-4 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold shrink-0 disabled:opacity-50"
                   >
                     {scannerStatus === "scanning" ? "Procesando..." : "Validar Ticket"}
                   </button>
