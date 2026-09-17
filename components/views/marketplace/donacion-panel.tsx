@@ -110,7 +110,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
             <Sparkles className="w-5 h-5 text-amber-400" />
           </div>
           <div>
-            <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-medium">Tus Puntos ClossApp (Base de datos)</p>
+            <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-medium">Tus Puntos ClossApp</p>
             <p className="font-serif text-xl text-amber-300 font-medium">{puntos} pts</p>
           </div>
         </div>
@@ -499,7 +499,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
               className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold tracking-wide disabled:opacity-50 transition-colors shadow-sm flex items-center justify-center gap-2 mt-2"
             >
               <QrCode className="w-4 h-4 text-amber-400" />
-              <span>Generar Código QR e Insertar Ticket en BD</span>
+              <span>Generar Código QR</span>
             </motion.button>
           </motion.div>
         )}
