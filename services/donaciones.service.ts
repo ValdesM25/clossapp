@@ -55,6 +55,8 @@ export async function fetchUserTickets(
       id: t.id,
       qrToken: t.qr_token,
       userId: t.user_id || "guest",
+      donorName: t.donor_name || "Donante ClossApp",
+      donorEmail: t.donor_email || "",
       puntoAcopioId: t.punto_acopio_id,
       puntoAcopioNombre: t.punto_acopio_nombre,
       status: t.status,
@@ -157,6 +159,8 @@ export async function createDonacionTicket(
 
     const payload = {
       user_id: validUserId,
+      donor_name: ticket.donorName || "Donante ClossApp",
+      donor_email: ticket.donorEmail || "",
       punto_acopio_id: ticket.puntoAcopioId,
       punto_acopio_nombre: ticket.puntoAcopioNombre,
       status: "pendiente",
@@ -202,20 +206,22 @@ export async function validarTicketQR(
   success: boolean
   puntos: number
   donorName: string
+  donorEmail?: string
   cantidadPrendas: number
+  prendas: any[]
   prendasResumen: string
   registroId?: string
 }> {
   try {
-    // Extraer token de QR si el input viene formateado como JSON
     let tokenToSearch = qrInput.trim()
     let ticketIdFromJSON: string | undefined
+    let parsedJSON: any = null
 
     if (qrInput.startsWith("{") && qrInput.endsWith("}")) {
       try {
-        const parsed = JSON.parse(qrInput)
-        if (parsed.qrToken) tokenToSearch = parsed.qrToken
-        if (parsed.ticketId) ticketIdFromJSON = parsed.ticketId
+        parsedJSON = JSON.parse(qrInput)
+        if (parsedJSON.qrToken) tokenToSearch = parsedJSON.qrToken
+        if (parsedJSON.ticketId) ticketIdFromJSON = parsedJSON.ticketId
       } catch {}
     }
 
@@ -230,11 +236,17 @@ export async function validarTicketQR(
     const { data: ticket, error: ticketErr } = await query.maybeSingle()
 
     if (ticketErr || !ticket) {
-      // Si no existe en la BD por ser un QR simulado de prueba local
-      const fallbackPuntos = 120
-      const fallbackDonor = "Donante Verificado"
-      const fallbackCount = 4
-      const fallbackResumen = "4 prendas recibidas y clasificadas"
+      // Si no existe aún en la BD por ser un QR generado de prueba o invitado
+      const fallbackDonor = parsedJSON?.donorName || "Donante Verificado"
+      const fallbackEmail = parsedJSON?.donorEmail || ""
+      const fallbackPrendas = Array.isArray(parsedJSON?.prendas) ? parsedJSON.prendas : []
+      const fallbackCount = parsedJSON?.cantidadPrendas || (fallbackPrendas.length > 0 ? fallbackPrendas.length : 3)
+      const fallbackPuntos = parsedJSON?.puntos || (fallbackCount >= 3 ? 100 + (fallbackCount - 3) * 20 : 50)
+      
+      const nombresList = fallbackPrendas
+        .map((p: any) => p.name || p.categoria || "Prenda")
+        .filter(Boolean)
+      const fallbackResumen = nombresList.length > 0 ? nombresList.join(", ") : `${fallbackCount} prendas entregadas`
       
       const cNombre = centroNombre || "Centro de Acopio Norte"
 
@@ -244,10 +256,11 @@ export async function validarTicketQR(
           punto_acopio_id: centroId,
           punto_acopio_nombre: cNombre,
           donor_name: fallbackDonor,
+          donor_email: fallbackEmail,
           cantidad_prendas: fallbackCount,
           puntos_otorgados: fallbackPuntos,
           fecha_registro: new Date().toISOString(),
-          observaciones: `Verificación QR (${tokenToSearch}) — ${fallbackResumen}`,
+          observaciones: `Verificación QR (${tokenToSearch}) — Donante: ${fallbackDonor} — ${fallbackResumen}`,
         })
         .select("id")
         .single()
@@ -256,21 +269,27 @@ export async function validarTicketQR(
         success: true,
         puntos: fallbackPuntos,
         donorName: fallbackDonor,
+        donorEmail: fallbackEmail,
         cantidadPrendas: fallbackCount,
+        prendas: fallbackPrendas,
         prendasResumen: fallbackResumen,
         registroId: regData?.id,
       }
     }
 
     const cNombre = centroNombre || ticket.punto_acopio_nombre || "Centro de Acopio Norte"
-    const donorName = ticket.donor_name || "Donante ClossApp"
-    const count = ticket.cantidad_prendas || 1
-    const puntos = ticket.puntos_otorgados || (count >= 3 ? 100 + (count - 3) * 20 : 50)
+    const donorName = ticket.donor_name || parsedJSON?.donorName || "Donante ClossApp"
+    const donorEmail = ticket.donor_email || parsedJSON?.donorEmail || ""
+    const prendas = Array.isArray(ticket.prendas_ids) && ticket.prendas_ids.length > 0 
+      ? ticket.prendas_ids 
+      : (Array.isArray(parsedJSON?.prendas) ? parsedJSON.prendas : [])
+    
+    const count = ticket.cantidad_prendas || parsedJSON?.cantidadPrendas || (prendas.length > 0 ? prendas.length : 1)
+    const puntos = ticket.puntos_otorgados || parsedJSON?.puntos || (count >= 3 ? 100 + (count - 3) * 20 : 50)
 
-    // Formatear resumen de prendas incluidas en el ticket
     let prendasResumen = `${count} prendas registradas`
-    if (Array.isArray(ticket.prendas_ids) && ticket.prendas_ids.length > 0) {
-      const nombresPrendas = ticket.prendas_ids
+    if (prendas.length > 0) {
+      const nombresPrendas = prendas
         .map((p: any) => (typeof p === "string" ? p : p.name || p.categoria || "Prenda"))
         .filter(Boolean)
       if (nombresPrendas.length > 0) {
@@ -278,7 +297,7 @@ export async function validarTicketQR(
       }
     }
 
-    // Si el ticket no estaba completado aún, actualizar estado
+    // Actualizar estado si estaba pendiente
     if (ticket.status !== "completado") {
       await supabase
         .from("donacion_tickets")
@@ -289,7 +308,7 @@ export async function validarTicketQR(
         })
         .eq("id", ticket.id)
 
-      // Insertar en la bitácora acopio_registros
+      // Insertar registro en bitácora acopio_registros
       const { data: regData } = await supabase
         .from("acopio_registros")
         .insert({
@@ -298,15 +317,16 @@ export async function validarTicketQR(
           punto_acopio_nombre: cNombre,
           donor_user_id: ticket.user_id,
           donor_name: donorName,
+          donor_email: donorEmail,
           cantidad_prendas: count,
           puntos_otorgados: puntos,
           fecha_registro: new Date().toISOString(),
-          observaciones: `Paquete entregado: ${prendasResumen}`,
+          observaciones: `Donación entregada por ${donorName}: ${prendasResumen}`,
         })
         .select("id")
         .single()
 
-      // Acreditar puntos al usuario en puntos_historial si tiene user_id registrado
+      // Acreditar puntos en puntos_historial si hay usuario registrado
       if (ticket.user_id && ticket.user_id !== "guest" && puntos > 0) {
         await supabase.from("puntos_historial").insert({
           user_id: ticket.user_id,
@@ -317,11 +337,27 @@ export async function validarTicketQR(
         })
       }
 
+      // Actualizar estado de las prendas en la BD si existen IDs
+      if (prendas.length > 0) {
+        const prendaIds = prendas.map((p: any) => typeof p === "string" ? p : p.id).filter(Boolean)
+        if (prendaIds.length > 0) {
+          await supabase
+            .from("prendas")
+            .update({
+              estado_uso: "Donada",
+              metadata: { donada: true, fecha_donacion: new Date().toISOString() }
+            })
+            .in("id", prendaIds)
+        }
+      }
+
       return {
         success: true,
         puntos,
         donorName,
+        donorEmail,
         cantidadPrendas: count,
+        prendas,
         prendasResumen,
         registroId: regData?.id,
       }
@@ -331,7 +367,9 @@ export async function validarTicketQR(
       success: true,
       puntos,
       donorName,
+      donorEmail,
       cantidadPrendas: count,
+      prendas,
       prendasResumen: `${prendasResumen} (Previamente verificado)`,
     }
   } catch (err) {

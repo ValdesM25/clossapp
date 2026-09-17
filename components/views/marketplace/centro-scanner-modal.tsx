@@ -156,6 +156,13 @@ export function CentroScannerModal({
             {/* Ticket Information preview */}
             <div className="border border-zinc-200 bg-zinc-50 p-4 flex flex-col gap-3">
               <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
+                <span className="text-xs text-zinc-500">Donante:</span>
+                <span className="text-xs font-semibold text-zinc-900">
+                  {ticket.donorName || "Donante ClossApp"} {ticket.donorEmail ? `(${ticket.donorEmail})` : ""}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
                 <span className="text-xs text-zinc-500">QR Token:</span>
                 <span className="text-xs font-mono font-bold text-zinc-900 bg-zinc-200 px-2 py-0.5">
                   {ticket.qrToken}
@@ -166,18 +173,47 @@ export function CentroScannerModal({
                 <span className="text-xs text-zinc-500">Prendas registradas:</span>
                 <span className="text-xs font-medium text-zinc-900 flex items-center gap-1">
                   <Shirt className="w-3.5 h-3.5 text-zinc-700" />
-                  {ticket.cantidadPrendas} prendas
+                  {ticket.cantidadPrendas} {ticket.cantidadPrendas === 1 ? "prenda" : "prendas"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500">Puntos a otortgar al donante:</span>
+                <span className="text-xs text-zinc-500">Puntos a otorgar al donante:</span>
                 <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1 bg-emerald-100 px-2 py-0.5">
                   <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                   +{ticket.puntosOtorgados} Puntos ClossApp
                 </span>
               </div>
             </div>
+
+            {/* List of prendas included for physical check */}
+            {ticket.prendas && ticket.prendas.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-700 font-semibold flex items-center gap-1">
+                  <Shirt className="w-3.5 h-3.5 text-emerald-600" />
+                  Inspección de prendas ({ticket.prendas.length}):
+                </p>
+                <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto p-1 bg-zinc-100 border border-zinc-200">
+                  {ticket.prendas.map((p: any, idx: number) => (
+                    <div key={p.id || idx} className="bg-white border border-zinc-200 p-2 flex items-center gap-2 text-left">
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.name} className="w-9 h-9 object-cover shrink-0 border border-zinc-200" />
+                      ) : (
+                        <div className="w-9 h-9 bg-zinc-200 flex items-center justify-center shrink-0">
+                          <Shirt className="w-4 h-4 text-zinc-400" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-zinc-900 truncate">{p.name || p.categoria || "Prenda"}</p>
+                        <p className="text-[10px] text-zinc-500 truncate">
+                          {p.category || "General"} {p.talla ? `· Talla ${p.talla}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {ticket.cantidadPrendas < 3 && (
               <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs">
@@ -216,7 +252,7 @@ export function CentroScannerModal({
             <p className="font-serif text-xl text-zinc-900">¡Donación Verificada e Insertada!</p>
 
             <p className="text-xs text-zinc-600 max-w-xs leading-relaxed">
-              Se ha insertado exitosamente una nueva fila en la tabla <strong>acopio_registros</strong> para <strong>{ticket.cantidadPrendas} prendas</strong> en {ticket.puntoAcopioNombre}.
+              Donante: <strong>{ticket.donorName || "Donante ClossApp"}</strong> · Entregó <strong>{ticket.cantidadPrendas} prendas</strong> en {ticket.puntoAcopioNombre}.
             </p>
 
             <div className="bg-white border border-emerald-300 px-4 py-2.5 flex items-center gap-2 text-xs font-semibold text-emerald-800 shadow-xs">

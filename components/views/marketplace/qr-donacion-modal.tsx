@@ -64,8 +64,18 @@ export function QRDonacionModal({ ticket, isOpen, onClose, onOpenScanner }: QRDo
                 ticketId: ticket.id,
                 qrToken: ticket.qrToken,
                 userId: ticket.userId,
+                donorName: ticket.donorName || "Donante ClossApp",
+                donorEmail: ticket.donorEmail || "",
                 cantidadPrendas: ticket.cantidadPrendas,
                 puntos: ticket.puntosOtorgados,
+                prendas: ticket.prendas.map((p) => ({
+                  id: p.id,
+                  name: p.name,
+                  category: p.category,
+                  image_url: p.image_url,
+                  talla: p.talla || null,
+                  estado_uso: p.estado_uso || null,
+                })),
               })}
               size={180}
               level="H"
@@ -83,6 +93,13 @@ export function QRDonacionModal({ ticket, isOpen, onClose, onOpenScanner }: QRDo
 
         {/* Ticket Metadata */}
         <div className="flex flex-col gap-3 text-xs text-zinc-600 bg-zinc-50 p-4 border border-zinc-200">
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
+            <span className="text-zinc-500">Donante:</span>
+            <span className="font-medium text-zinc-900">
+              {ticket.donorName || "Donante ClossApp"} {ticket.donorEmail ? `(${ticket.donorEmail})` : ""}
+            </span>
+          </div>
+
           <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
             <span className="text-zinc-500">Punto de acopio:</span>
             <span className="font-medium text-zinc-900 flex items-center gap-1">
