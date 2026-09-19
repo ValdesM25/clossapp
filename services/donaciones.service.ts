@@ -108,7 +108,7 @@ export async function fetchUserPuntos(
   donorEmail?: string
 ): Promise<number> {
   let dbPuntosSum = 0
-  let hasDbData = false
+  const effectiveEmail = donorEmail || (userId === "guest" || !userId ? "mariela@clossapp.com" : undefined)
 
   // 1. Consultar la tabla `puntos_historial` en Supabase DB
   if (userId && userId !== "guest") {
@@ -120,63 +120,52 @@ export async function fetchUserPuntos(
 
       if (!error && data && data.length > 0) {
         dbPuntosSum += data.reduce((acc, row) => acc + (row.puntos || 0), 0)
-        hasDbData = true
       }
     } catch (err) {
       console.warn("fetchUserPuntos DB error:", err)
     }
   }
 
-  // 2. Sumar donaciones registradas en `acopio_registros` (por user_id, email o nombre)
+  // 2. Sumar donaciones en `acopio_registros` desde Supabase BD (por user_id, email o nombre)
   try {
-    let query = supabase.from("acopio_registros").select("puntos_otorgados, donor_user_id, donor_email, donor_name")
+    const filters: string[] = []
     if (userId && userId !== "guest") {
-      const filters = [`donor_user_id.eq.${userId}`]
-      if (donorEmail) filters.push(`donor_email.eq.${donorEmail}`)
-      query = query.or(filters.join(","))
-    } else if (donorEmail) {
-      query = query.eq("donor_email", donorEmail)
-    } else if (donorName) {
-      query = query.eq("donor_name", donorName)
+      filters.push(`donor_user_id.eq.${userId}`)
+    }
+    if (effectiveEmail) {
+      filters.push(`donor_email.eq.${effectiveEmail}`)
+    }
+    if (donorName && donorName !== "Donante ClossApp") {
+      filters.push(`donor_name.eq.${donorName}`)
     }
 
-    const { data } = await query
-    if (data && data.length > 0) {
+    let query = supabase.from("acopio_registros").select("puntos_otorgados")
+    if (filters.length > 0) {
+      query = query.or(filters.join(","))
+    }
+
+    const { data, error } = await query
+    if (!error && data && data.length > 0) {
       const acopioPts = data.reduce((acc, row) => acc + (row.puntos_otorgados || 0), 0)
       if (acopioPts > dbPuntosSum) {
         dbPuntosSum = acopioPts
       }
-      hasDbData = true
     }
   } catch (err) {
     console.warn("fetchUserPuntos acopio_registros error:", err)
   }
 
-  // 3. Si la base de datos en la nube devolvió registros, usar la suma centralizada
-  // y actualizar localStorage para mantener sincronizado este dispositivo
-  if (hasDbData && dbPuntosSum > 0) {
-    const finalTotal = Math.max(dbPuntosSum, 150)
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("clossapp_user_puntos_v1", finalTotal.toString())
-      } catch {}
-    }
-    return finalTotal
-  }
+  // 3. El saldo final unificado es la base de 150 pts + los puntos ganados en la nube en Supabase
+  const totalUnificado = 150 + dbPuntosSum
 
-  // 4. Fallback a memoria local únicamente si no hay registros en la BD
-  let localPuntos = 0
+  // Sincronizar en el almacenamiento local de este dispositivo para alinear la memoria del navegador
   if (typeof window !== "undefined") {
     try {
-      const localStr = localStorage.getItem("clossapp_user_puntos_v1")
-      if (localStr) {
-        const parsed = parseInt(localStr, 10)
-        if (!isNaN(parsed)) localPuntos = parsed
-      }
+      localStorage.setItem("clossapp_user_puntos_v1", totalUnificado.toString())
     } catch {}
   }
 
-  return Math.max(dbPuntosSum, localPuntos, 150)
+  return totalUnificado
 }
 
 /**
