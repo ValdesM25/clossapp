@@ -107,9 +107,10 @@ export async function fetchUserPuntos(
   donorName?: string,
   donorEmail?: string
 ): Promise<number> {
-  let totalPuntos = 0
+  let dbPuntosSum = 0
+  let hasDbData = false
 
-  // 1. Intentar consultar la tabla `puntos_historial`
+  // 1. Consultar la tabla `puntos_historial` en Supabase DB
   if (userId && userId !== "guest") {
     try {
       const { data, error } = await supabase
@@ -118,18 +119,21 @@ export async function fetchUserPuntos(
         .eq("user_id", userId)
 
       if (!error && data && data.length > 0) {
-        totalPuntos += data.reduce((acc, row) => acc + (row.puntos || 0), 0)
+        dbPuntosSum += data.reduce((acc, row) => acc + (row.puntos || 0), 0)
+        hasDbData = true
       }
     } catch (err) {
       console.warn("fetchUserPuntos DB error:", err)
     }
   }
 
-  // 2. Sumar también donaciones registradas en `acopio_registros` para este donante
+  // 2. Sumar donaciones registradas en `acopio_registros` (por user_id, email o nombre)
   try {
     let query = supabase.from("acopio_registros").select("puntos_otorgados, donor_user_id, donor_email, donor_name")
     if (userId && userId !== "guest") {
-      query = query.or(`donor_user_id.eq.${userId}${donorEmail ? `,donor_email.eq.${donorEmail}` : ""}`)
+      const filters = [`donor_user_id.eq.${userId}`]
+      if (donorEmail) filters.push(`donor_email.eq.${donorEmail}`)
+      query = query.or(filters.join(","))
     } else if (donorEmail) {
       query = query.eq("donor_email", donorEmail)
     } else if (donorName) {
@@ -139,31 +143,40 @@ export async function fetchUserPuntos(
     const { data } = await query
     if (data && data.length > 0) {
       const acopioPts = data.reduce((acc, row) => acc + (row.puntos_otorgados || 0), 0)
-      if (acopioPts > totalPuntos) {
-        totalPuntos = acopioPts
+      if (acopioPts > dbPuntosSum) {
+        dbPuntosSum = acopioPts
       }
+      hasDbData = true
     }
   } catch (err) {
     console.warn("fetchUserPuntos acopio_registros error:", err)
   }
 
-  // 3. Sincronizar con localStorage en el navegador si existe saldo guardado
+  // 3. Si la base de datos en la nube devolvió registros, usar la suma centralizada
+  // y actualizar localStorage para mantener sincronizado este dispositivo
+  if (hasDbData && dbPuntosSum > 0) {
+    const finalTotal = Math.max(dbPuntosSum, 150)
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("clossapp_user_puntos_v1", finalTotal.toString())
+      } catch {}
+    }
+    return finalTotal
+  }
+
+  // 4. Fallback a memoria local únicamente si no hay registros en la BD
+  let localPuntos = 0
   if (typeof window !== "undefined") {
     try {
       const localStr = localStorage.getItem("clossapp_user_puntos_v1")
       if (localStr) {
-        const localPts = parseInt(localStr, 10)
-        if (!isNaN(localPts) && localPts > totalPuntos) {
-          totalPuntos = localPts
-        }
+        const parsed = parseInt(localStr, 10)
+        if (!isNaN(parsed)) localPuntos = parsed
       }
-      const finalTotal = Math.max(totalPuntos, 150)
-      localStorage.setItem("clossapp_user_puntos_v1", finalTotal.toString())
-      return finalTotal
     } catch {}
   }
 
-  return Math.max(totalPuntos, 150)
+  return Math.max(dbPuntosSum, localPuntos, 150)
 }
 
 /**
