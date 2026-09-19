@@ -356,31 +356,62 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
                 No tienes prendas disponibles en tu armario para donar.
               </p>
             ) : (
-              <div className="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto p-0.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 p-1">
                 {disponibles.map((p) => {
                   const isSelected = selectedIds.includes(p.id)
                   return (
                     <button
                       key={p.id}
+                      type="button"
                       onClick={() => togglePrenda(p.id)}
                       className={cn(
-                        "relative overflow-hidden border-2 text-left transition-all bg-white",
+                        "group relative overflow-hidden border-2 text-left transition-all bg-white rounded-md flex flex-col justify-between shadow-xs hover:shadow-md",
                         isSelected
-                          ? "border-zinc-900 ring-2 ring-zinc-900/10"
+                          ? "border-zinc-900 ring-2 ring-zinc-900/15 shadow-sm"
                           : "border-zinc-200 hover:border-zinc-400"
                       )}
                     >
-                      <div className="absolute top-1.5 right-1.5 z-10 bg-white/90 p-0.5 rounded-sm">
-                        {isSelected ? (
-                          <CheckSquare className="w-4 h-4 text-zinc-900 fill-zinc-900" />
-                        ) : (
-                          <Square className="w-4 h-4 text-zinc-400" />
-                        )}
+                      {/* Checkbox overlay badge at top right */}
+                      <div className="absolute top-2 right-2 z-10">
+                        <div
+                          className={cn(
+                            "w-6 h-6 rounded-full flex items-center justify-center transition-all shadow-sm",
+                            isSelected
+                              ? "bg-zinc-900 text-white scale-105"
+                              : "bg-white/85 backdrop-blur-xs text-zinc-400 border border-zinc-200 hover:bg-white"
+                          )}
+                        >
+                          {isSelected ? (
+                            <CheckSquare className="w-3.5 h-3.5 fill-zinc-900 text-white" />
+                          ) : (
+                            <Square className="w-3.5 h-3.5 opacity-40" />
+                          )}
+                        </div>
                       </div>
-                      <img src={p.image_url} alt={p.name} className="w-full h-24 object-cover" />
-                      <p className="text-[10px] text-zinc-700 font-medium truncate px-1.5 py-1">
-                        {p.name}
-                      </p>
+
+                      {/* Image container with 3:4 portrait aspect ratio for full clothing visibility */}
+                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-100">
+                        <img
+                          src={p.image_url}
+                          alt={p.name}
+                          className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
+
+                      {/* Card Footer: clean info without excessive blank space */}
+                      <div className="p-2.5 bg-white border-t border-zinc-100 flex flex-col justify-between gap-1 min-h-[52px]">
+                        <p className="text-xs font-semibold text-zinc-900 truncate leading-snug">
+                          {p.name}
+                        </p>
+                        <div className="flex items-center justify-between text-[10px] text-zinc-500 font-mono">
+                          <span className="truncate capitalize text-zinc-500">{p.category || "Prenda"}</span>
+                          {p.talla && (
+                            <span className="bg-zinc-100 text-zinc-700 px-1.5 py-0.5 font-sans font-medium text-[9px] rounded-xs shrink-0">
+                              Talla {p.talla}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </button>
                   )
                 })}

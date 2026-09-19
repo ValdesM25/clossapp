@@ -61,7 +61,8 @@ export function QRDonacionModal({ ticket, isOpen, onClose, onOpenScanner }: QRDo
           <div className="bg-white p-4 shadow-xl border-4 border-zinc-800 rounded-sm flex items-center justify-center">
             <QRCodeSVG
               value={JSON.stringify({
-                ticketId: ticket.id,
+                tkt: ticket.qrToken,
+                id: ticket.id,
                 qrToken: ticket.qrToken,
                 userId: ticket.userId,
                 donorName: ticket.donorName || "Donante ClossApp",
@@ -72,14 +73,12 @@ export function QRDonacionModal({ ticket, isOpen, onClose, onOpenScanner }: QRDo
                   id: p.id,
                   name: p.name,
                   category: p.category,
-                  image_url: p.image_url,
                   talla: p.talla || null,
-                  estado_uso: p.estado_uso || null,
                 })),
               })}
-              size={180}
-              level="H"
-              includeMargin={false}
+              size={200}
+              level="M"
+              includeMargin={true}
             />
           </div>
 
@@ -134,11 +133,13 @@ export function QRDonacionModal({ ticket, isOpen, onClose, onOpenScanner }: QRDo
         {ticket.prendas.length > 0 && (
           <div className="flex flex-col gap-2">
             <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Prendas incluidas en este ticket</p>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {ticket.prendas.map((p) => (
-                <div key={p.id} className="border border-zinc-200 overflow-hidden bg-white">
-                  <img src={p.image_url} alt={p.name} className="w-full h-14 object-cover" />
-                  <p className="text-[10px] text-zinc-700 truncate px-1 py-1 font-medium">{p.name}</p>
+                <div key={p.id} className="border border-zinc-200 overflow-hidden bg-white rounded-xs">
+                  <div className="aspect-[3/4] w-full overflow-hidden bg-zinc-100">
+                    <img src={p.image_url} alt={p.name} className="w-full h-full object-cover object-top" />
+                  </div>
+                  <p className="text-[10px] text-zinc-700 truncate px-1.5 py-1 font-medium">{p.name}</p>
                 </div>
               ))}
             </div>

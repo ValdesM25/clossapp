@@ -220,8 +220,11 @@ export async function validarTicketQR(
     if (qrInput.startsWith("{") && qrInput.endsWith("}")) {
       try {
         parsedJSON = JSON.parse(qrInput)
-        if (parsedJSON.qrToken) tokenToSearch = parsedJSON.qrToken
-        if (parsedJSON.ticketId) ticketIdFromJSON = parsedJSON.ticketId
+        if (parsedJSON.tkt) tokenToSearch = parsedJSON.tkt
+        else if (parsedJSON.qrToken) tokenToSearch = parsedJSON.qrToken
+
+        if (parsedJSON.id) ticketIdFromJSON = parsedJSON.id
+        else if (parsedJSON.ticketId) ticketIdFromJSON = parsedJSON.ticketId
       } catch {}
     }
 
@@ -237,11 +240,11 @@ export async function validarTicketQR(
 
     if (ticketErr || !ticket) {
       // Si no existe aún en la BD por ser un QR generado de prueba o invitado
-      const fallbackDonor = parsedJSON?.donorName || "Donante Verificado"
+      const fallbackDonor = parsedJSON?.donorName || parsedJSON?.name || "Donante Verificado"
       const fallbackEmail = parsedJSON?.donorEmail || ""
       const fallbackPrendas = Array.isArray(parsedJSON?.prendas) ? parsedJSON.prendas : []
-      const fallbackCount = parsedJSON?.cantidadPrendas || (fallbackPrendas.length > 0 ? fallbackPrendas.length : 3)
-      const fallbackPuntos = parsedJSON?.puntos || (fallbackCount >= 3 ? 100 + (fallbackCount - 3) * 20 : 50)
+      const fallbackCount = parsedJSON?.cantidadPrendas || parsedJSON?.cant || (fallbackPrendas.length > 0 ? fallbackPrendas.length : 3)
+      const fallbackPuntos = parsedJSON?.puntos || parsedJSON?.pts || (fallbackCount >= 3 ? 100 + (fallbackCount - 3) * 20 : 50)
       
       const nombresList = fallbackPrendas
         .map((p: any) => p.name || p.categoria || "Prenda")

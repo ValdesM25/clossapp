@@ -216,7 +216,7 @@ export function PuntoRecoleccionView() {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
           const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: "dontInvert",
+            inversionAttempts: "attemptBoth",
           })
 
           if (code && code.data && code.data.trim().length > 0) {
@@ -1013,7 +1013,7 @@ export function PuntoRecoleccionView() {
                             }`}
                           >
                             <div className="flex items-start gap-2 mb-1.5">
-                              <img src={p.image_url} alt={p.name} className="w-12 h-14 object-cover border border-zinc-200 shrink-0" />
+                              <img src={p.image_url} alt={p.name} className="w-12 aspect-[3/4] object-cover object-top border border-zinc-200 shrink-0 rounded-xs" />
                               <div className="min-w-0 flex-1">
                                 <span className="text-[9px] font-mono uppercase bg-amber-50 text-amber-800 border border-amber-200 px-1 py-0.5 font-bold inline-block mb-1">
                                   🔥 {p.usos || 0} usos
@@ -1058,7 +1058,7 @@ export function PuntoRecoleccionView() {
                                       : "border-zinc-200 hover:border-zinc-400"
                                   }`}
                                 >
-                                  <img src={p.image_url} alt={p.name} className="w-10 h-12 object-cover border border-zinc-200 shrink-0" />
+                                  <img src={p.image_url} alt={p.name} className="w-10 aspect-[3/4] object-cover object-top border border-zinc-200 shrink-0 rounded-xs" />
                                   <div className="min-w-0 flex-1">
                                     <p className="text-xs font-semibold text-zinc-900 truncate">{p.name}</p>
                                     <p className="text-[10px] text-zinc-500 truncate">{p.category}</p>
