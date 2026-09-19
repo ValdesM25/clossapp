@@ -497,24 +497,12 @@ export function PuntoRecoleccionView() {
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                setConfirmMetricasSuccess(false)
-                setIsConfirmMetricasModalOpen(true)
-              }}
-              className="px-4 py-3 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm"
-            >
-              <PieChart className="w-4 h-4 text-zinc-950" />
-              <span>Confirmar Recepción y Métricas</span>
-            </motion.button>
-
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => {
                 setScannerStatus("idle")
                 setVerifiedPackage(null)
                 setScannerErrorMsg(null)
                 setIsScannerOpen(true)
               }}
-              className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm"
+              className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
             >
               <Scan className="w-4 h-4 text-zinc-950" />
               <span>Escanear QR</span>

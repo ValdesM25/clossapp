@@ -42,35 +42,60 @@ export async function fetchUserTickets(
   supabase: SupabaseClient,
   userId?: string
 ): Promise<DonacionTicket[]> {
+  let dbTickets: DonacionTicket[] = []
   try {
     let query = supabase.from("donacion_tickets").select("*").order("created_at", { ascending: false })
     if (userId && userId !== "guest") {
       query = query.eq("user_id", userId)
     }
 
-    const { data, error } = await query
-    if (error || !data) return []
-
-    return data.map((t) => ({
-      id: t.id,
-      qrToken: t.qr_token,
-      userId: t.user_id || "guest",
-      donorName: t.donor_name || "Donante ClossApp",
-      donorEmail: t.donor_email || "",
-      puntoAcopioId: t.punto_acopio_id,
-      puntoAcopioNombre: t.punto_acopio_nombre,
-      status: t.status,
-      prendas: Array.isArray(t.prendas_ids) ? t.prendas_ids : [],
-      cantidadPrendas: t.cantidad_prendas,
-      puntosOtorgados: t.puntos_otorgados || 0,
-      createdAt: t.created_at,
-      validatedAt: t.validated_at,
-      validatedBy: t.validated_by,
-    }))
+    const { data } = await query
+    if (data) {
+      dbTickets = data.map((t) => ({
+        id: t.id,
+        qrToken: t.qr_token,
+        userId: t.user_id || "guest",
+        donorName: t.donor_name || "Donante ClossApp",
+        donorEmail: t.donor_email || "",
+        puntoAcopioId: t.punto_acopio_id,
+        puntoAcopioNombre: t.punto_acopio_nombre,
+        status: t.status,
+        prendas: Array.isArray(t.prendas_ids) ? t.prendas_ids : [],
+        cantidadPrendas: t.cantidad_prendas,
+        puntosOtorgados: t.puntos_otorgados || 0,
+        createdAt: t.created_at,
+        validatedAt: t.validated_at,
+        validatedBy: t.validated_by,
+      }))
+    }
   } catch (err) {
     console.error("fetchUserTickets error:", err)
-    return []
   }
+
+  // Combinar con tickets guardados localmente en localStorage
+  let localTickets: DonacionTicket[] = []
+  if (typeof window !== "undefined") {
+    try {
+      const localStr = localStorage.getItem("clossapp_local_tickets_v1")
+      if (localStr) {
+        localTickets = JSON.parse(localStr)
+      }
+    } catch {}
+  }
+
+  // Fusionar tickets evitando duplicados (priorizando estado "completado")
+  const map = new Map<string, DonacionTicket>()
+  localTickets.forEach((t) => map.set(t.qrToken || t.id, t))
+  dbTickets.forEach((t) => {
+    const existing = map.get(t.qrToken || t.id)
+    if (!existing || t.status === "completado") {
+      map.set(t.qrToken || t.id, t)
+    }
+  })
+
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+  )
 }
 
 /**
@@ -197,6 +222,10 @@ export async function createDonacionTicket(
     createdAt: new Date().toISOString(),
   }
 
+  const finalTicket: DonacionTicket = {
+    ...fallbackTicket,
+  }
+
   try {
     const validUserId =
       ticket.userId && ticket.userId !== "guest" && ticket.userId.includes("-")
@@ -223,12 +252,9 @@ export async function createDonacionTicket(
       .single()
 
     if (!error && data) {
-      return {
-        ...fallbackTicket,
-        id: data.id,
-        qrToken: data.qr_token,
-        createdAt: data.created_at,
-      }
+      finalTicket.id = data.id
+      finalTicket.qrToken = data.qr_token
+      finalTicket.createdAt = data.created_at
     } else if (error) {
       console.warn("createDonacionTicket DB notice (using generated local ticket):", error.message || error)
     }
@@ -236,7 +262,19 @@ export async function createDonacionTicket(
     console.warn("createDonacionTicket error (using generated local ticket):", err)
   }
 
-  return fallbackTicket
+  // Guardar siempre en localStorage para persistencia y disponibilidad local
+  if (typeof window !== "undefined") {
+    try {
+      const localStr = localStorage.getItem("clossapp_local_tickets_v1")
+      const list: DonacionTicket[] = localStr ? JSON.parse(localStr) : []
+      // Reemplazar si ya existe por QR token o agregar al inicio
+      const filtered = list.filter((t) => t.qrToken !== finalTicket.qrToken && t.id !== finalTicket.id)
+      filtered.unshift(finalTicket)
+      localStorage.setItem("clossapp_local_tickets_v1", JSON.stringify(filtered))
+    } catch {}
+  }
+
+  return finalTicket
 }
 
 /**
@@ -314,13 +352,32 @@ export async function validarTicketQR(
         .select("id")
         .single()
 
-      // Sincronizar en localStorage y notificar a la app de la actualización de puntos
+      // Sincronizar en localStorage (puntos, tickets completados y acopio registros)
       if (typeof window !== "undefined") {
         try {
           const currentStr = localStorage.getItem("clossapp_user_puntos_v1")
           const current = currentStr ? parseInt(currentStr, 10) : 150
           const newTotal = current + fallbackPuntos
           localStorage.setItem("clossapp_user_puntos_v1", newTotal.toString())
+
+          // Registrar acopio local
+          const localRegsStr = localStorage.getItem("clossapp_local_acopio_registros_v1")
+          const localRegs: AcopioRegistroDB[] = localRegsStr ? JSON.parse(localRegsStr) : []
+          localRegs.unshift({
+            id: regData?.id || `rec_${Date.now()}`,
+            ticket_id: ticketIdFromJSON || null,
+            punto_acopio_id: centroId,
+            punto_acopio_nombre: cNombre,
+            donor_user_id: "guest",
+            donor_name: fallbackDonor,
+            donor_email: fallbackEmail,
+            cantidad_prendas: fallbackCount,
+            puntos_otorgados: fallbackPuntos,
+            fecha_registro: new Date().toISOString(),
+            observaciones: `Verificación QR (${tokenToSearch}) — Donante: ${fallbackDonor} — ${fallbackResumen}`,
+          })
+          localStorage.setItem("clossapp_local_acopio_registros_v1", JSON.stringify(localRegs))
+
           window.dispatchEvent(new CustomEvent("clossapp_puntos_updated", { detail: { puntos: newTotal } }))
           window.dispatchEvent(new Event("storage"))
         } catch {}
@@ -359,6 +416,7 @@ export async function validarTicketQR(
     }
 
     // Actualizar estado si estaba pendiente
+    let regIdInserted: string | undefined = undefined
     if (ticket.status !== "completado") {
       await supabase
         .from("donacion_tickets")
@@ -387,6 +445,8 @@ export async function validarTicketQR(
         .select("id")
         .single()
 
+      if (regData?.id) regIdInserted = regData.id
+
       // Acreditar puntos en puntos_historial si hay usuario registrado
       if (ticket.user_id && ticket.user_id !== "guest" && puntos > 0) {
         await supabase.from("puntos_historial").insert({
@@ -411,29 +471,51 @@ export async function validarTicketQR(
             .in("id", prendaIds)
         }
       }
+    }
 
-      // Sincronizar en localStorage y notificar a la app de la actualización de puntos
-      if (typeof window !== "undefined") {
-        try {
-          const currentStr = localStorage.getItem("clossapp_user_puntos_v1")
-          const current = currentStr ? parseInt(currentStr, 10) : 150
-          const newTotal = current + puntos
-          localStorage.setItem("clossapp_user_puntos_v1", newTotal.toString())
-          window.dispatchEvent(new CustomEvent("clossapp_puntos_updated", { detail: { puntos: newTotal } }))
-          window.dispatchEvent(new Event("storage"))
-        } catch {}
-      }
+    // Sincronizar en localStorage (puntos, actualizar ticket a "completado" y registrar acopio)
+    if (typeof window !== "undefined") {
+      try {
+        const currentStr = localStorage.getItem("clossapp_user_puntos_v1")
+        const current = currentStr ? parseInt(currentStr, 10) : 150
+        const newTotal = current + puntos
+        localStorage.setItem("clossapp_user_puntos_v1", newTotal.toString())
 
-      return {
-        success: true,
-        puntos,
-        donorName,
-        donorEmail,
-        cantidadPrendas: count,
-        prendas,
-        prendasResumen,
-        registroId: regData?.id,
-      }
+        // Actualizar ticket local
+        const localTktsStr = localStorage.getItem("clossapp_local_tickets_v1")
+        if (localTktsStr) {
+          const localTkts: DonacionTicket[] = JSON.parse(localTktsStr)
+          const updated = localTkts.map((t) => {
+            if (t.qrToken === tokenToSearch || t.id === ticket.id) {
+              return { ...t, status: "completado", validatedAt: new Date().toISOString() }
+            }
+            return t
+          })
+          localStorage.setItem("clossapp_local_tickets_v1", JSON.stringify(updated))
+        }
+
+        // Registrar acopio local
+        const localRegsStr = localStorage.getItem("clossapp_local_acopio_registros_v1")
+        const localRegs: AcopioRegistroDB[] = localRegsStr ? JSON.parse(localRegsStr) : []
+        const newReg: AcopioRegistroDB = {
+          id: regIdInserted || `rec_${Date.now()}`,
+          ticket_id: ticket.id,
+          punto_acopio_id: centroId,
+          punto_acopio_nombre: cNombre,
+          donor_user_id: ticket.user_id,
+          donor_name: donorName,
+          donor_email: donorEmail,
+          cantidad_prendas: count,
+          puntos_otorgados: puntos,
+          fecha_registro: new Date().toISOString(),
+          observaciones: `Donación entregada por ${donorName}: ${prendasResumen}`,
+        }
+        localRegs.unshift(newReg)
+        localStorage.setItem("clossapp_local_acopio_registros_v1", JSON.stringify(localRegs))
+
+        window.dispatchEvent(new CustomEvent("clossapp_puntos_updated", { detail: { puntos: newTotal } }))
+        window.dispatchEvent(new Event("storage"))
+      } catch {}
     }
 
     return {
@@ -443,7 +525,8 @@ export async function validarTicketQR(
       donorEmail,
       cantidadPrendas: count,
       prendas,
-      prendasResumen: `${prendasResumen} (Previamente verificado)`,
+      prendasResumen,
+      registroId: regIdInserted,
     }
   } catch (err) {
     console.error("validarTicketQR error:", err)
@@ -452,23 +535,41 @@ export async function validarTicketQR(
 }
 
 /**
- * Obtiene la bitácora completa de registros guardados en la tabla `acopio_registros`.
+ * Obtiene la bitácora completa de registros guardados en la tabla `acopio_registros` combinada con los locales.
  */
 export async function fetchAcopioRegistros(
   supabase: SupabaseClient
 ): Promise<AcopioRegistroDB[]> {
+  let dbRegs: AcopioRegistroDB[] = []
   try {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("acopio_registros")
       .select("*")
       .order("fecha_registro", { ascending: false })
 
-    if (error || !data) return []
-    return data
+    if (data) dbRegs = data
   } catch (err) {
-    console.error("fetchAcopioRegistros error:", err)
-    return []
+    console.error("fetchAcopioRegistros DB error:", err)
   }
+
+  let localRegs: AcopioRegistroDB[] = []
+  if (typeof window !== "undefined") {
+    try {
+      const localStr = localStorage.getItem("clossapp_local_acopio_registros_v1")
+      if (localStr) {
+        localRegs = JSON.parse(localStr)
+      }
+    } catch {}
+  }
+
+  // Fusionar evitando duplicados por id
+  const map = new Map<string, AcopioRegistroDB>()
+  localRegs.forEach((r) => map.set(r.id, r))
+  dbRegs.forEach((r) => map.set(r.id, r))
+
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(b.fecha_registro).getTime() - new Date(a.fecha_registro).getTime()
+  )
 }
 
 /**
