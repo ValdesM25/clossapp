@@ -10,6 +10,7 @@ type PrendasContextValue = {
   loading: boolean
   refresh: () => Promise<void>
   addPrenda: (payload: Parameters<typeof import("@/services/prendas.service").insertPrenda>[1]) => Promise<void>
+  deletePrenda: (prendaId: string) => Promise<void>
 }
 
 const PrendasContext = createContext<PrendasContextValue | null>(null)
@@ -25,9 +26,9 @@ export function PrendasProvider({ children }: { children: ReactNode }) {
 }
 
 function PrendasProviderInner({ userId, isGuest, children }: { userId: string; isGuest: boolean; children: ReactNode }) {
-  const { prendas, loading, refresh, addPrenda } = usePrendas(userId, isGuest)
+  const { prendas, loading, refresh, addPrenda, deletePrenda } = usePrendas(userId, isGuest)
   return (
-    <PrendasContext.Provider value={{ prendas, loading, refresh, addPrenda }}>
+    <PrendasContext.Provider value={{ prendas, loading, refresh, addPrenda, deletePrenda }}>
       {children}
     </PrendasContext.Provider>
   )

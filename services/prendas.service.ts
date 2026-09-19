@@ -32,3 +32,12 @@ export async function insertPrenda(
   const { error } = await supabase.from("prendas").insert(payload)
   if (error) throw error
 }
+
+export async function deletePrenda(
+  supabase: SupabaseClient,
+  prendaId: string
+): Promise<void> {
+  const { error } = await supabase.from("prendas").delete().eq("id", prendaId)
+  if (error) throw error
+}
+

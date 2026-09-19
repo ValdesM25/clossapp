@@ -20,8 +20,16 @@ export function InicioView({ onNavigate }: InicioViewProps) {
   const { prendas } = usePrendasContext()
   const [wornToday, setWornToday] = useState(false)
 
-  // Usar prendas del contexto o las prendas de prueba
-  const userPrendas: Prenda[] = prendas.length > 0 ? prendas : GUEST_PRENDAS
+  // Usar prendas del contexto o las prendas de prueba (filtrando duplicados por nombre)
+  const rawPrendas = prendas.length > 0 ? prendas : GUEST_PRENDAS
+  const seenNames = new Set<string>()
+  const userPrendas: Prenda[] = rawPrendas.filter((p) => {
+    const key = (p.name || "").trim().toLowerCase()
+    if (!key) return true
+    if (seenNames.has(key)) return false
+    seenNames.add(key)
+    return true
+  })
 
   // 1. Outfit recomendado del día
   const dailyOutfitPrendas = userPrendas.slice(0, 3)
