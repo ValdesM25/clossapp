@@ -24,7 +24,11 @@ import {
   Camera,
   CameraOff,
   RefreshCw,
-  Upload
+  Upload,
+  PieChart,
+  Scale,
+  Leaf,
+  Check
 } from "lucide-react"
 import { useAuthContext } from "@/context/auth-context"
 import { Input } from "@/components/ui/input"
@@ -70,6 +74,17 @@ export function PuntoRecoleccionView() {
   // Modals state
   const [isScannerOpen, setIsScannerOpen] = useState(false)
   const [isManualModalOpen, setIsManualModalOpen] = useState(false)
+  const [isConfirmMetricasModalOpen, setIsConfirmMetricasModalOpen] = useState(false)
+
+  // Desglose y confirmación de métricas state
+  const [confirmDonorName, setConfirmDonorName] = useState("Mariela Morales")
+  const [confirmAbrigosCount, setConfirmAbrigosCount] = useState<number>(2)
+  const [confirmInfantilCount, setConfirmInfantilCount] = useState<number>(1)
+  const [confirmCalzadoCount, setConfirmCalzadoCount] = useState<number>(1)
+  const [confirmCasualCount, setConfirmCasualCount] = useState<number>(1)
+  const [confirmReusoPct, setConfirmReusoPct] = useState<number>(85)
+  const [confirmMetricasSuccess, setConfirmMetricasSuccess] = useState(false)
+
   const [searchQuery, setSearchQuery] = useState("")
   const [manualTicketInput, setManualTicketInput] = useState("")
   const [scannerStatus, setScannerStatus] = useState<"idle" | "scanning" | "success" | "error">("idle")
@@ -360,6 +375,49 @@ export function PuntoRecoleccionView() {
     }
   }
 
+  // Handle donation receipt confirmation & metrics breakdown
+  async function handleConfirmarYDividirMetricas() {
+    const totalCount = confirmAbrigosCount + confirmInfantilCount + confirmCalzadoCount + confirmCasualCount
+    if (totalCount <= 0) return
+
+    const points = totalCount >= 3 ? 100 + (totalCount - 3) * 20 : 50
+    const kgTextil = (totalCount * 0.45).toFixed(1)
+    const co2Evitado = (totalCount * 0.45 * 12.5).toFixed(1)
+    const reusoCount = Math.round(totalCount * (confirmReusoPct / 100))
+    const reciclajeCount = totalCount - reusoCount
+
+    const obsDetails = `Recepción Confirmada y Clasificada — Donante: ${confirmDonorName} — ${totalCount} prendas [Desglose: ${confirmAbrigosCount} Abrigos, ${confirmInfantilCount} Infantil, ${confirmCalzadoCount} Calzado, ${confirmCasualCount} Casual | ${confirmReusoPct}% Reuso (${reusoCount} p.), ${100 - confirmReusoPct}% Reciclaje (${reciclajeCount} p.) | ${kgTextil} kg textil, ${co2Evitado} kg CO2 evitado]`
+
+    const created = await registrarDonacionPresencial(supabase, {
+      puntoAcopioId: "norte",
+      puntoAcopioNombre: userName || "Centro de Acopio Norte",
+      donorName: confirmDonorName,
+      cantidadPrendas: totalCount,
+      puntos: points,
+      categoria: obsDetails,
+    })
+
+    if (created) {
+      if (typeof window !== "undefined") {
+        try {
+          const currentStr = localStorage.getItem("clossapp_user_puntos_v1")
+          const current = currentStr ? parseInt(currentStr, 10) : 150
+          const newTotal = current + points
+          localStorage.setItem("clossapp_user_puntos_v1", newTotal.toString())
+          window.dispatchEvent(new CustomEvent("clossapp_puntos_updated", { detail: { puntos: newTotal } }))
+          window.dispatchEvent(new Event("storage"))
+        } catch {}
+      }
+
+      setConfirmMetricasSuccess(true)
+      await loadDBRecords()
+      setTimeout(() => {
+        setConfirmMetricasSuccess(false)
+        setIsConfirmMetricasModalOpen(false)
+      }, 1500)
+    }
+  }
+
   const filteredRegistros = acopioRegistros.filter(
     (r) =>
       (r.donor_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -435,7 +493,19 @@ export function PuntoRecoleccionView() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2.5 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-2.5 shrink-0 flex-wrap">
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                setConfirmMetricasSuccess(false)
+                setIsConfirmMetricasModalOpen(true)
+              }}
+              className="px-4 py-3 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm"
+            >
+              <PieChart className="w-4 h-4 text-zinc-950" />
+              <span>Confirmar Recepción y Métricas</span>
+            </motion.button>
+
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => {
@@ -447,7 +517,7 @@ export function PuntoRecoleccionView() {
               className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm"
             >
               <Scan className="w-4 h-4 text-zinc-950" />
-              <span>Escanear QR de Donante</span>
+              <span>Escanear QR</span>
             </motion.button>
 
             <motion.button
@@ -456,7 +526,7 @@ export function PuntoRecoleccionView() {
               className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors"
             >
               <Plus className="w-4 h-4 text-amber-400" />
-              <span>Registrar Donación Presencial</span>
+              <span>Donación Presencial</span>
             </motion.button>
           </div>
         </div>
@@ -846,7 +916,7 @@ export function PuntoRecoleccionView() {
                       <Shirt className="w-3.5 h-3.5 text-emerald-600" />
                       Prendas verificadas en paquete ({verifiedPackage.prendas.length}):
                     </p>
-                    <span className="text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 font-medium">✓ Aceptadas</span>
+                    <span className="text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 font-medium">✓ Inspeccionadas</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 bg-zinc-100 border border-zinc-200">
@@ -871,20 +941,23 @@ export function PuntoRecoleccionView() {
                 </div>
               )}
 
-              <div className="w-full bg-emerald-100 border border-emerald-300 px-4 py-2.5 font-mono text-xs text-emerald-900 font-bold flex items-center justify-center gap-2">
-                <Sparkles className="w-4 h-4 text-emerald-600" />
-                <span>+{verifiedPackage?.points} Puntos ClossApp cargados a la cuenta</span>
-              </div>
-
-              <button
+              {/* Botón principal de recepción justo debajo de las fotos de la ropa */}
+              <motion.button
+                whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   setScannerStatus("idle")
                   setIsScannerOpen(false)
                 }}
-                className="mt-3 text-xs text-zinc-700 underline font-medium hover:text-zinc-900"
+                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold tracking-wide flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
               >
-                Cerrar Escáner
-              </button>
+                <CheckCircle2 className="w-4.5 h-4.5 text-white" />
+                <span>Recibir Ropa y Agregar {verifiedPackage?.points} Puntos a {verifiedPackage?.name}</span>
+              </motion.button>
+
+              <div className="w-full bg-emerald-100 border border-emerald-300 px-4 py-2 font-mono text-[11px] text-emerald-900 font-bold flex items-center justify-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                <span>+{verifiedPackage?.points} Puntos ClossApp abonados a {verifiedPackage?.name}</span>
+              </div>
             </motion.div>
           )}
         </div>
@@ -1131,6 +1204,171 @@ export function PuntoRecoleccionView() {
               <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
               <p className="font-serif text-lg font-semibold text-zinc-900">¡Donación Presencial Registrada!</p>
               <p className="text-xs text-zinc-600">Sumada exitosamente al historial de recolección.</p>
+            </div>
+          )}
+        </div>
+      </CenteredModal>
+      {/* MODAL 3: CONFIRMAR RECEPCIÓN Y DIVIDIR EN MÉTRICAS DEL CENTRO */}
+      <CenteredModal open={isConfirmMetricasModalOpen} onClose={() => setIsConfirmMetricasModalOpen(false)}>
+        <div className="flex flex-col gap-4 p-1 max-h-[85vh] overflow-y-auto">
+          {/* Header Banner */}
+          <div className="bg-zinc-900 text-white p-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs">
+              <PieChart className="w-4 h-4 text-amber-400" />
+              <span className="font-medium font-serif text-sm">Confirmar Recepción & Desglose en Métricas</span>
+            </div>
+            <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 bg-zinc-800 px-2.5 py-0.5 border border-amber-500/30 flex items-center gap-1">
+              <Scale className="w-3 h-3" /> Impacto Ecológico
+            </span>
+          </div>
+
+          {!confirmMetricasSuccess ? (
+            <div className="space-y-4">
+              <p className="text-xs text-zinc-600 leading-relaxed">
+                Ingresa el paquete o donación recibida para clasificarla automáticamente en las metas por categoría, kilogramos textiles y reducción de huella de carbono.
+              </p>
+
+              {/* Selector de donante */}
+              <div>
+                <label className="text-[10px] uppercase font-mono text-zinc-600 font-semibold">
+                  Nombre del Donante / Paquete
+                </label>
+                <Input
+                  type="text"
+                  value={confirmDonorName}
+                  onChange={(e) => setConfirmDonorName(e.target.value)}
+                  placeholder="Ej. Mariela Morales"
+                  className="mt-1 h-9 text-xs rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900"
+                />
+              </div>
+
+              {/* Desglose de prendas por categoría */}
+              <div className="space-y-2 border border-zinc-200 p-3 bg-zinc-50">
+                <p className="text-[11px] font-mono uppercase font-bold text-zinc-700 flex items-center gap-1">
+                  <Shirt className="w-3.5 h-3.5 text-emerald-600" />
+                  División de Prendas por Categorías del Centro:
+                </p>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-white p-2 border border-zinc-200">
+                    <span className="text-[10px] text-zinc-500 font-medium block">🧥 Abrigos e Invierno</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={confirmAbrigosCount}
+                      onChange={(e) => setConfirmAbrigosCount(parseInt(e.target.value, 10) || 0)}
+                      className="mt-1 h-8 text-xs rounded-none border-zinc-200"
+                    />
+                  </div>
+
+                  <div className="bg-white p-2 border border-zinc-200">
+                    <span className="text-[10px] text-zinc-500 font-medium block">👶 Ropa Infantil y Bebé</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={confirmInfantilCount}
+                      onChange={(e) => setConfirmInfantilCount(parseInt(e.target.value, 10) || 0)}
+                      className="mt-1 h-8 text-xs rounded-none border-zinc-200"
+                    />
+                  </div>
+
+                  <div className="bg-white p-2 border border-zinc-200">
+                    <span className="text-[10px] text-zinc-500 font-medium block">👟 Calzado y Zapatos</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={confirmCalzadoCount}
+                      onChange={(e) => setConfirmCalzadoCount(parseInt(e.target.value, 10) || 0)}
+                      className="mt-1 h-8 text-xs rounded-none border-zinc-200"
+                    />
+                  </div>
+
+                  <div className="bg-white p-2 border border-zinc-200">
+                    <span className="text-[10px] text-zinc-500 font-medium block">👕 Ropa Casual / Tops</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={confirmCasualCount}
+                      onChange={(e) => setConfirmCasualCount(parseInt(e.target.value, 10) || 0)}
+                      className="mt-1 h-8 text-xs rounded-none border-zinc-200"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Clasificación de Destino Ecológico (% Reuso vs % Reciclaje) */}
+              <div className="space-y-2 border border-zinc-200 p-3 bg-zinc-50">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className="flex items-center gap-1 text-zinc-800">
+                    <Leaf className="w-3.5 h-3.5 text-emerald-600" />
+                    Destino Ecológico:
+                  </span>
+                  <span className="font-mono text-emerald-700">{confirmReusoPct}% Reuso Directo</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-zinc-500 font-mono">Reuso</span>
+                  <input
+                    type="range"
+                    min={30}
+                    max={100}
+                    value={confirmReusoPct}
+                    onChange={(e) => setConfirmReusoPct(parseInt(e.target.value, 10) || 80)}
+                    className="w-full accent-emerald-600 cursor-pointer"
+                  />
+                  <span className="text-[10px] text-zinc-500 font-mono">Reciclaje</span>
+                </div>
+              </div>
+
+              {/* Métricas calculadas en tiempo real */}
+              {(() => {
+                const total = confirmAbrigosCount + confirmInfantilCount + confirmCalzadoCount + confirmCasualCount
+                const kg = (total * 0.45).toFixed(1)
+                const co2 = (total * 0.45 * 12.5).toFixed(1)
+                const pts = total >= 3 ? 100 + (total - 3) * 20 : 50
+                return (
+                  <div className="bg-emerald-950 text-emerald-100 p-3.5 border border-emerald-800 space-y-2">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-bold">
+                      Resumen de Métricas Generadas:
+                    </p>
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+                      <div className="bg-emerald-900/60 p-2 border border-emerald-800">
+                        <span className="block text-[10px] text-emerald-300">Total Prendas</span>
+                        <strong className="text-base text-white">{total}</strong>
+                      </div>
+                      <div className="bg-emerald-900/60 p-2 border border-emerald-800">
+                        <span className="block text-[10px] text-emerald-300">Textil Procesado</span>
+                        <strong className="text-base text-white">{kg} kg</strong>
+                      </div>
+                      <div className="bg-emerald-900/60 p-2 border border-emerald-800">
+                        <span className="block text-[10px] text-emerald-300">CO2 Ahorrado</span>
+                        <strong className="text-base text-amber-300">{co2} kg</strong>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-emerald-300 text-center font-mono">
+                      ✨ Otorgará <strong>+{pts} Puntos ClossApp</strong> al donante.
+                    </p>
+                  </div>
+                )
+              })()}
+
+              <button
+                onClick={handleConfirmarYDividirMetricas}
+                className="w-full py-3 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs tracking-wide transition-colors flex items-center justify-center gap-2 shadow-sm"
+              >
+                <CheckCircle2 className="w-4 h-4 text-zinc-950" />
+                <span>Confirmar Recepción e Integrar a Métricas del Centro</span>
+              </button>
+            </div>
+          ) : (
+            <div className="py-6 text-center space-y-3 bg-emerald-50 border border-emerald-200 p-6">
+              <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto">
+                <Check className="w-7 h-7" />
+              </div>
+              <p className="font-serif text-xl font-bold text-zinc-900">¡Recepción Confirmada y Dividida en Métricas!</p>
+              <p className="text-xs text-zinc-600">
+                Se actualizaron las metas del mes, los kilogramos textiles procesados y los Puntos ClossApp del donante.
+              </p>
             </div>
           )}
         </div>

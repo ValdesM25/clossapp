@@ -30,7 +30,7 @@ export function useDonaciones(userId?: string, userName?: string, userEmail?: st
       const [pacopio, userTkts, userPts, imp, regs] = await Promise.all([
         fetchPuntosAcopio(supabase),
         fetchUserTickets(supabase, userId),
-        fetchUserPuntos(supabase, userId),
+        fetchUserPuntos(supabase, userId, userName, userEmail),
         fetchAcopioImpacto(supabase),
         fetchAcopioRegistros(supabase),
       ])
@@ -45,10 +45,29 @@ export function useDonaciones(userId?: string, userName?: string, userEmail?: st
     } finally {
       setLoading(false)
     }
-  }, [supabase, userId])
+  }, [supabase, userId, userName, userEmail])
 
   useEffect(() => {
     refresh()
+
+    const handlePuntosEvent = (e: any) => {
+      if (e?.detail?.puntos !== undefined) {
+        setPuntos(e.detail.puntos)
+      }
+      refresh()
+    }
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("clossapp_puntos_updated", handlePuntosEvent)
+      window.addEventListener("storage", refresh)
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("clossapp_puntos_updated", handlePuntosEvent)
+        window.removeEventListener("storage", refresh)
+      }
+    }
   }, [refresh])
 
   const handleCreateTicket = useCallback(

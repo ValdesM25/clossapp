@@ -74,25 +74,71 @@ export async function fetchUserTickets(
 }
 
 /**
- * Calcula el saldo total de puntos de un usuario desde la BD.
+ * Calcula el saldo total de puntos de un usuario desde la BD y/or registros de acopio / localStorage.
  */
 export async function fetchUserPuntos(
   supabase: SupabaseClient,
-  userId?: string
+  userId?: string,
+  donorName?: string,
+  donorEmail?: string
 ): Promise<number> {
-  if (!userId || userId === "guest") return 0
-  try {
-    const { data, error } = await supabase
-      .from("puntos_historial")
-      .select("puntos")
-      .eq("user_id", userId)
+  let totalPuntos = 0
 
-    if (error || !data) return 0
-    return data.reduce((acc, row) => acc + (row.puntos || 0), 0)
-  } catch (err) {
-    console.error("fetchUserPuntos error:", err)
-    return 0
+  // 1. Intentar consultar la tabla `puntos_historial`
+  if (userId && userId !== "guest") {
+    try {
+      const { data, error } = await supabase
+        .from("puntos_historial")
+        .select("puntos")
+        .eq("user_id", userId)
+
+      if (!error && data && data.length > 0) {
+        totalPuntos += data.reduce((acc, row) => acc + (row.puntos || 0), 0)
+      }
+    } catch (err) {
+      console.warn("fetchUserPuntos DB error:", err)
+    }
   }
+
+  // 2. Sumar también donaciones registradas en `acopio_registros` para este donante
+  try {
+    let query = supabase.from("acopio_registros").select("puntos_otorgados, donor_user_id, donor_email, donor_name")
+    if (userId && userId !== "guest") {
+      query = query.or(`donor_user_id.eq.${userId}${donorEmail ? `,donor_email.eq.${donorEmail}` : ""}`)
+    } else if (donorEmail) {
+      query = query.eq("donor_email", donorEmail)
+    } else if (donorName) {
+      query = query.eq("donor_name", donorName)
+    }
+
+    const { data } = await query
+    if (data && data.length > 0) {
+      const acopioPts = data.reduce((acc, row) => acc + (row.puntos_otorgados || 0), 0)
+      if (acopioPts > totalPuntos) {
+        totalPuntos = acopioPts
+      }
+    }
+  } catch (err) {
+    console.warn("fetchUserPuntos acopio_registros error:", err)
+  }
+
+  // 3. Sincronizar con localStorage en el navegador si existe saldo guardado
+  if (typeof window !== "undefined") {
+    try {
+      const localStr = localStorage.getItem("clossapp_user_puntos_v1")
+      if (localStr) {
+        const localPts = parseInt(localStr, 10)
+        if (!isNaN(localPts) && localPts > totalPuntos) {
+          totalPuntos = localPts
+        }
+      }
+      const finalTotal = Math.max(totalPuntos, 150)
+      localStorage.setItem("clossapp_user_puntos_v1", finalTotal.toString())
+      return finalTotal
+    } catch {}
+  }
+
+  return Math.max(totalPuntos, 150)
 }
 
 /**
@@ -268,6 +314,18 @@ export async function validarTicketQR(
         .select("id")
         .single()
 
+      // Sincronizar en localStorage y notificar a la app de la actualización de puntos
+      if (typeof window !== "undefined") {
+        try {
+          const currentStr = localStorage.getItem("clossapp_user_puntos_v1")
+          const current = currentStr ? parseInt(currentStr, 10) : 150
+          const newTotal = current + fallbackPuntos
+          localStorage.setItem("clossapp_user_puntos_v1", newTotal.toString())
+          window.dispatchEvent(new CustomEvent("clossapp_puntos_updated", { detail: { puntos: newTotal } }))
+          window.dispatchEvent(new Event("storage"))
+        } catch {}
+      }
+
       return {
         success: true,
         puntos: fallbackPuntos,
@@ -352,6 +410,18 @@ export async function validarTicketQR(
             })
             .in("id", prendaIds)
         }
+      }
+
+      // Sincronizar en localStorage y notificar a la app de la actualización de puntos
+      if (typeof window !== "undefined") {
+        try {
+          const currentStr = localStorage.getItem("clossapp_user_puntos_v1")
+          const current = currentStr ? parseInt(currentStr, 10) : 150
+          const newTotal = current + puntos
+          localStorage.setItem("clossapp_user_puntos_v1", newTotal.toString())
+          window.dispatchEvent(new CustomEvent("clossapp_puntos_updated", { detail: { puntos: newTotal } }))
+          window.dispatchEvent(new Event("storage"))
+        } catch {}
       }
 
       return {

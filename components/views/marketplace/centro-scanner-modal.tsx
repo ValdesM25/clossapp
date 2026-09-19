@@ -227,14 +227,14 @@ export function CentroScannerModal({
               whileTap={{ scale: 0.98 }}
               disabled={isVerifying}
               onClick={handleScanSimulation}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold tracking-wide flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 transition-colors"
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold tracking-wide flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 transition-colors cursor-pointer"
             >
               {isVerifying ? (
-                <span>Escribiendo registro en la base de datos...</span>
+                <span>Procesando recepción y acreditando puntos...</span>
               ) : (
                 <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  Validar QR e Insertar Registro en acopio_registros BD
+                  <CheckCircle2 className="w-4 h-4 text-white" />
+                  <span>Recibir Ropa y Agregar {ticket.puntosOtorgados} Puntos a {ticket.donorName || "Donante ClossApp"}</span>
                 </>
               )}
             </motion.button>
@@ -249,7 +249,9 @@ export function CentroScannerModal({
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
-            <p className="font-serif text-xl text-zinc-900">¡Donación Verificada e Insertada!</p>
+            <p className="font-serif text-xl font-bold text-zinc-900">
+              ¡Ropa Recibida y {ticket.puntosOtorgados} Puntos Acreditados!
+            </p>
 
             <p className="text-xs text-zinc-600 max-w-xs leading-relaxed">
               Donante: <strong>{ticket.donorName || "Donante ClossApp"}</strong> · Entregó <strong>{ticket.cantidadPrendas} prendas</strong> en {ticket.puntoAcopioNombre}.
@@ -257,7 +259,7 @@ export function CentroScannerModal({
 
             <div className="bg-white border border-emerald-300 px-4 py-2.5 flex items-center gap-2 text-xs font-semibold text-emerald-800 shadow-xs">
               <Sparkles className="w-4 h-4 text-emerald-600" />
-              <span>+{ticket.puntosOtorgados} Puntos acreditados al usuario</span>
+              <span>+{ticket.puntosOtorgados} Puntos sumados a {ticket.donorName || "la cuenta del donante"}</span>
             </div>
 
             <div className="w-full text-left bg-white border border-zinc-200 p-3 mt-2">
