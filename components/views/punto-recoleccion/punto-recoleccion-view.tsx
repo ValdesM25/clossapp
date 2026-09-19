@@ -34,6 +34,9 @@ import {
   fetchAcopioRegistros,
   validarTicketQR,
   registrarDonacionPresencial,
+  fetchDonantesRegistrados,
+  DONANTES_DEMO,
+  type DonanteRegistrado,
 } from "@/services/donaciones.service"
 import type { AcopioRegistroDB } from "@/types/donaciones"
 
@@ -92,6 +95,21 @@ export function PuntoRecoleccionView() {
   const [donorPrendasCount, setDonorPrendasCount] = useState<number>(3)
   const [donorCategoriaInput, setDonorCategoriaInput] = useState("Abrigos e Invierno")
   const [manualSuccessMsg, setManualSuccessMsg] = useState(false)
+
+  // Registered donors & garment selection state
+  const [registeredDonors, setRegisteredDonors] = useState<DonanteRegistrado[]>(DONANTES_DEMO)
+  const [selectedDonor, setSelectedDonor] = useState<DonanteRegistrado | null>(null)
+  const [selectedPrendaIds, setSelectedPrendaIds] = useState<string[]>([])
+  const [showAllPrendas, setShowAllPrendas] = useState(false)
+
+  // Fetch registered donors from DB
+  useEffect(() => {
+    async function loadDonors() {
+      const donors = await fetchDonantesRegistrados(supabase)
+      setRegisteredDonors(donors)
+    }
+    loadDonors()
+  }, [supabase])
 
   // Fetch real database records from Supabase `acopio_registros`
   const loadDBRecords = useCallback(async () => {
@@ -307,8 +325,16 @@ export function PuntoRecoleccionView() {
   async function handleRegisterWalkInDonation() {
     if (donorPrendasCount <= 0) return
 
-    const points = donorPrendasCount >= 3 ? 100 + (donorPrendasCount - 3) * 20 : 0
+    const points = donorPrendasCount >= 3 ? 100 + (donorPrendasCount - 3) * 20 : 50
     const name = donorNameInput.trim() || "Donante Presencial"
+
+    let obsCat = donorCategoriaInput
+    if (selectedDonor && selectedPrendaIds.length > 0) {
+      const selectedNames = selectedDonor.prendas
+        .filter((p) => selectedPrendaIds.includes(p.id))
+        .map((p) => p.name)
+      obsCat = `${donorCategoriaInput} — Donación de prendas de ${selectedDonor.nombre}: ${selectedNames.join(", ")}`
+    }
 
     const created = await registrarDonacionPresencial(supabase, {
       puntoAcopioId: "norte",
@@ -316,7 +342,7 @@ export function PuntoRecoleccionView() {
       donorName: name,
       cantidadPrendas: donorPrendasCount,
       puntos: points,
-      categoria: donorCategoriaInput,
+      categoria: obsCat,
     })
 
     if (created) {
@@ -326,6 +352,9 @@ export function PuntoRecoleccionView() {
         setManualSuccessMsg(false)
         setIsManualModalOpen(false)
         setDonorNameInput("")
+        setSelectedDonor(null)
+        setSelectedPrendaIds([])
+        setShowAllPrendas(false)
         setDonorPrendasCount(3)
       }, 1200)
     }
@@ -878,19 +907,175 @@ export function PuntoRecoleccionView() {
                 Usa este formulario para registrar prendas entregadas directamente en el punto de acopio por un donante presencial.
               </p>
 
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[10px] uppercase font-mono text-zinc-500 font-semibold">
-                    Nombre del donante (opcional)
-                  </label>
+              {/* Selector de Donante Registrado */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-mono text-zinc-500 font-semibold flex items-center justify-between">
+                  <span>Nombre del donante / Persona registrada</span>
+                  {selectedDonor && (
+                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 border border-emerald-200 font-sans">
+                      ✓ Donante Registrado
+                    </span>
+                  )}
+                </label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <select
+                    value={selectedDonor?.id || ""}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      if (!val) {
+                        setSelectedDonor(null)
+                        setSelectedPrendaIds([])
+                        setShowAllPrendas(false)
+                      } else {
+                        const d = registeredDonors.find((donor) => donor.id === val)
+                        if (d) {
+                          setSelectedDonor(d)
+                          setDonorNameInput(d.nombre)
+                          const sorted = [...d.prendas].sort((a, b) => (b.usos || 0) - (a.usos || 0))
+                          const top1 = sorted[0] ? [sorted[0].id] : []
+                          setSelectedPrendaIds(top1)
+                          setDonorPrendasCount(1)
+                          if (sorted[0]?.category) setDonorCategoriaInput(sorted[0].category)
+                        }
+                      }
+                    }}
+                    className="h-10 text-xs border border-zinc-300 bg-white px-3 focus:outline-none focus:border-zinc-900 font-medium text-zinc-900"
+                  >
+                    <option value="">-- Seleccionar persona registrada --</option>
+                    {registeredDonors.map((donor) => (
+                      <option key={donor.id} value={donor.id}>
+                        👤 {donor.nombre} ({donor.prendas.length} prendas)
+                      </option>
+                    ))}
+                  </select>
+
                   <Input
                     value={donorNameInput}
-                    onChange={(e) => setDonorNameInput(e.target.value)}
-                    placeholder="Ej. Gabriel Morales"
-                    className="mt-1 h-10 text-xs rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900"
+                    onChange={(e) => {
+                      setDonorNameInput(e.target.value)
+                      if (selectedDonor && e.target.value !== selectedDonor.nombre) {
+                        setSelectedDonor(null)
+                        setSelectedPrendaIds([])
+                      }
+                    }}
+                    placeholder="O escribir nombre libre (ej. Gabriel Morales)"
+                    className="h-10 text-xs rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900"
                   />
                 </div>
+              </div>
 
+              {/* Si hay un donante seleccionado: Mostrar ropa que más usa */}
+              {selectedDonor && selectedDonor.prendas.length > 0 && (() => {
+                const sortedPrendas = [...selectedDonor.prendas].sort((a, b) => (b.usos || 0) - (a.usos || 0))
+                const topPrendas = sortedPrendas.slice(0, 3)
+                const otherPrendas = sortedPrendas.slice(3)
+
+                const togglePrenda = (id: string, cat?: string) => {
+                  const next = selectedPrendaIds.includes(id)
+                    ? selectedPrendaIds.filter((pId) => pId !== id)
+                    : [...selectedPrendaIds, id]
+                  setSelectedPrendaIds(next)
+                  setDonorPrendasCount(next.length > 0 ? next.length : 1)
+                  if (cat) setDonorCategoriaInput(cat)
+                }
+
+                return (
+                  <div className="border border-zinc-200 p-3 bg-zinc-50/80 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+                          <Shirt className="w-4 h-4 text-emerald-600" />
+                          Ropa que más usa (Sugerencias para donar)
+                        </p>
+                        <p className="text-[11px] text-zinc-500">
+                          Prendas con mayor frecuencia de uso en el clóset de {selectedDonor.nombre}
+                        </p>
+                      </div>
+
+                      <span className="text-[10px] font-mono font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 border border-emerald-200">
+                        {selectedPrendaIds.length} seleccionada(s)
+                      </span>
+                    </div>
+
+                    {/* Tarjetas de prendas más usadas */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {topPrendas.map((p) => {
+                        const isSelected = selectedPrendaIds.includes(p.id)
+                        return (
+                          <div
+                            key={p.id}
+                            onClick={() => togglePrenda(p.id, p.category)}
+                            className={`cursor-pointer p-2.5 bg-white border transition-all relative flex flex-col justify-between ${
+                              isSelected
+                                ? "border-emerald-600 ring-2 ring-emerald-500/20 bg-emerald-50/40"
+                                : "border-zinc-200 hover:border-zinc-400"
+                            }`}
+                          >
+                            <div className="flex items-start gap-2 mb-1.5">
+                              <img src={p.image_url} alt={p.name} className="w-12 h-14 object-cover border border-zinc-200 shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <span className="text-[9px] font-mono uppercase bg-amber-50 text-amber-800 border border-amber-200 px-1 py-0.5 font-bold inline-block mb-1">
+                                  🔥 {p.usos || 0} usos
+                                </span>
+                                <p className="text-xs font-semibold text-zinc-900 line-clamp-2 leading-tight">{p.name}</p>
+                                <p className="text-[10px] text-zinc-500 truncate">{p.category}</p>
+                              </div>
+                            </div>
+
+                            <div className="mt-1 flex items-center justify-between border-t border-zinc-100 pt-1 text-[10px]">
+                              <span className={isSelected ? "font-bold text-emerald-700" : "text-zinc-500"}>
+                                {isSelected ? "✓ Seleccionada" : "+ Toca para elegir"}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Botón Ver Más Prendas */}
+                    {otherPrendas.length > 0 && (
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowAllPrendas(!showAllPrendas)}
+                          className="w-full py-2 bg-white hover:bg-zinc-100 text-zinc-800 border border-zinc-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <span>{showAllPrendas ? "▲ Ocultar prendas adicionales" : `▼ Ver más prendas (${otherPrendas.length} prendas más)`}</span>
+                        </button>
+
+                        {showAllPrendas && (
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2 pt-2 border-t border-zinc-200 max-h-48 overflow-y-auto">
+                            {otherPrendas.map((p) => {
+                              const isSelected = selectedPrendaIds.includes(p.id)
+                              return (
+                                <div
+                                  key={p.id}
+                                  onClick={() => togglePrenda(p.id, p.category)}
+                                  className={`cursor-pointer p-2 bg-white border transition-all flex items-start gap-2 ${
+                                    isSelected
+                                      ? "border-emerald-600 ring-2 ring-emerald-500/20 bg-emerald-50/40"
+                                      : "border-zinc-200 hover:border-zinc-400"
+                                  }`}
+                                >
+                                  <img src={p.image_url} alt={p.name} className="w-10 h-12 object-cover border border-zinc-200 shrink-0" />
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-semibold text-zinc-900 truncate">{p.name}</p>
+                                    <p className="text-[10px] text-zinc-500 truncate">{p.category}</p>
+                                    <span className="text-[9px] text-zinc-400 font-mono">{p.usos || 0} usos</span>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] uppercase font-mono text-zinc-500 font-semibold">
                     Cantidad de prendas recibidas
@@ -918,18 +1103,20 @@ export function PuntoRecoleccionView() {
                     <option value="Ropa Infantil y Bebé">Ropa Infantil y Bebé</option>
                     <option value="Calzado y Zapatos">Calzado y Zapatos</option>
                     <option value="Ropa Casual / Pantalones">Ropa Casual / Pantalones</option>
+                    <option value="Tops">Tops</option>
+                    <option value="Vestidos">Vestidos</option>
                   </select>
                 </div>
+              </div>
 
-                <div className="p-3 bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
-                  <p className="font-semibold flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                    Puntos estimados: +{donorPrendasCount >= 3 ? 100 + (donorPrendasCount - 3) * 20 : 0} Puntos
-                  </p>
-                  <p className="text-[11px] text-amber-800">
-                    Se sumarán automáticamente a la meta mensual del centro de acopio.
-                  </p>
-                </div>
+              <div className="p-3 bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
+                <p className="font-semibold flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  Puntos estimados: +{donorPrendasCount >= 3 ? 100 + (donorPrendasCount - 3) * 20 : 50} Puntos
+                </p>
+                <p className="text-[11px] text-amber-800">
+                  Se sumarán automáticamente a la meta mensual del centro de acopio.
+                </p>
               </div>
 
               <button

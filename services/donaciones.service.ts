@@ -439,3 +439,116 @@ export async function registrarDonacionPresencial(
   }
 }
 
+export interface DonanteRegistrado {
+  id: string
+  nombre: string
+  email: string
+  prendas: Array<{
+    id: string
+    name: string
+    category: string
+    image_url: string
+    usos?: number
+    ultimo_uso?: string
+    talla?: string
+    estado_uso?: string
+  }>
+}
+
+export const DONANTES_DEMO: DonanteRegistrado[] = [
+  {
+    id: "d_mariela",
+    nombre: "Mariela Morales",
+    email: "mariela@clossapp.com",
+    prendas: [
+      { id: "m1", name: "Jeans Skinny Azul Denim Levi's", category: "Pantalones", image_url: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&q=80", usos: 45, talla: "M", estado_uso: "Excelente" },
+      { id: "m2", name: "Blazer Negro Elegante", category: "Abrigos e Invierno", image_url: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&q=80", usos: 32, talla: "S", estado_uso: "Como nuevo" },
+      { id: "m3", name: "Top de Lino Blanco", category: "Tops", image_url: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80", usos: 28, talla: "S", estado_uso: "Bueno" },
+      { id: "m4", name: "Vestido Midi Satinado", category: "Vestidos", image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80", usos: 14, talla: "M", estado_uso: "Como nuevo" },
+      { id: "m5", name: "Abrigo Beige de Lana", category: "Abrigos e Invierno", image_url: "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=400&q=80", usos: 8, talla: "M", estado_uso: "Poco uso" },
+      { id: "m6", name: "Sandalias de Cuero", category: "Calzado y Zapatos", image_url: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&q=80", usos: 5, talla: "24", estado_uso: "Bueno" }
+    ]
+  },
+  {
+    id: "d_gabriel",
+    nombre: "Gabriel Morales",
+    email: "gabriel@clossapp.com",
+    prendas: [
+      { id: "g1", name: "Chamarra de Mezclilla Azul", category: "Abrigos e Invierno", image_url: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400&q=80", usos: 38, talla: "L", estado_uso: "Excelente" },
+      { id: "g2", name: "Camisa Casual Oxford", category: "Tops", image_url: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400&q=80", usos: 29, talla: "L", estado_uso: "Bueno" },
+      { id: "g3", name: "Pants Deportivos Negros", category: "Ropa Casual / Pantalones", image_url: "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=400&q=80", usos: 21, talla: "L", estado_uso: "Bueno" },
+      { id: "g4", name: "Sudadera Gris Oversize", category: "Abrigos e Invierno", image_url: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=400&q=80", usos: 12, talla: "XL", estado_uso: "Como nuevo" },
+      { id: "g5", name: "Tenis Blancos de Cuero", category: "Calzado y Zapatos", image_url: "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=400&q=80", usos: 7, talla: "28", estado_uso: "Poco uso" }
+    ]
+  },
+  {
+    id: "d_sofia",
+    nombre: "Sofía Rodríguez",
+    email: "sofia@clossapp.com",
+    prendas: [
+      { id: "s1", name: "Vestido Floral Verano", category: "Vestidos", image_url: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&q=80", usos: 41, talla: "S", estado_uso: "Excelente" },
+      { id: "s2", name: "Chamarra de Piel Sintética", category: "Abrigos e Invierno", image_url: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&q=80", usos: 30, talla: "S", estado_uso: "Como nuevo" },
+      { id: "s3", name: "Falda Plisada Negra", category: "Ropa Casual / Pantalones", image_url: "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=400&q=80", usos: 24, talla: "M", estado_uso: "Bueno" },
+      { id: "s4", name: "Blusa de Seda Rosa", category: "Tops", image_url: "https://images.unsplash.com/photo-1564257631407-4deb1f99d992?w=400&q=80", usos: 15, talla: "S", estado_uso: "Bueno" },
+      { id: "s5", name: "Zapatillas Altas Beige", category: "Calzado y Zapatos", image_url: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&q=80", usos: 9, talla: "23.5", estado_uso: "Poco uso" }
+    ]
+  },
+  {
+    id: "d_ana",
+    nombre: "Ana Gómez",
+    email: "ana@clossapp.com",
+    prendas: [
+      { id: "a1", name: "Blazer Beige Estructurado", category: "Abrigos e Invierno", image_url: "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=400&q=80", usos: 36, talla: "M", estado_uso: "Excelente" },
+      { id: "a2", name: "Pantalón de Vestir Marino", category: "Ropa Casual / Pantalones", image_url: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&q=80", usos: 27, talla: "M", estado_uso: "Bueno" },
+      { id: "a3", name: "Suéter Tejido Crema", category: "Abrigos e Invierno", image_url: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400&q=80", usos: 18, talla: "M", estado_uso: "Como nuevo" },
+      { id: "a4", name: "Botines de Cuero Marrón", category: "Calzado y Zapatos", image_url: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&q=80", usos: 11, talla: "24.5", estado_uso: "Bueno" }
+    ]
+  }
+]
+
+export async function fetchDonantesRegistrados(supabase: SupabaseClient): Promise<DonanteRegistrado[]> {
+  try {
+    const { data: dbPrendas } = await supabase.from("prendas").select("*")
+    if (dbPrendas && dbPrendas.length > 0) {
+      // Aggregate real DB prendas by user
+      const usersMap = new Map<string, DonanteRegistrado>()
+      dbPrendas.forEach((p) => {
+        const uId = p.user_id || "guest"
+        if (!usersMap.has(uId)) {
+          const defaultName = uId === "guest" ? "Donante Invitado" : `Usuario ${uId.substring(0, 6)}`
+          usersMap.set(uId, {
+            id: uId,
+            nombre: defaultName,
+            email: `${uId}@clossapp.com`,
+            prendas: []
+          })
+        }
+        usersMap.get(uId)!.prendas.push({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          image_url: p.image_url,
+          usos: p.usos || 0,
+          ultimo_uso: p.ultimo_uso,
+          talla: p.talla,
+          estado_uso: p.estado_uso
+        })
+      })
+
+      const realDonors = Array.from(usersMap.values())
+      // Merge with demo donors so there are full rich profiles available
+      const merged = [...realDonors]
+      DONANTES_DEMO.forEach((d) => {
+        if (!merged.some((m) => m.nombre.toLowerCase() === d.nombre.toLowerCase())) {
+          merged.push(d)
+        }
+      })
+      return merged
+    }
+  } catch (err) {
+    console.warn("fetchDonantesRegistrados fallback:", err)
+  }
+  return DONANTES_DEMO
+}
+
+
