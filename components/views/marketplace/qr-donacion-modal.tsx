@@ -13,14 +13,14 @@ interface QRDonacionModalProps {
   onOpenScanner?: (ticket: DonacionTicket) => void
 }
 
-export function QRDonacionModal({ ticket, isOpen, onClose, onOpenScanner }: QRDonacionModalProps) {
+export function QRDonacionModal({ ticket, isOpen, onClose }: QRDonacionModalProps) {
   if (!ticket) return null
 
   const isCompletado = ticket.status === "completado"
 
   return (
     <CenteredModal open={isOpen} onClose={onClose}>
-      <div className="flex flex-col gap-5 p-1 max-h-[80vh] overflow-y-auto">
+      <div className="flex flex-col gap-4 p-4 sm:p-5">
         {/* Header Badge */}
         <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
           <div className="flex items-center gap-2">
@@ -49,16 +49,16 @@ export function QRDonacionModal({ ticket, isOpen, onClose, onOpenScanner }: QRDo
         </div>
 
         {/* QR Display Card */}
-        <div className="bg-zinc-900 text-white p-6 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+        <div className="bg-zinc-900 text-white p-4 sm:p-5 rounded-sm flex flex-col items-center justify-center gap-3 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
             <QrCode className="w-36 h-36 text-white" />
           </div>
 
-          <p className="text-[11px] text-zinc-400 uppercase tracking-widest font-medium">
+          <p className="text-[11px] text-zinc-300 uppercase tracking-widest font-medium">
             Presenta este QR al entregar tu paquete
           </p>
 
-          <div className="bg-white p-4 shadow-xl border-4 border-zinc-800 rounded-sm flex items-center justify-center">
+          <div className="bg-white p-3 shadow-md border-2 border-zinc-800 rounded-sm flex items-center justify-center">
             <QRCodeSVG
               value={JSON.stringify({
                 tkt: ticket.qrToken,
@@ -76,14 +76,14 @@ export function QRDonacionModal({ ticket, isOpen, onClose, onOpenScanner }: QRDo
                   talla: p.talla || null,
                 })),
               })}
-              size={200}
+              size={165}
               level="M"
               includeMargin={true}
             />
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-950/60 px-3 py-1.5 border border-amber-800/40">
-            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+          <div className="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-950/60 px-3 py-1 border border-amber-800/40">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             <span>
               Recompensa: <strong>+{ticket.puntosOtorgados} Puntos ClossApp</strong>
             </span>
@@ -91,15 +91,15 @@ export function QRDonacionModal({ ticket, isOpen, onClose, onOpenScanner }: QRDo
         </div>
 
         {/* Ticket Metadata */}
-        <div className="flex flex-col gap-3 text-xs text-zinc-600 bg-zinc-50 p-4 border border-zinc-200">
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
+        <div className="flex flex-col gap-2.5 text-xs text-zinc-600 bg-zinc-50 p-3.5 border border-zinc-200">
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5">
             <span className="text-zinc-500">Donante:</span>
             <span className="font-medium text-zinc-900">
               {ticket.donorName || "Donante ClossApp"} {ticket.donorEmail ? `(${ticket.donorEmail})` : ""}
             </span>
           </div>
 
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5">
             <span className="text-zinc-500">Punto de acopio:</span>
             <span className="font-medium text-zinc-900 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-zinc-700" />
@@ -107,7 +107,7 @@ export function QRDonacionModal({ ticket, isOpen, onClose, onOpenScanner }: QRDo
             </span>
           </div>
 
-          <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
+          <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5">
             <span className="text-zinc-500">Prendas registradas:</span>
             <span className="font-medium text-zinc-900 flex items-center gap-1">
               <Shirt className="w-3.5 h-3.5 text-zinc-700" />
@@ -144,18 +144,6 @@ export function QRDonacionModal({ ticket, isOpen, onClose, onOpenScanner }: QRDo
               ))}
             </div>
           </div>
-        )}
-
-        {/* Action Button: Scanner Simulator for testing */}
-        {!isCompletado && onOpenScanner && (
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onOpenScanner(ticket)}
-            className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium tracking-wide flex items-center justify-center gap-2 transition-colors mt-2"
-          >
-            <Scan className="w-4 h-4" />
-            Simular Escáner de Centro de Acopio (Probar Verificación)
-          </motion.button>
         )}
 
         {isCompletado && (
