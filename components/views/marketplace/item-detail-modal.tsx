@@ -2,11 +2,11 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Loader2 } from "lucide-react"
+import { Loader2, ShoppingBag, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Input } from "@/components/ui/input"
 import { CenteredModal } from "@/components/shared/centered-modal"
 import { RentDatePicker } from "./rent-date-picker"
+import { useCartContext } from "@/context/cart-context"
 import type { Prenda } from "@/types"
 
 interface ItemDetailModalProps {
@@ -21,6 +21,7 @@ interface ItemDetailModalProps {
 
 export function ItemDetailModal({ item, isRenta, apartSuccess, aparting, isGuest, onClose, onApartar }: ItemDetailModalProps) {
   const [showFecha, setShowFecha] = useState(false)
+  const { addToCart } = useCartContext()
 
   function handleClose() {
     setShowFecha(false)
@@ -28,10 +29,13 @@ export function ItemDetailModal({ item, isRenta, apartSuccess, aparting, isGuest
   }
 
   function handleApartar() {
-    if (isRenta) {
+    if (isRenta && !showFecha) {
       setShowFecha(true)
     } else {
-      onApartar()
+      if (item) {
+        addToCart(item, isRenta ? "renta" : "compra")
+        handleClose()
+      }
     }
   }
 
@@ -67,22 +71,36 @@ export function ItemDetailModal({ item, isRenta, apartSuccess, aparting, isGuest
                 </div>
               )}
             </div>
+
+            {/* Escrow Custody Protection Notice */}
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 flex items-center gap-2 text-xs text-emerald-900">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>
+                <strong>Pago en Custodia Escrow:</strong> Tu dinero queda retenido de forma segura hasta que recojas el producto.
+              </span>
+            </div>
+
             {apartSuccess ? (
               <div className="w-full py-3 border border-zinc-200 text-zinc-600 text-sm text-center tracking-wide">
                 {isRenta ? "Solicitud enviada" : "Apartado correctamente"}
               </div>
             ) : isRenta && showFecha ? (
               <RentDatePicker
-                onConfirm={(fecha) => onApartar(fecha)}
+                onConfirm={(fecha) => {
+                  if (item) {
+                    addToCart(item, "renta", fecha)
+                    handleClose()
+                  }
+                }}
                 onCancel={() => setShowFecha(false)}
                 aparting={aparting}
               />
             ) : (
               <motion.button whileTap={{ scale: 0.98 }} onClick={handleApartar} disabled={aparting || isGuest}
-                className={cn("w-full py-3 text-sm font-medium tracking-wide flex items-center justify-center gap-2",
-                  isGuest ? "bg-zinc-100 text-zinc-400 cursor-default" : "bg-zinc-900 text-white disabled:opacity-50")}>
-                {aparting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isGuest ? "Solo lectura" : aparting ? "Procesando..." : isRenta ? "Solicitar Renta" : "Apartar"}
+                className={cn("w-full py-3 text-sm font-medium tracking-wide flex items-center justify-center gap-2 rounded",
+                  isGuest ? "bg-zinc-100 text-zinc-400 cursor-default" : "bg-zinc-900 text-white hover:bg-zinc-800 transition-colors disabled:opacity-50")}>
+                {aparting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4 text-emerald-400" />}
+                {isGuest ? "Solo lectura" : aparting ? "Procesando..." : isRenta ? "Agregar Renta al Carrito" : "Agregar al Carrito de Custodia"}
               </motion.button>
             )}
           </div>

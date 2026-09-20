@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Search, Tag } from "lucide-react"
+import { Search, Tag, ShoppingBag, ShieldCheck, PackageCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { PrendaSkeleton } from "@/components/shared/prenda-skeleton"
@@ -10,12 +10,16 @@ import { pageProps } from "@/constants/animation"
 import { filterChips } from "@/constants/navigation"
 import { useAuthContext } from "@/context/auth-context"
 import { usePrendasContext } from "@/context/prendas-context"
+import { useCartContext } from "@/context/cart-context"
 import { useMarketplace } from "@/hooks/use-marketplace"
 import type { Prenda } from "@/types"
 import { MarketItemCard } from "./market-item-card"
 import { ItemDetailModal } from "./item-detail-modal"
 import { SellFormModal } from "./sell-form-modal"
 import { DonacionPanel } from "./donacion-panel"
+import { CartDrawer } from "./cart-drawer"
+import { EscrowCheckoutModal } from "./escrow-checkout-modal"
+import { EscrowOrdersModal } from "./escrow-orders-modal"
 
 interface MarketplaceViewProps {
   onApartar: () => void
@@ -24,6 +28,7 @@ interface MarketplaceViewProps {
 export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
   const { userId, isGuest } = useAuthContext()
   const { prendas } = usePrendasContext()
+  const { itemCount, setIsCartOpen } = useCartContext()
   const {
     marketTab, setMarketTab, activeFilter, setActiveFilter,
     items, rentaItems, loading, aparting, apartSuccess,
@@ -33,6 +38,8 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
 
   const [selectedItem, setSelectedItem] = useState<Prenda | null>(null)
   const [showSellForm, setShowSellForm] = useState(false)
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false)
+  const [showOrdersModal, setShowOrdersModal] = useState(false)
 
   const currentItems = marketTab === "comprar" ? items : rentaItems
   const filtered = activeFilter === "Todos" ? currentItems : currentItems.filter((i) => i.category === activeFilter)
@@ -58,12 +65,44 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
           <p className="text-xs text-zinc-400 uppercase tracking-widest">Descubre</p>
           <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">Marketplace</h1>
         </div>
-        {!isGuest && !isDonar && (
-          <motion.button whileTap={{ scale: 0.96 }} onClick={() => { setShowSellForm(true); setSellMode("venta") }}
-            className="border border-zinc-900 text-zinc-900 text-xs px-3 py-1.5 flex items-center gap-1 tracking-wide">
-            <Tag className="w-3 h-3" /> Publicar
+
+        <div className="flex items-center gap-2">
+          {/* Botón Mis Compras en Custodia */}
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => setShowOrdersModal(true)}
+            className="border border-zinc-200 text-zinc-700 hover:bg-zinc-50 text-xs px-2.5 py-1.5 flex items-center gap-1 font-medium rounded"
+            title="Ver mis compras en custodia"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="hidden sm:inline">Mis Custodias</span>
           </motion.button>
-        )}
+
+          {/* Botón Carrito de Compras */}
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={() => setIsCartOpen(true)}
+            className="bg-zinc-900 text-white text-xs px-3 py-1.5 flex items-center gap-1.5 font-medium rounded shadow-xs relative"
+          >
+            <ShoppingBag className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Carrito</span>
+            {itemCount > 0 && (
+              <span className="bg-emerald-500 text-zinc-950 font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center -mr-1">
+                {itemCount}
+              </span>
+            )}
+          </motion.button>
+
+          {!isGuest && !isDonar && (
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => { setShowSellForm(true); setSellMode("venta") }}
+              className="border border-zinc-900 text-zinc-900 text-xs px-3 py-1.5 flex items-center gap-1 tracking-wide rounded"
+            >
+              <Tag className="w-3 h-3" /> Publicar
+            </motion.button>
+          )}
+        </div>
       </div>
 
       <div className="px-4 flex border-b border-zinc-200">
@@ -128,6 +167,22 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
         selling={selling}
         rentaError={rentaError}
         onPublish={handlePublish}
+      />
+
+      <CartDrawer onCheckout={() => setShowCheckoutModal(true)} />
+
+      <EscrowCheckoutModal
+        open={showCheckoutModal}
+        onClose={() => setShowCheckoutModal(false)}
+        onOrderCreated={() => {
+          setShowCheckoutModal(false)
+          setShowOrdersModal(true)
+        }}
+      />
+
+      <EscrowOrdersModal
+        open={showOrdersModal}
+        onClose={() => setShowOrdersModal(false)}
       />
     </motion.div>
   )

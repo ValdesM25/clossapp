@@ -42,6 +42,7 @@ import {
   DONANTES_DEMO,
   type DonanteRegistrado,
 } from "@/services/donaciones.service"
+import { liberarFondosEscrow } from "@/services/escrow.service"
 import type { AcopioRegistroDB } from "@/types/donaciones"
 
 interface CategoriaMeta {
@@ -268,10 +269,48 @@ export function PuntoRecoleccionView() {
     setScannerStatus("scanning")
     setScannerErrorMsg(null)
 
+    const cleanToken = token.trim()
+
     try {
+      // Si el código pertenece a una orden Escrow (#ESC-XXXXX o ESC-QR-XXXXX)
+      if (cleanToken.toUpperCase().startsWith("ESC-")) {
+        const escrowRes = await liberarFondosEscrow(
+          supabase,
+          cleanToken,
+          "norte",
+          userName || "Centro de Acopio Norte"
+        )
+
+        if (escrowRes.success && escrowRes.order) {
+          setVerifiedPackage({
+            name: `${escrowRes.order.buyerName} (Comprador Escrow)`,
+            email: escrowRes.order.buyerEmail || "",
+            count: escrowRes.order.items.length,
+            points: 0,
+            prendas: escrowRes.order.items.map((i: any) => ({
+              id: i.id,
+              name: i.prenda.name,
+              category: i.prenda.category,
+              image_url: i.prenda.image_url,
+              talla: i.prenda.talla,
+            })),
+            prendasResumen: escrowRes.mensaje,
+          })
+
+          setScannerStatus("success")
+          await loadDBRecords()
+          return
+        } else {
+          setScannerErrorMsg(escrowRes.mensaje || "Código de Custodia no válido.")
+          setScannerStatus("error")
+          return
+        }
+      }
+
+      // De lo contrario es un ticket de donación estándar
       const res = await validarTicketQR(
         supabase,
-        token.trim(),
+        cleanToken,
         "norte",
         userName || "Centro de Acopio Norte"
       )

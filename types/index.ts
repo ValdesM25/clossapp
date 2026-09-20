@@ -4,4 +4,5 @@ export type { OutfitRec } from "./outfit"
 export type { UserMode } from "./auth"
 export type { View } from "./views"
 export * from "./donaciones"
+export * from "./escrow"
 

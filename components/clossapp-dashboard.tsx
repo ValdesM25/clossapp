@@ -6,6 +6,7 @@ import type { View } from "@/types"
 import { useKeyboard } from "@/hooks/use-keyboard"
 import { AuthProvider, useAuthContext } from "@/context/auth-context"
 import { PrendasProvider, usePrendasContext } from "@/context/prendas-context"
+import { CartProvider } from "@/context/cart-context"
 import { BottomNav } from "@/components/shared/bottom-nav"
 import { SiteFooter } from "@/components/shared/site-footer"
 import { LoginView } from "@/components/views/login-view"
@@ -70,7 +71,9 @@ export function ClossappDashboard() {
       <div className="min-h-screen w-full bg-white relative">
         <AuthProvider>
           <PrendasProvider>
-            <AppShell />
+            <CartProvider>
+              <AppShell />
+            </CartProvider>
           </PrendasProvider>
         </AuthProvider>
       </div>
