@@ -57,65 +57,65 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-[100] flex items-center justify-center p-3 sm:p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white max-w-md w-full rounded-xl overflow-hidden shadow-2xl border border-zinc-200"
+        className="bg-white max-w-md w-full max-h-[90dvh] rounded-xl overflow-hidden shadow-2xl border border-zinc-200 flex flex-col my-auto"
       >
         {/* Modal Header */}
-        <div className="p-4 bg-zinc-900 text-white flex items-center justify-between border-b border-zinc-800">
+        <div className="p-3.5 sm:p-4 bg-zinc-900 text-white flex items-center justify-between border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-400" />
-            <h3 className="font-serif text-base text-white">Pago Seguro en Custodia (Escrow)</h3>
+            <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-400" />
+            <h3 className="font-serif text-sm sm:text-base text-white">Pago Seguro en Custodia (Escrow)</h3>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="p-1 text-zinc-400 hover:text-white transition-colors" aria-label="Cerrar">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {completedOrder ? (
           /* Success Screen */
-          <div className="p-6 text-center space-y-4">
-            <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600">
-              <CheckCircle2 className="w-8 h-8" />
+          <div className="p-4 sm:p-6 text-center space-y-3.5 sm:space-y-4 overflow-y-auto max-h-[calc(90dvh-4rem)]">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+              <CheckCircle2 className="w-7 h-7 sm:w-8 sm:h-8" />
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
                 Pago Retenido en Custodia Exitosamente
               </span>
-              <h2 className="font-serif text-xl text-zinc-900 mt-2">¡Fondos Protegidos!</h2>
+              <h2 className="font-serif text-lg sm:text-xl text-zinc-900 mt-2">¡Fondos Protegidos!</h2>
               <p className="text-xs text-zinc-600 mt-1 max-w-sm mx-auto">
                 Tu pago de <strong className="font-mono text-zinc-900">${completedOrder.totalPagado} MXN</strong> está retenido por ClossApp. El vendedor <strong>NO</strong> recibirá el dinero hasta que recojas y verifiques tus artículos en el Punto de Recolección.
               </p>
             </div>
 
             {/* QR Order Ticket Card */}
-            <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-lg text-left space-y-3">
+            <div className="p-3.5 sm:p-4 bg-zinc-50 border border-zinc-200 rounded-lg text-left space-y-3">
               <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
                 <div>
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Folio de Orden Escrow</p>
-                  <p className="font-mono text-base font-bold text-zinc-900">{completedOrder.orderCode}</p>
+                  <p className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-widest">Folio Escrow</p>
+                  <p className="font-mono text-sm sm:text-base font-bold text-zinc-900">{completedOrder.orderCode}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Punto de Entrega</p>
-                  <p className="text-xs font-semibold text-zinc-800 flex items-center gap-1">
+                  <p className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-widest">Punto de Entrega</p>
+                  <p className="text-xs font-semibold text-zinc-800 flex items-center justify-end gap-1">
                     <Store className="w-3.5 h-3.5 text-emerald-600" /> {completedOrder.puntoAcopioNombre}
                   </p>
                 </div>
               </div>
 
               {/* QR Code Graphical Token */}
-              <div className="flex flex-col items-center justify-center bg-white p-4 border border-zinc-200 rounded shadow-xs">
-                <QrCode className="w-28 h-28 text-zinc-900" />
-                <p className="font-mono text-[11px] text-zinc-500 mt-2 tracking-wider">{completedOrder.qrToken}</p>
-                <p className="text-[10px] text-emerald-700 font-medium mt-1">
+              <div className="flex flex-col items-center justify-center bg-white p-3 sm:p-4 border border-zinc-200 rounded shadow-xs">
+                <QrCode className="w-24 h-24 sm:w-28 sm:h-28 text-zinc-900" />
+                <p className="font-mono text-[10px] sm:text-[11px] text-zinc-500 mt-2 tracking-wider">{completedOrder.qrToken}</p>
+                <p className="text-[10px] text-emerald-700 font-medium mt-1 text-center">
                   Presenta este QR al operador en el punto de acopio
                 </p>
               </div>
 
-              <div className="text-[11px] text-zinc-600 space-y-1">
+              <div className="text-[10px] sm:text-[11px] text-zinc-600 space-y-1">
                 <p className="font-medium text-zinc-800">Prendas en Custodia ({completedOrder.items.length}):</p>
                 {completedOrder.items.map((it) => (
                   <p key={it.id} className="text-zinc-600 truncate">
@@ -134,10 +134,10 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
           </div>
         ) : (
           /* Payment Form Screen */
-          <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+          <div className="p-4 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto max-h-[calc(90dvh-4rem)]">
             {/* Banner info */}
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-900 flex items-start gap-2.5">
-              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-[11px] sm:text-xs text-emerald-900 flex items-start gap-2.5">
+              <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-600 shrink-0 mt-0.5" />
               <div>
                 <strong className="block text-emerald-950 font-bold">Intermediario Custodio ClossApp</strong>
                 Al pagar, tus fondos quedan en custodia segura. Solo liberaremos el pago al vendedor cuando escanees el código QR al recoger tus prendas.
@@ -150,45 +150,47 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
                 <p className="text-zinc-500">Artículos ({cart.length})</p>
                 <p className="font-semibold text-zinc-800">Total retenido en custodia</p>
               </div>
-              <span className="font-mono text-lg font-bold text-zinc-900">${totalPrice} MXN</span>
+              <span className="font-mono text-base sm:text-lg font-bold text-zinc-900">${totalPrice} MXN</span>
             </div>
 
             {/* Metodo de Pago Selector */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
+            <div className="space-y-1.5">
+              <label className="text-[11px] sm:text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
                 Método de Pago
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setMetodoPago("tarjeta")}
-                  className={`p-2.5 border rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all ${
+                  className={`p-2.5 border rounded-lg text-[11px] sm:text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
                     metodoPago === "tarjeta"
                       ? "border-zinc-900 bg-zinc-900 text-white shadow-xs"
                       : "border-zinc-200 text-zinc-700 hover:border-zinc-300"
                   }`}
                 >
-                  <CreditCard className="w-4 h-4" /> Tarjeta Crédito / Débito
+                  <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="truncate">Tarjeta Crédito / Débito</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setMetodoPago("puntos")}
-                  className={`p-2.5 border rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all ${
+                  className={`p-2.5 border rounded-lg text-[11px] sm:text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
                     metodoPago === "puntos"
                       ? "border-zinc-900 bg-zinc-900 text-white shadow-xs"
                       : "border-zinc-200 text-zinc-700 hover:border-zinc-300"
                   }`}
                 >
-                  <Lock className="w-4 h-4" /> Puntos ClossApp (Demo)
+                  <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="truncate">Puntos ClossApp (Demo)</span>
                 </button>
               </div>
             </div>
 
             {/* Card Form */}
             {metodoPago === "tarjeta" && (
-              <div className="space-y-3 bg-zinc-50/70 p-3 rounded-lg border border-zinc-200">
+              <div className="space-y-2.5 bg-zinc-50/70 p-3 rounded-lg border border-zinc-200">
                 <div>
-                  <label className="text-[11px] text-zinc-600 font-medium block mb-1">Nombre en la tarjeta</label>
+                  <label className="text-[10px] sm:text-[11px] text-zinc-600 font-medium block mb-1">Nombre en la tarjeta</label>
                   <input
                     type="text"
                     value={nombreTarjeta}
@@ -197,7 +199,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-zinc-600 font-medium block mb-1">Número de Tarjeta</label>
+                  <label className="text-[10px] sm:text-[11px] text-zinc-600 font-medium block mb-1">Número de Tarjeta</label>
                   <input
                     type="text"
                     value={numeroTarjeta}
@@ -207,7 +209,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[11px] text-zinc-600 font-medium block mb-1">Vencimiento</label>
+                    <label className="text-[10px] sm:text-[11px] text-zinc-600 font-medium block mb-1">Vencimiento</label>
                     <input
                       type="text"
                       value={expiracion}
@@ -216,7 +218,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-zinc-600 font-medium block mb-1">CVC</label>
+                    <label className="text-[10px] sm:text-[11px] text-zinc-600 font-medium block mb-1">CVC</label>
                     <input
                       type="text"
                       value={cvc}
@@ -229,11 +231,11 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
             )}
 
             {/* Action Buttons */}
-            <div className="pt-2 border-t border-zinc-100 flex gap-2">
+            <div className="pt-2 border-t border-zinc-100 flex gap-2 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 border border-zinc-200 text-zinc-700 text-xs rounded hover:bg-zinc-50 transition-colors"
+                className="px-3.5 py-2.5 border border-zinc-200 text-zinc-700 text-xs rounded hover:bg-zinc-50 transition-colors"
               >
                 Cancelar
               </button>
