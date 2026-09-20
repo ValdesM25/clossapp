@@ -45,12 +45,14 @@ export async function fetchUserTickets(
   let dbTickets: DonacionTicket[] = []
   try {
     let query = supabase.from("donacion_tickets").select("*").order("created_at", { ascending: false })
-    if (userId && userId !== "guest") {
-      query = query.eq("user_id", userId)
+    
+    // Si no es verificador/recolección y hay un userId específico, traer los tickets del usuario o tickets generales/invitado
+    if (userId && userId !== "guest" && userId !== "punto_centro_norte") {
+      query = query.or(`user_id.eq.${userId},user_id.is.null`)
     }
 
-    const { data } = await query
-    if (data) {
+    const { data, error } = await query
+    if (!error && data) {
       dbTickets = data.map((t) => ({
         id: t.id,
         qrToken: t.qr_token,
@@ -83,13 +85,15 @@ export async function fetchUserTickets(
     } catch {}
   }
 
-  // Fusionar tickets evitando duplicados (priorizando estado "completado")
+  // Fusionar tickets evitando duplicados (priorizando estado "completado" y datos de la BD)
   const map = new Map<string, DonacionTicket>()
   localTickets.forEach((t) => map.set(t.qrToken || t.id, t))
   dbTickets.forEach((t) => {
     const existing = map.get(t.qrToken || t.id)
     if (!existing || t.status === "completado") {
       map.set(t.qrToken || t.id, t)
+    } else {
+      map.set(t.qrToken || t.id, { ...existing, ...t })
     }
   })
 
@@ -325,7 +329,7 @@ export async function validarTicketQR(
     const { data: ticket, error: ticketErr } = await query.maybeSingle()
 
     if (ticketErr || !ticket) {
-      // Si no existe aún en la BD por ser un QR generado de prueba o invitado
+      // Si no existe aún en la BD por ser un QR generado de prueba o invitado, crearlo en la BD como completado
       const fallbackDonor = parsedJSON?.donorName || parsedJSON?.name || "Donante Verificado"
       const fallbackEmail = parsedJSON?.donorEmail || ""
       const fallbackPrendas = Array.isArray(parsedJSON?.prendas) ? parsedJSON.prendas : []
@@ -338,21 +342,45 @@ export async function validarTicketQR(
       const fallbackResumen = nombresList.length > 0 ? nombresList.join(", ") : `${fallbackCount} prendas entregadas`
       
       const cNombre = centroNombre || "Centro de Acopio Norte"
+      const createdNow = new Date().toISOString()
 
+      // 1. Insertar o registrar ticket en donacion_tickets en Supabase DB
+      const { data: newDbTicket } = await supabase
+        .from("donacion_tickets")
+        .insert({
+          qr_token: tokenToSearch,
+          donor_name: fallbackDonor,
+          donor_email: fallbackEmail,
+          punto_acopio_id: centroId,
+          punto_acopio_nombre: cNombre,
+          status: "completado",
+          cantidad_prendas: fallbackCount,
+          prendas_ids: fallbackPrendas,
+          puntos_otorgados: fallbackPuntos,
+          validated_at: createdNow,
+          validated_by: centroId,
+        })
+        .select("id")
+        .maybeSingle()
+
+      const createdTicketId = newDbTicket?.id || ticketIdFromJSON || `tkt_${Date.now()}`
+
+      // 2. Insertar registro en bitácora acopio_registros en Supabase DB
       const { data: regData } = await supabase
         .from("acopio_registros")
         .insert({
+          ticket_id: createdTicketId.includes("-") ? createdTicketId : null,
           punto_acopio_id: centroId,
           punto_acopio_nombre: cNombre,
           donor_name: fallbackDonor,
           donor_email: fallbackEmail,
           cantidad_prendas: fallbackCount,
           puntos_otorgados: fallbackPuntos,
-          fecha_registro: new Date().toISOString(),
+          fecha_registro: createdNow,
           observaciones: `Verificación QR (${tokenToSearch}) — Donante: ${fallbackDonor} — ${fallbackResumen}`,
         })
         .select("id")
-        .single()
+        .maybeSingle()
 
       // Sincronizar en localStorage (puntos, tickets completados y acopio registros)
       if (typeof window !== "undefined") {
@@ -362,12 +390,39 @@ export async function validarTicketQR(
           const newTotal = current + fallbackPuntos
           localStorage.setItem("clossapp_user_puntos_v1", newTotal.toString())
 
+          // Actualizar ticket local a completado
+          const localTktsStr = localStorage.getItem("clossapp_local_tickets_v1")
+          const localTkts: DonacionTicket[] = localTktsStr ? JSON.parse(localTktsStr) : []
+          const existingIndex = localTkts.findIndex((t) => t.qrToken === tokenToSearch || t.id === createdTicketId)
+          if (existingIndex >= 0) {
+            localTkts[existingIndex].status = "completado"
+            localTkts[existingIndex].validatedAt = createdNow
+          } else {
+            localTkts.unshift({
+              id: createdTicketId,
+              qrToken: tokenToSearch,
+              userId: "guest",
+              donorName: fallbackDonor,
+              donorEmail: fallbackEmail,
+              puntoAcopioId: centroId,
+              puntoAcopioNombre: cNombre,
+              status: "completado",
+              prendas: fallbackPrendas,
+              cantidadPrendas: fallbackCount,
+              puntosOtorgados: fallbackPuntos,
+              createdAt: createdNow,
+              validatedAt: createdNow,
+              validatedBy: centroId,
+            })
+          }
+          localStorage.setItem("clossapp_local_tickets_v1", JSON.stringify(localTkts))
+
           // Registrar acopio local
           const localRegsStr = localStorage.getItem("clossapp_local_acopio_registros_v1")
           const localRegs: AcopioRegistroDB[] = localRegsStr ? JSON.parse(localRegsStr) : []
           localRegs.unshift({
             id: regData?.id || `rec_${Date.now()}`,
-            ticket_id: ticketIdFromJSON || null,
+            ticket_id: createdTicketId,
             punto_acopio_id: centroId,
             punto_acopio_nombre: cNombre,
             donor_user_id: "guest",
@@ -375,7 +430,7 @@ export async function validarTicketQR(
             donor_email: fallbackEmail,
             cantidad_prendas: fallbackCount,
             puntos_otorgados: fallbackPuntos,
-            fecha_registro: new Date().toISOString(),
+            fecha_registro: createdNow,
             observaciones: `Verificación QR (${tokenToSearch}) — Donante: ${fallbackDonor} — ${fallbackResumen}`,
           })
           localStorage.setItem("clossapp_local_acopio_registros_v1", JSON.stringify(localRegs))

@@ -57,15 +57,23 @@ export function useDonaciones(userId?: string, userName?: string, userEmail?: st
       refresh()
     }
 
+    // Auto-refresh cada 5 segundos para sincronización en vivo entre dispositivos (iPad/Laptop)
+    const intervalId = setInterval(() => {
+      refresh()
+    }, 5000)
+
     if (typeof window !== "undefined") {
       window.addEventListener("clossapp_puntos_updated", handlePuntosEvent)
       window.addEventListener("storage", refresh)
+      window.addEventListener("focus", refresh)
     }
 
     return () => {
+      clearInterval(intervalId)
       if (typeof window !== "undefined") {
         window.removeEventListener("clossapp_puntos_updated", handlePuntosEvent)
         window.removeEventListener("storage", refresh)
+        window.removeEventListener("focus", refresh)
       }
     }
   }, [refresh])
