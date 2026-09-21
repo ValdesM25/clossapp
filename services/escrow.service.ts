@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { CartItem, EscrowOrder, MetodoPagoEscrow } from "@/types/escrow"
 import type { AcopioRegistroDB } from "@/types/donaciones"
+import { DEMO_ESCROW_ORDERS } from "@/constants/demo-data"
 
 /**
  * Crea una nueva Orden en Custodia (Escrow) reteniendo el dinero de la compra.
@@ -155,10 +156,21 @@ export async function fetchUserEscrowOrders(
     }
   })
 
+  // Si no hay ninguna orden ni en BD ni en localStorage (ej. en iPad / nuevo dispositivo / invitado), sembrar órdenes demo
+  if (map.size === 0) {
+    DEMO_ESCROW_ORDERS.forEach((o) => map.set(o.orderCode || o.id, o as EscrowOrder))
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(DEMO_ESCROW_ORDERS))
+      } catch {}
+    }
+  }
+
   return Array.from(map.values()).sort(
     (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
   )
 }
+
 
 /**
  * Procesa la verificación en el Punto de Recolección y LIBERA LOS FONDOS retenidos al vendedor.

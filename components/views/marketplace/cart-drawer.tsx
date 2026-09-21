@@ -1,17 +1,36 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, ShoppingBag, ShieldCheck, Trash2, ArrowRight, Calendar, Tag } from "lucide-react"
+import { X, ShoppingBag, ShieldCheck, Trash2, ArrowRight, Calendar, QrCode } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCartContext } from "@/context/cart-context"
+import { useAuthContext } from "@/context/auth-context"
+import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
+import { fetchUserEscrowOrders } from "@/services/escrow.service"
+import type { EscrowOrder } from "@/types/escrow"
 
 interface CartDrawerProps {
   onCheckout: () => void
+  onOpenOrders?: () => void
 }
 
-export function CartDrawer({ onCheckout }: CartDrawerProps) {
+export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
   const { cart, isCartOpen, setIsCartOpen, removeFromCart, clearCart, itemCount, totalPrice } = useCartContext()
+  const { userId, userEmail } = useAuthContext()
+  const supabase = createBrowserSupabaseClient()
+
+  const [escrowOrders, setEscrowOrders] = useState<EscrowOrder[]>([])
+
+  useEffect(() => {
+    if (isCartOpen) {
+      fetchUserEscrowOrders(supabase, userId, userEmail)
+        .then((orders) => setEscrowOrders(orders))
+        .catch((err) => console.error(err))
+    }
+  }, [isCartOpen, supabase, userId, userEmail])
+
+  const custodiaActivas = escrowOrders.filter((o) => o.status === "pago_en_custodia")
 
   return (
     <AnimatePresence>
@@ -38,7 +57,7 @@ export function CartDrawer({ onCheckout }: CartDrawerProps) {
             <div className="p-3.5 sm:p-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-900 text-white shrink-0">
               <div className="flex items-center gap-2">
                 <ShoppingBag className="w-5 h-5 text-emerald-400" />
-                <h2 className="font-serif text-base sm:text-lg text-white">Tu Carrito de Compras</h2>
+                <h2 className="font-serif text-base sm:text-lg text-white">Tu Carrito de Custodia</h2>
                 {itemCount > 0 && (
                   <span className="bg-emerald-500 text-zinc-950 text-[11px] font-bold px-2 py-0.5 rounded-full">
                     {itemCount}
@@ -69,10 +88,36 @@ export function CartDrawer({ onCheckout }: CartDrawerProps) {
               </div>
             </div>
 
+            {/* Sub-banner: Compras Activas en Custodia con QR */}
+            {custodiaActivas.length > 0 && (
+              <div className="bg-amber-50 border-b border-amber-200 p-3 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 bg-amber-100 rounded-md text-amber-800 shrink-0">
+                    <QrCode className="w-4.5 h-4.5" />
+                  </div>
+                  <div>
+                    <h5 className="text-[11px] sm:text-xs font-bold text-amber-950">
+                      {custodiaActivas.length} {custodiaActivas.length === 1 ? "Compra en Custodia (QR)" : "Compras en Custodia (QR)"}
+                    </h5>
+                    <p className="text-[10px] text-amber-800">Muestra tu QR en el punto de acopio</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsCartOpen(false)
+                    onOpenOrders?.()
+                  }}
+                  className="bg-zinc-900 text-white text-[11px] font-medium px-2.5 py-1.5 rounded hover:bg-zinc-800 transition-colors shrink-0 flex items-center gap-1 shadow-xs"
+                >
+                  <span>Ver QR ({custodiaActivas.length})</span>
+                </button>
+              </div>
+            )}
+
             {/* Cart Items List */}
             <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
               {cart.length === 0 ? (
-                <div className="py-12 sm:py-16 text-center flex flex-col items-center justify-center">
+                <div className="py-10 sm:py-14 text-center flex flex-col items-center justify-center">
                   <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-zinc-100 flex items-center justify-center mb-3 text-zinc-400">
                     <ShoppingBag className="w-7 h-7 sm:w-8 sm:h-8" />
                   </div>
@@ -80,6 +125,32 @@ export function CartDrawer({ onCheckout }: CartDrawerProps) {
                   <p className="text-xs text-zinc-500 mt-1 max-w-xs">
                     Explora el marketplace y añade prendas para comprar o rentar de forma segura.
                   </p>
+
+                  {custodiaActivas.length > 0 && (
+                    <div className="mt-6 w-full p-4 border border-amber-200 bg-amber-50/70 rounded-xl text-left space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-amber-200/60 pb-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-amber-900 flex items-center gap-1">
+                          <QrCode className="w-3.5 h-3.5 text-amber-700" /> Compras Activas en Custodia
+                        </span>
+                        <span className="bg-amber-200 text-amber-950 font-bold text-[10px] px-2 py-0.5 rounded-full">
+                          {custodiaActivas.length} QR listos
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-amber-900 leading-snug">
+                        Tienes {custodiaActivas.length} órdenes pagadas y protegidas en Custodia. Presenta el código QR al operador para recibir tus prendas.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setIsCartOpen(false)
+                          onOpenOrders?.()
+                        }}
+                        className="w-full bg-zinc-900 text-white font-medium text-xs py-2.5 rounded hover:bg-zinc-800 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                      >
+                        <QrCode className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Ver mis {custodiaActivas.length} Códigos QR en Custodia</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 cart.map((item) => (
@@ -190,3 +261,4 @@ export function CartDrawer({ onCheckout }: CartDrawerProps) {
     </AnimatePresence>
   )
 }
+
