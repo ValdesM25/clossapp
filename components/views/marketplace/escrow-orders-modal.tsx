@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, ShieldCheck, QrCode, Clock, CheckCircle2, Store, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { QRCodeSVG } from "qrcode.react"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { fetchUserEscrowOrders } from "@/services/escrow.service"
@@ -172,9 +173,22 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                 </button>
               </div>
 
-              <div className="p-3 sm:p-4 bg-zinc-50 border rounded-lg flex flex-col items-center">
-                <QrCode className="w-32 h-32 sm:w-36 sm:h-36 text-zinc-900" />
-                <p className="font-mono text-xs text-zinc-600 mt-2 font-bold">{selectedQR.qrToken}</p>
+              <div className="p-3 sm:p-4 bg-zinc-50 border border-zinc-200 rounded-lg flex flex-col items-center">
+                <div className="bg-white p-3 rounded-lg border border-zinc-200 shadow-sm flex items-center justify-center">
+                  <QRCodeSVG
+                    value={JSON.stringify({
+                      esc: selectedQR.orderCode,
+                      token: selectedQR.qrToken,
+                      buyer: selectedQR.buyerName,
+                      total: selectedQR.totalPagado,
+                      items: selectedQR.items.map((i) => i.prenda.name),
+                    })}
+                    size={165}
+                    level="M"
+                    includeMargin={true}
+                  />
+                </div>
+                <p className="font-mono text-xs text-zinc-900 mt-2.5 font-bold tracking-wider">{selectedQR.qrToken}</p>
                 <p className="text-[10px] sm:text-[11px] text-emerald-800 font-medium mt-1">
                   Muestra este QR en el Punto de Recolección para verificar tu entrega y liberar los fondos al vendedor.
                 </p>

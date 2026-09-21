@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion } from "framer-motion"
 import jsQR from "jsqr"
+import { QRCodeSVG } from "qrcode.react"
 import {
   Building2,
   MapPin,
@@ -1793,6 +1794,25 @@ export function PuntoRecoleccionView() {
 
               {selectedEscrowOrder && (
                 <div className="bg-zinc-50 border border-zinc-200 p-3.5 space-y-3">
+                  {/* QR Display Card */}
+                  <div className="flex flex-col items-center justify-center bg-white p-3 border border-zinc-200 rounded-lg shadow-xs mb-2">
+                    <QRCodeSVG
+                      value={JSON.stringify({
+                        esc: selectedEscrowOrder.orderCode,
+                        token: selectedEscrowOrder.qrToken,
+                        buyer: selectedEscrowOrder.buyerName,
+                        total: selectedEscrowOrder.totalPagado,
+                        itemsCount: selectedEscrowOrder.items.length,
+                      })}
+                      size={140}
+                      level="M"
+                      includeMargin={true}
+                    />
+                    <p className="font-mono text-xs font-bold text-zinc-900 mt-2 font-mono">
+                      Token QR: {selectedEscrowOrder.qrToken}
+                    </p>
+                  </div>
+
                   <div className="flex items-center justify-between text-xs border-b border-zinc-200 pb-2">
                     <span className="text-zinc-500 font-mono">Comprador:</span>
                     <strong className="text-zinc-900 font-semibold">{selectedEscrowOrder.buyerName}</strong>

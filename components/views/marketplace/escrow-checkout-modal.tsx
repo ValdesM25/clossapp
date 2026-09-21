@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, ShieldCheck, CreditCard, Lock, CheckCircle2, QrCode, ArrowRight, Store } from "lucide-react"
+import { QRCodeSVG } from "qrcode.react"
 import { useCartContext } from "@/context/cart-context"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
@@ -107,9 +108,22 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
               </div>
 
               {/* QR Code Graphical Token */}
-              <div className="flex flex-col items-center justify-center bg-white p-3 sm:p-4 border border-zinc-200 rounded shadow-xs">
-                <QrCode className="w-24 h-24 sm:w-28 sm:h-28 text-zinc-900" />
-                <p className="font-mono text-[10px] sm:text-[11px] text-zinc-500 mt-2 tracking-wider">{completedOrder.qrToken}</p>
+              <div className="flex flex-col items-center justify-center bg-white p-3.5 sm:p-4 border border-zinc-200 rounded-lg shadow-xs">
+                <div className="bg-white p-2.5 rounded border border-zinc-200 shadow-sm flex items-center justify-center">
+                  <QRCodeSVG
+                    value={JSON.stringify({
+                      esc: completedOrder.orderCode,
+                      token: completedOrder.qrToken,
+                      buyer: completedOrder.buyerName,
+                      total: completedOrder.totalPagado,
+                      items: completedOrder.items.map((i) => i.prenda.name),
+                    })}
+                    size={150}
+                    level="M"
+                    includeMargin={true}
+                  />
+                </div>
+                <p className="font-mono text-xs font-bold text-zinc-900 mt-2.5 tracking-wider">{completedOrder.qrToken}</p>
                 <p className="text-[10px] text-emerald-700 font-medium mt-1 text-center">
                   Presenta este QR al operador en el punto de acopio
                 </p>
