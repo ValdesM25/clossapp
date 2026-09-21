@@ -28,7 +28,14 @@ import {
   PieChart,
   Scale,
   Leaf,
-  Check
+  Check,
+  Heart,
+  ShoppingBag,
+  DollarSign,
+  ArrowRight,
+  UserCheck,
+  AlertCircle,
+  Eye,
 } from "lucide-react"
 import { useAuthContext } from "@/context/auth-context"
 import { Input } from "@/components/ui/input"
@@ -42,8 +49,9 @@ import {
   DONANTES_DEMO,
   type DonanteRegistrado,
 } from "@/services/donaciones.service"
-import { liberarFondosEscrow } from "@/services/escrow.service"
+import { liberarFondosEscrow, fetchUserEscrowOrders } from "@/services/escrow.service"
 import type { AcopioRegistroDB } from "@/types/donaciones"
+import type { EscrowOrder } from "@/types/escrow"
 
 interface CategoriaMeta {
   categoria: string
@@ -64,7 +72,18 @@ export function PuntoRecoleccionView() {
   const { userName, userEmail, logout } = useAuthContext()
   const supabase = createBrowserSupabaseClient()
 
-  // Real DB state
+  // Mode Selection: "donaciones" | "custodia_compras"
+  const [operatorTab, setOperatorTab] = useState<"donaciones" | "custodia_compras">("donaciones")
+
+  // Escrow orders state (Compras y Rentas)
+  const [escrowOrders, setEscrowOrders] = useState<EscrowOrder[]>([])
+  const [loadingEscrow, setLoadingEscrow] = useState(false)
+  const [selectedEscrowOrder, setSelectedEscrowOrder] = useState<EscrowOrder | null>(null)
+  const [isEscrowVerifyModalOpen, setIsEscrowVerifyModalOpen] = useState(false)
+  const [escrowReleaseSuccess, setEscrowReleaseSuccess] = useState(false)
+  const [escrowReleaseMsg, setEscrowReleaseMsg] = useState<string | null>(null)
+
+  // Real DB state (Donaciones)
   const [acopioRegistros, setAcopioRegistros] = useState<AcopioRegistroDB[]>([])
   const [loadingDB, setLoadingDB] = useState(true)
 
@@ -117,6 +136,24 @@ export function PuntoRecoleccionView() {
   const [selectedDonor, setSelectedDonor] = useState<DonanteRegistrado | null>(null)
   const [selectedPrendaIds, setSelectedPrendaIds] = useState<string[]>([])
   const [showAllPrendas, setShowAllPrendas] = useState(false)
+
+  // Load Escrow Orders
+  const loadEscrowOrders = useCallback(async () => {
+    setLoadingEscrow(true)
+    try {
+      const orders = await fetchUserEscrowOrders(supabase, "punto_centro_norte")
+      setEscrowOrders(orders)
+    } catch (err) {
+      console.error("Error loading escrow orders:", err)
+    } finally {
+      setLoadingEscrow(false)
+    }
+  }, [supabase])
+
+  useEffect(() => {
+    loadEscrowOrders()
+  }, [loadEscrowOrders])
+
 
   // Fetch registered donors from DB
   useEffect(() => {
@@ -457,12 +494,47 @@ export function PuntoRecoleccionView() {
     }
   }
 
+  async function handleVerifyAndReleaseEscrow(orderToVerify?: EscrowOrder) {
+    const target = orderToVerify || selectedEscrowOrder
+    if (!target) return
+
+    const code = target.qrToken || target.orderCode || target.id
+    setEscrowReleaseSuccess(false)
+    setEscrowReleaseMsg(null)
+
+    const res = await liberarFondosEscrow(
+      supabase,
+      code,
+      "norte",
+      userName || "Centro de Acopio Norte"
+    )
+
+    if (res.success) {
+      setEscrowReleaseSuccess(true)
+      setEscrowReleaseMsg(res.mensaje)
+      await loadEscrowOrders()
+      setTimeout(() => {
+        setIsEscrowVerifyModalOpen(false)
+        setEscrowReleaseSuccess(false)
+        setSelectedEscrowOrder(null)
+      }, 2000)
+    } else {
+      setEscrowReleaseSuccess(false)
+      setEscrowReleaseMsg(res.mensaje || "Error al liberar la orden.")
+    }
+  }
+
   const filteredRegistros = acopioRegistros.filter(
     (r) =>
       (r.donor_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (r.punto_acopio_nombre || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (r.observaciones || "").toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  const escrowPendientes = escrowOrders.filter((o) => o.status === "pago_en_custodia")
+  const escrowEntregadas = escrowOrders.filter((o) => o.status === "entregado_y_liberado")
+  const totalFondosCustodia = escrowPendientes.reduce((sum, o) => sum + (o.totalPagado || 0), 0)
+  const totalFondosLiberados = escrowEntregadas.reduce((sum, o) => sum + (o.totalPagado || 0), 0)
 
   return (
     <div className="min-h-screen bg-zinc-50/50 pb-20">
@@ -492,11 +564,14 @@ export function PuntoRecoleccionView() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => loadDBRecords()}
+              onClick={() => {
+                loadDBRecords()
+                loadEscrowOrders()
+              }}
               className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition-colors"
               title="Actualizar datos"
             >
-              <RefreshCw className={`w-4 h-4 ${loadingDB ? "animate-spin text-emerald-400" : ""}`} />
+              <RefreshCw className={`w-4 h-4 ${loadingDB || loadingEscrow ? "animate-spin text-emerald-400" : ""}`} />
             </button>
 
             <div className="hidden sm:flex flex-col items-end text-xs text-zinc-300">
@@ -514,286 +589,581 @@ export function PuntoRecoleccionView() {
             </button>
           </div>
         </div>
+
+        {/* DUAL MODE TAB BAR: DONACIONES vs COMPRAS Y RENTA EN CUSTODIA */}
+        <div className="bg-zinc-950 border-t border-zinc-800 px-4">
+          <div className="max-w-6xl mx-auto flex items-center gap-2">
+            <button
+              onClick={() => setOperatorTab("donaciones")}
+              className={`py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+                operatorTab === "donaciones"
+                  ? "border-emerald-400 text-emerald-400 bg-emerald-950/40"
+                  : "border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/60"
+              }`}
+            >
+              <Heart className="w-4 h-4 text-emerald-400" />
+              <span>1. Recepción de Donaciones</span>
+              <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono text-[10px] px-2 py-0.5 rounded-full">
+                {garmentsCollectedMonth} prendas
+              </span>
+            </button>
+
+            <button
+              onClick={() => setOperatorTab("custodia_compras")}
+              className={`py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+                operatorTab === "custodia_compras"
+                  ? "border-amber-400 text-amber-300 bg-amber-950/40"
+                  : "border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/60"
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <span>2. Entregas de Compras y Renta (Custodia)</span>
+              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono text-[10px] px-2 py-0.5 rounded-full">
+                {escrowPendientes.length} por entregar
+              </span>
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Main Content Area */}
       <main className="max-w-6xl mx-auto px-4 pt-6 space-y-6">
-        {/* Banner: Operación de Donaciones e Identificación */}
-        <div className="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-white p-5 border border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
-          <div className="space-y-1">
-            <span className="text-[10px] uppercase font-mono tracking-widest text-emerald-400 bg-emerald-950/80 px-2.5 py-1 border border-emerald-800/50 inline-block mb-1">
-              Portal Exclusivo Puntos de Recolección
-            </span>
-            <h2 className="font-serif text-xl sm:text-2xl text-white">
-              Panel de Control y Metas Mensuales de Recolección
-            </h2>
-            <p className="text-xs text-zinc-300 max-w-2xl leading-relaxed">
-              Registra y verifica paquetes de ropa donada, acredita Puntos ClossApp a los donantes y da seguimiento en tiempo real al cumplimiento de las metas comunitarias del mes.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2.5 shrink-0 flex-wrap">
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => {
-                setScannerStatus("idle")
-                setVerifiedPackage(null)
-                setScannerErrorMsg(null)
-                setIsScannerOpen(true)
-              }}
-              className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
-            >
-              <Scan className="w-4 h-4 text-zinc-950" />
-              <span>Escanear QR</span>
-            </motion.button>
-
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setIsManualModalOpen(true)}
-              className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors"
-            >
-              <Plus className="w-4 h-4 text-amber-400" />
-              <span>Donación Presencial</span>
-            </motion.button>
-          </div>
-        </div>
-
-        {/* SECTION 1: METAS DE ROPA DONADA DEL MES */}
-        <section className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 pb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
-                <Target className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-serif text-lg font-semibold text-zinc-900">
-                  Meta de Ropa Donada del Mes
-                </h3>
-                <p className="text-xs text-zinc-500">
-                  Objetivo comunitario — Septiembre 2026
+        {operatorTab === "donaciones" ? (
+          <>
+            {/* Banner: Operación de Donaciones e Identificación */}
+            <div className="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-white p-5 border border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase font-mono tracking-widest text-emerald-400 bg-emerald-950/80 px-2.5 py-1 border border-emerald-800/50 inline-block mb-1">
+                  Módulo de Gestión de Donaciones
+                </span>
+                <h2 className="font-serif text-xl sm:text-2xl text-white">
+                  Panel de Control y Metas Mensuales de Recolección
+                </h2>
+                <p className="text-xs text-zinc-300 max-w-2xl leading-relaxed">
+                  Registra y verifica paquetes de ropa donada, acredita Puntos ClossApp a los donantes y da seguimiento en tiempo real al cumplimiento de las metas comunitarias del mes.
                 </p>
               </div>
+
+              <div className="flex flex-col sm:flex-row gap-2.5 shrink-0 flex-wrap">
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setScannerStatus("idle")
+                    setVerifiedPackage(null)
+                    setScannerErrorMsg(null)
+                    setIsScannerOpen(true)
+                  }}
+                  className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                >
+                  <Scan className="w-4 h-4 text-zinc-950" />
+                  <span>Escanear QR Donación</span>
+                </motion.button>
+
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsManualModalOpen(true)}
+                  className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Plus className="w-4 h-4 text-amber-400" />
+                  <span>Donación Presencial</span>
+                </motion.button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono bg-zinc-100 border border-zinc-200 px-3 py-1 text-zinc-700 font-medium flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-zinc-500" />
-                15 días restantes
-              </span>
-            </div>
-          </div>
+            {/* SECTION 1: METAS DE ROPA DONADA DEL MES */}
+            <section className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+                    <Target className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-lg font-semibold text-zinc-900">
+                      Meta de Ropa Donada del Mes
+                    </h3>
+                    <p className="text-xs text-zinc-500">
+                      Objetivo comunitario — Septiembre 2026
+                    </p>
+                  </div>
+                </div>
 
-          {/* Big Progress Bar Card */}
-          <div className="bg-zinc-50 border border-zinc-200 p-5 flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-widest text-zinc-500 font-medium">Progreso Global del Mes</p>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="font-serif text-3xl sm:text-4xl text-zinc-900 font-semibold">
-                    {garmentsCollectedMonth}
-                  </span>
-                  <span className="text-sm font-medium text-zinc-500">
-                    / {targetMonthlyGoal} prendas meta
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono bg-zinc-100 border border-zinc-200 px-3 py-1 text-zinc-700 font-medium flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-zinc-500" />
+                    15 días restantes
                   </span>
                 </div>
               </div>
 
-              <div className="text-left sm:text-right">
-                <span className="text-2xl font-mono font-bold text-emerald-700">
-                  {percentGoal}%
-                </span>
-                <p className="text-xs text-zinc-500 font-medium mt-0.5">
-                  Faltan <strong className="text-zinc-900">{remainingPrendas} prendas</strong> para alcanzar el 100%
-                </p>
-              </div>
-            </div>
-
-            {/* Custom Progress Bar */}
-            <div className="w-full bg-zinc-200 h-4 rounded-full overflow-hidden relative border border-zinc-300/60">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${percentGoal}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full relative"
-              />
-            </div>
-
-            <div className="flex items-center justify-between text-[11px] text-zinc-500 font-mono pt-1">
-              <span>0 prendas</span>
-              <span>250 prendas (50%)</span>
-              <span className="font-bold text-zinc-800">500 prendas (Meta Final)</span>
-            </div>
-          </div>
-
-          {/* Breakdown by Priority Categories */}
-          <div>
-            <h4 className="text-xs uppercase font-mono tracking-wider text-zinc-500 mb-3 font-semibold">
-              Metas por Categoría Prioritaria
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {categoriasMetas.map((cat) => {
-                const pct = cat.meta > 0 ? Math.min(100, Math.round((cat.actual / cat.meta) * 100)) : 0
-                return (
-                  <div key={cat.categoria} className="border border-zinc-200 p-3.5 bg-white space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg">{cat.icono}</span>
-                      <span
-                        className={`text-[10px] font-mono px-2 py-0.5 uppercase font-medium ${
-                          cat.prioridad === "alta"
-                            ? "bg-red-50 text-red-700 border border-red-200"
-                            : "bg-zinc-100 text-zinc-600"
-                        }`}
-                      >
-                        {cat.prioridad === "alta" ? "Alta demanda" : "Normal"}
+              {/* Big Progress Bar Card */}
+              <div className="bg-zinc-50 border border-zinc-200 p-5 flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-widest text-zinc-500 font-medium">Progreso Global del Mes</p>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="font-serif text-3xl sm:text-4xl text-zinc-900 font-semibold">
+                        {garmentsCollectedMonth}
+                      </span>
+                      <span className="text-sm font-medium text-zinc-500">
+                        / {targetMonthlyGoal} prendas meta
                       </span>
                     </div>
-
-                    <div>
-                      <p className="text-xs font-semibold text-zinc-900 truncate">{cat.categoria}</p>
-                      <p className="text-[11px] text-zinc-500 font-mono mt-0.5">
-                        {cat.actual} / {cat.meta} prendas ({pct}%)
-                      </p>
-                    </div>
-
-                    <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden border border-zinc-200">
-                      <div className="bg-zinc-800 h-full rounded-full" style={{ width: `${pct}%` }} />
-                    </div>
                   </div>
-                )
-              })}
+
+                  <div className="text-left sm:text-right">
+                    <span className="text-2xl font-mono font-bold text-emerald-700">
+                      {percentGoal}%
+                    </span>
+                    <p className="text-xs text-zinc-500 font-medium mt-0.5">
+                      Faltan <strong className="text-zinc-900">{remainingPrendas} prendas</strong> para alcanzar el 100%
+                    </p>
+                  </div>
+                </div>
+
+                {/* Custom Progress Bar */}
+                <div className="w-full bg-zinc-200 h-4 rounded-full overflow-hidden relative border border-zinc-300/60">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${percentGoal}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full relative"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-zinc-500 font-mono pt-1">
+                  <span>0 prendas</span>
+                  <span>250 prendas (50%)</span>
+                  <span className="font-bold text-zinc-800">500 prendas (Meta Final)</span>
+                </div>
+              </div>
+
+              {/* Breakdown by Priority Categories */}
+              <div>
+                <h4 className="text-xs uppercase font-mono tracking-wider text-zinc-500 mb-3 font-semibold">
+                  Metas por Categoría Prioritaria
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {categoriasMetas.map((cat) => {
+                    const pct = cat.meta > 0 ? Math.min(100, Math.round((cat.actual / cat.meta) * 100)) : 0
+                    return (
+                      <div key={cat.categoria} className="border border-zinc-200 p-3.5 bg-white space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg">{cat.icono}</span>
+                          <span
+                            className={`text-[10px] font-mono px-2 py-0.5 uppercase font-medium ${
+                              cat.prioridad === "alta"
+                                ? "bg-red-50 text-red-700 border border-red-200"
+                                : "bg-zinc-100 text-zinc-600"
+                            }`}
+                          >
+                            {cat.prioridad === "alta" ? "Alta demanda" : "Normal"}
+                          </span>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-semibold text-zinc-900 truncate">{cat.categoria}</p>
+                          <p className="text-[11px] text-zinc-500 font-mono mt-0.5">
+                            {cat.actual} / {cat.meta} prendas ({pct}%)
+                          </p>
+                        </div>
+
+                        <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden border border-zinc-200">
+                          <div className="bg-zinc-800 h-full rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </section>
+
+            {/* SECTION 2: MÉTRICAS DE RECOLECCIÓN DE ESTE MES */}
+            <section className="space-y-3">
+              <h3 className="font-serif text-lg font-semibold text-zinc-900 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-emerald-600" />
+                Métricas de Recolección de este Mes
+              </h3>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
+                  <div className="flex items-center justify-between text-zinc-400">
+                    <Shirt className="w-4 h-4 text-emerald-600" />
+                    <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5">
+                      Registradas
+                    </span>
+                  </div>
+                  <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">{garmentsCollectedMonth}</p>
+                  <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Prendas donadas en mes</p>
+                </div>
+
+                <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
+                  <div className="flex items-center justify-between text-zinc-400">
+                    <PackageCheck className="w-4 h-4 text-zinc-700" />
+                    <span className="text-[10px] font-mono text-zinc-500">Verificados</span>
+                  </div>
+                  <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">{ticketsValidatedCount}</p>
+                  <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Tickets / Paquetes</p>
+                </div>
+
+                <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
+                  <div className="flex items-center justify-between text-zinc-400">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-1.5 py-0.5">Entregados</span>
+                  </div>
+                  <p className="font-serif text-2xl sm:text-3xl text-amber-600 font-bold">{pointsDistributed.toLocaleString()}</p>
+                  <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Puntos ClossApp creados</p>
+                </div>
+
+                <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
+                  <div className="flex items-center justify-between text-zinc-400">
+                    <Users className="w-4 h-4 text-indigo-600" />
+                    <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5">Comunidad</span>
+                  </div>
+                  <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">{familiasBeneficiadas}</p>
+                  <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Familias beneficiadas</p>
+                </div>
+              </div>
+            </section>
+
+            {/* SECTION 3: RECEPTION TOOL & RECENT ACTIVITY LOG */}
+            <section className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-4">
+                <div>
+                  <h3 className="font-serif text-lg font-semibold text-zinc-900">
+                    Historial de Donaciones Recibidas en este Punto
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Registro de tickets escaneados y confirmados en el centro de acopio
+                  </p>
+                </div>
+
+                {/* Quick manual lookup bar */}
+                <div className="relative w-full sm:w-72">
+                  <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar por donante o detalle..."
+                    className="pl-9 h-9 text-xs rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900"
+                  />
+                </div>
+              </div>
+
+              {filteredRegistros.length === 0 ? (
+                <div className="p-8 text-center border border-dashed border-zinc-200 text-zinc-400">
+                  <QrCode className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs">No hay registros de donación aún.</p>
+                  <p className="text-[11px] text-zinc-500 mt-1">
+                    Usa el escáner o el botón de registro presencial para recibir prendas.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-100 border border-zinc-200">
+                  {filteredRegistros.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-4 hover:bg-zinc-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0 mt-0.5">
+                          <ShieldCheck className="w-5 h-5" />
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-zinc-900">{item.donor_name}</span>
+                            <span className="text-[10px] font-mono text-zinc-400 bg-zinc-100 px-2 py-0.5 border border-zinc-200">
+                              {item.punto_acopio_nombre}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-zinc-600 mt-0.5">{item.observaciones || "Verificado"}</p>
+                          <p className="text-[10px] text-zinc-400 font-mono mt-1 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(item.fecha_registro).toLocaleString("es-MX", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex sm:flex-col items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-zinc-100">
+                        <span className="text-xs font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-1 border border-emerald-200 font-mono flex items-center gap-1">
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                          +{item.puntos_otorgados} Puntos acreditados
+                        </span>
+                        <span className="text-[11px] text-zinc-700 font-medium mt-1">
+                          {item.cantidad_prendas} prendas verificadas
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        ) : (
+          /* OPERATOR TAB 2: INTERFAZ DE COMPRAS Y RENTA EN CUSTODIA (MARKETPLACE / ESCROW) */
+          <div className="space-y-6">
+            {/* Banner Custodia */}
+            <div className="bg-gradient-to-r from-amber-950 via-zinc-900 to-amber-950 text-white p-5 border border-amber-900/60 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 bg-amber-950/80 px-2.5 py-1 border border-amber-700/50 inline-block mb-1">
+                  Módulo de Custodia, Compras & Rentas
+                </span>
+                <h2 className="font-serif text-xl sm:text-2xl text-white flex items-center gap-2">
+                  <ShieldCheck className="w-6 h-6 text-amber-400" />
+                  Verificación de Entrega y Liberación de Pago al Vendedor
+                </h2>
+                <p className="text-xs text-amber-200/80 max-w-2xl leading-relaxed">
+                  Verifica el código QR presentado por el comprador en el punto de acopio. Al confirmar la entrega física de las prendas en buen estado, se liberará el dinero retenido en custodia al vendedor.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2.5 shrink-0 flex-wrap">
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setScannerStatus("idle")
+                    setVerifiedPackage(null)
+                    setScannerErrorMsg(null)
+                    setIsScannerOpen(true)
+                  }}
+                  className="px-4 py-3 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                >
+                  <QrCode className="w-4 h-4 text-zinc-950" />
+                  <span>Escanear QR de Custodia</span>
+                </motion.button>
+
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => loadEscrowOrders()}
+                  className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors"
+                >
+                  <RefreshCw className={`w-4 h-4 text-amber-400 ${loadingEscrow ? "animate-spin" : ""}`} />
+                  <span>Actualizar Lista</span>
+                </motion.button>
+              </div>
             </div>
-          </div>
-        </section>
 
-        {/* SECTION 2: MÉTRICAS DE RECOLECCIÓN DE ESTE MES */}
-        <section className="space-y-3">
-          <h3 className="font-serif text-lg font-semibold text-zinc-900 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-emerald-600" />
-            Métricas de Recolección de este Mes
-          </h3>
+            {/* KPI Cards Custodia */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-white border border-amber-200 p-4 space-y-1 shadow-sm">
+                <div className="flex items-center justify-between text-amber-700">
+                  <PackageCheck className="w-4 h-4" />
+                  <span className="text-[10px] font-mono bg-amber-50 px-1.5 py-0.5 border border-amber-200">
+                    Por Entregar
+                  </span>
+                </div>
+                <p className="font-serif text-2xl sm:text-3xl text-amber-950 font-bold">{escrowPendientes.length}</p>
+                <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Órdenes en Custodia</p>
+              </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
-              <div className="flex items-center justify-between text-zinc-400">
-                <Shirt className="w-4 h-4 text-emerald-600" />
-                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5">
-                  Registradas
+              <div className="bg-white border border-emerald-200 p-4 space-y-1 shadow-sm">
+                <div className="flex items-center justify-between text-emerald-700">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="text-[10px] font-mono bg-emerald-50 px-1.5 py-0.5 border border-emerald-200">
+                    Completadas
+                  </span>
+                </div>
+                <p className="font-serif text-2xl sm:text-3xl text-emerald-900 font-bold">{escrowEntregadas.length}</p>
+                <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Entregadas & Liberadas</p>
+              </div>
+
+              <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
+                <div className="flex items-center justify-between text-zinc-500">
+                  <DollarSign className="w-4 h-4 text-emerald-600" />
+                  <span className="text-[10px] font-mono text-zinc-500">Retenido</span>
+                </div>
+                <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">${totalFondosCustodia}</p>
+                <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Fondos en Custodia Segura</p>
+              </div>
+
+              <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
+                <div className="flex items-center justify-between text-zinc-500">
+                  <Sparkles className="w-4 h-4 text-emerald-600" />
+                  <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5">Liberado</span>
+                </div>
+                <p className="font-serif text-2xl sm:text-3xl text-emerald-800 font-bold">${totalFondosLiberados}</p>
+                <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Pagos Entregados a Vendedores</p>
+              </div>
+            </div>
+
+            {/* SECCIÓN 1: ÓRDENEN EN CUSTODIA PENDIENTES DE ENTREGA */}
+            <section className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-amber-600" />
+                  <h3 className="font-serif text-lg font-semibold text-zinc-900">
+                    Compras y Rentas Listas para Entrega en este Punto
+                  </h3>
+                </div>
+                <span className="text-xs font-mono text-amber-900 bg-amber-100 border border-amber-300 px-3 py-1 font-bold">
+                  {escrowPendientes.length} órdenes esperando comprador
                 </span>
               </div>
-              <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">{garmentsCollectedMonth}</p>
-              <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Prendas donadas en mes</p>
-            </div>
 
-            <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
-              <div className="flex items-center justify-between text-zinc-400">
-                <PackageCheck className="w-4 h-4 text-zinc-700" />
-                <span className="text-[10px] font-mono text-zinc-500">Verificados</span>
-              </div>
-              <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">{ticketsValidatedCount}</p>
-              <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Tickets / Paquetes</p>
-            </div>
-
-            <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
-              <div className="flex items-center justify-between text-zinc-400">
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-1.5 py-0.5">Entregados</span>
-              </div>
-              <p className="font-serif text-2xl sm:text-3xl text-amber-600 font-bold">{pointsDistributed.toLocaleString()}</p>
-              <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Puntos ClossApp creados</p>
-            </div>
-
-            <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
-              <div className="flex items-center justify-between text-zinc-400">
-                <Users className="w-4 h-4 text-indigo-600" />
-                <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5">Comunidad</span>
-              </div>
-              <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">{familiasBeneficiadas}</p>
-              <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Familias beneficiadas</p>
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 3: RECEPTION TOOL & RECENT ACTIVITY LOG */}
-        <section className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-4">
-            <div>
-              <h3 className="font-serif text-lg font-semibold text-zinc-900">
-                Historial de Donaciones Recibidas en este Punto
-              </h3>
-              <p className="text-xs text-zinc-500">
-                Registro de tickets escaneados y confirmados en el centro de acopio
-              </p>
-            </div>
-
-            {/* Quick manual lookup bar */}
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por donante o detalle..."
-                className="pl-9 h-9 text-xs rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900"
-              />
-            </div>
-          </div>
-
-          {filteredRegistros.length === 0 ? (
-            <div className="p-8 text-center border border-dashed border-zinc-200 text-zinc-400">
-              <QrCode className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-xs">No hay registros de donación aún.</p>
-              <p className="text-[11px] text-zinc-500 mt-1">
-                Usa el escáner o el botón de registro presencial para recibir prendas.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-zinc-100 border border-zinc-200">
-              {filteredRegistros.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-4 hover:bg-zinc-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0 mt-0.5">
-                      <ShieldCheck className="w-5 h-5" />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-zinc-900">{item.donor_name}</span>
-                        <span className="text-[10px] font-mono text-zinc-400 bg-zinc-100 px-2 py-0.5 border border-zinc-200">
-                          {item.punto_acopio_nombre}
+              {escrowPendientes.length === 0 ? (
+                <div className="py-12 text-center border border-dashed border-zinc-200 text-zinc-400">
+                  <PackageCheck className="w-8 h-8 mx-auto mb-2 opacity-50 text-amber-600" />
+                  <p className="text-xs font-semibold text-zinc-700">No hay compras o rentas pendientes en este momento.</p>
+                  <p className="text-[11px] text-zinc-500 mt-1">
+                    Cuando un usuario compre o rente prendas en el Marketplace, aparecerán aquí para entrega.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {escrowPendientes.map((order) => (
+                    <motion.div
+                      key={order.id}
+                      whileHover={{ y: -2 }}
+                      className="border border-amber-300 bg-amber-50/40 p-4 rounded-xl flex flex-col justify-between gap-3 relative shadow-xs"
+                    >
+                      <div className="flex items-center justify-between border-b border-amber-200/80 pb-2.5">
+                        <div>
+                          <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-amber-950 bg-amber-200/80 px-2 py-0.5 rounded">
+                            Código: #{order.orderCode}
+                          </span>
+                          <p className="text-[10px] text-zinc-500 font-mono mt-1">
+                            QR Token: <span className="font-bold text-zinc-800">{order.qrToken}</span>
+                          </p>
+                        </div>
+                        <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                          En Custodia
                         </span>
                       </div>
 
-                      <p className="text-xs text-zinc-600 mt-0.5">{item.observaciones || "Verificado"}</p>
-                      <p className="text-[10px] text-zinc-400 font-mono mt-1 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {new Date(item.fecha_registro).toLocaleString("es-MX", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                    </div>
-                  </div>
+                      {/* Items details */}
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-mono text-zinc-600 font-semibold uppercase">
+                          Prendas en la Orden ({order.items.length}):
+                        </p>
+                        <div className="space-y-2 bg-white border border-amber-200/70 p-2.5 rounded-lg">
+                          {order.items.map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-3 text-xs">
+                              <img
+                                src={item.prenda.image_url || "/placeholder.svg"}
+                                alt={item.prenda.name}
+                                className="w-12 h-14 object-cover rounded bg-zinc-100 border border-zinc-200 shrink-0"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  <span className={`text-[9px] uppercase font-semibold px-1.5 py-0.2 rounded ${
+                                    item.tipo === "renta"
+                                      ? "bg-amber-100 text-amber-800"
+                                      : "bg-emerald-100 text-emerald-800"
+                                  }`}>
+                                    {item.tipo === "renta" ? "Renta" : "Compra"}
+                                  </span>
+                                  {item.prenda.talla && (
+                                    <span className="text-[9px] text-zinc-500 bg-zinc-100 px-1 py-0.2 rounded">
+                                      Talla {item.prenda.talla}
+                                    </span>
+                                  )}
+                                </div>
+                                <h5 className="font-semibold text-zinc-900 truncate">{item.prenda.name}</h5>
+                                <p className="text-[10px] text-zinc-500 truncate">Vendedor: {item.sellerName || "Verificado"}</p>
+                              </div>
+                              <span className="font-mono font-bold text-zinc-900">${item.precio} MXN</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
-                  <div className="flex sm:flex-col items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-zinc-100">
-                    <span className="text-xs font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-1 border border-emerald-200 font-mono flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                      +{item.puntos_otorgados} Puntos acreditados
-                    </span>
-                    <span className="text-[11px] text-zinc-700 font-medium mt-1">
-                      {item.cantidad_prendas} prendas verificadas
-                    </span>
-                  </div>
+                      {/* Buyer & Payment breakdown */}
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-200/80">
+                        <div>
+                          <p className="text-[10px] text-zinc-500 font-mono">Comprador:</p>
+                          <p className="font-semibold text-zinc-900">{order.buyerName}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] text-zinc-500 font-mono">Total Retenido:</p>
+                          <p className="font-mono text-base font-bold text-amber-950">${order.totalPagado} MXN</p>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          setSelectedEscrowOrder(order)
+                          setEscrowReleaseSuccess(false)
+                          setEscrowReleaseMsg(null)
+                          setIsEscrowVerifyModalOpen(true)
+                        }}
+                        className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <span>Verificar QR y Entregar Prenda</span>
+                      </motion.button>
+                    </motion.div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
+              )}
+            </section>
+
+            {/* SECCIÓN 2: HISTORIAL DE ENTREGAS Y LIBERACIÓN DE FONDOS */}
+            <section className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-4">
+              <div className="border-b border-zinc-100 pb-3">
+                <h3 className="font-serif text-lg font-semibold text-zinc-900 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  Historial de Entregas Realizadas y Fondos Liberados al Vendedor
+                </h3>
+                <p className="text-xs text-zinc-500">
+                  Registro de compradores que ya acudieron al punto de recolección y retiraron sus prendas
+                </p>
+              </div>
+
+              {escrowEntregadas.length === 0 ? (
+                <div className="p-6 text-center border border-zinc-200 text-zinc-400 text-xs">
+                  Aún no hay entregas completadas en este turno.
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-100 border border-zinc-200">
+                  {escrowEntregadas.map((o) => (
+                    <div key={o.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
+                          <Check className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-bold text-zinc-900">#{o.orderCode}</span>
+                            <span className="text-[10px] font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 border border-emerald-200">
+                              ✓ Entregado & Pago Liberado
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-700 mt-0.5">
+                            Comprador: <strong>{o.buyerName}</strong> · {o.items.length} {o.items.length === 1 ? "prenda" : "prendas"}
+                          </p>
+                          <p className="text-[10px] text-zinc-400 font-mono mt-1">
+                            Punto de Acopio: {o.puntoAcopioNombre}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex sm:flex-col items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-zinc-100">
+                        <span className="font-mono text-sm font-bold text-emerald-700">
+                          ${o.totalPagado} MXN liberados
+                        </span>
+                        <span className="text-[10px] text-zinc-400 font-mono">
+                          Liberado por operador
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        )}
       </main>
+
 
       {/* MODAL 1: LIVE QR SCANNER FOR OPERATOR */}
       <CenteredModal open={isScannerOpen} onClose={() => setIsScannerOpen(false)}>
@@ -1395,6 +1765,103 @@ export function PuntoRecoleccionView() {
               <p className="font-serif text-xl font-bold text-zinc-900">¡Recepción Confirmada y Dividida en Métricas!</p>
               <p className="text-xs text-zinc-600">
                 Se actualizaron las metas del mes, los kilogramos textiles procesados y los Puntos ClossApp del donante.
+              </p>
+            </div>
+          )}
+        </div>
+      </CenteredModal>
+
+      {/* MODAL 4: VERIFICAR Y ENTREGAR PRENDA EN CUSTODIA (ESCROW) */}
+      <CenteredModal open={isEscrowVerifyModalOpen} onClose={() => setIsEscrowVerifyModalOpen(false)}>
+        <div className="flex flex-col gap-4 p-1 max-h-[85vh] overflow-y-auto">
+          {/* Header Banner */}
+          <div className="bg-amber-950 text-white p-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs">
+              <ShieldCheck className="w-5 h-5 text-amber-400" />
+              <span className="font-medium font-serif text-sm">Verificación de Custodia & Entrega</span>
+            </div>
+            <span className="text-[10px] uppercase font-mono tracking-widest text-amber-300 bg-amber-900/60 px-2.5 py-0.5 border border-amber-700 font-bold">
+              #{selectedEscrowOrder?.orderCode}
+            </span>
+          </div>
+
+          {!escrowReleaseSuccess ? (
+            <div className="space-y-4">
+              <p className="text-xs text-zinc-600 leading-relaxed">
+                Revisa los datos de la orden y confirma que las prendas hayan sido inspeccionadas físicamente antes de liberarle el pago al vendedor.
+              </p>
+
+              {selectedEscrowOrder && (
+                <div className="bg-zinc-50 border border-zinc-200 p-3.5 space-y-3">
+                  <div className="flex items-center justify-between text-xs border-b border-zinc-200 pb-2">
+                    <span className="text-zinc-500 font-mono">Comprador:</span>
+                    <strong className="text-zinc-900 font-semibold">{selectedEscrowOrder.buyerName}</strong>
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-[10px] uppercase font-mono text-zinc-500 font-semibold">Prendas a Entregar:</span>
+                    {selectedEscrowOrder.items.map((it, idx) => (
+                      <div key={idx} className="flex items-center gap-3 bg-white p-2 border border-zinc-200 text-xs">
+                        <img src={it.prenda.image_url} alt={it.prenda.name} className="w-10 h-12 object-cover border border-zinc-200 rounded" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-zinc-900 truncate">{it.prenda.name}</p>
+                          <p className="text-[10px] text-zinc-500">Vendedor: {it.sellerName || "Verificado"}</p>
+                        </div>
+                        <span className="font-mono font-bold text-zinc-900">${it.precio} MXN</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="bg-amber-100/70 border border-amber-300 p-2.5 flex items-center justify-between text-xs">
+                    <span className="font-semibold text-amber-950 flex items-center gap-1.5">
+                      <DollarSign className="w-4 h-4 text-amber-700" /> Total a Liberar al Vendedor:
+                    </span>
+                    <strong className="font-mono text-base text-amber-950">${selectedEscrowOrder.totalPagado} MXN</strong>
+                  </div>
+                </div>
+              )}
+
+              {/* Checklist de Inspección */}
+              <div className="space-y-2 bg-zinc-50 p-3 border border-zinc-200 text-xs">
+                <p className="font-bold text-zinc-800 text-[11px] font-mono uppercase">Checklist de Recepción en Punto:</p>
+                <div className="space-y-1.5 text-zinc-700">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Las prendas coinciden con la orden y fotos publicadas</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Sin defectos no reportados o daños graves</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Comprador autenticado por QR Token de autorización</span>
+                  </div>
+                </div>
+              </div>
+
+              {escrowReleaseMsg && (
+                <div className="p-3 bg-red-50 border border-red-200 text-xs text-red-700">
+                  {escrowReleaseMsg}
+                </div>
+              )}
+
+              <button
+                onClick={() => handleVerifyAndReleaseEscrow()}
+                className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold text-xs tracking-wide transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+              >
+                <ShieldCheck className="w-4 h-4 text-zinc-950" />
+                <span>Entregar Prenda y Liberar ${selectedEscrowOrder?.totalPagado} MXN</span>
+              </button>
+            </div>
+          ) : (
+            <div className="py-6 text-center space-y-3 bg-emerald-50 border border-emerald-200 p-6">
+              <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
+                <Check className="w-7 h-7" />
+              </div>
+              <p className="font-serif text-xl font-bold text-zinc-900">¡Entrega Confirmada y Fondos Liberados!</p>
+              <p className="text-xs text-zinc-600 max-w-sm mx-auto">
+                {escrowReleaseMsg || `Se transfirieron $${selectedEscrowOrder?.totalPagado} MXN al vendedor y la transacción ha quedado cerrada exitosamente.`}
               </p>
             </div>
           )}
