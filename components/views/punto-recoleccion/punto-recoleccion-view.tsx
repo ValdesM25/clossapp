@@ -117,6 +117,9 @@ export function PuntoRecoleccionView() {
     points: number
     prendas: any[]
     prendasResumen?: string
+    isEscrow?: boolean
+    orderCode?: string
+    totalLiberado?: number
   } | null>(null)
 
   // Camera video stream state & refs
@@ -308,10 +311,27 @@ export function PuntoRecoleccionView() {
     setScannerErrorMsg(null)
 
     const cleanToken = token.trim()
+    let isEscrowCode = false
+    let parsedJSON: any = null
+
+    if (cleanToken.startsWith("{") && cleanToken.endsWith("}")) {
+      try {
+        parsedJSON = JSON.parse(cleanToken)
+        if (parsedJSON.esc) {
+          isEscrowCode = true
+        } else if (parsedJSON.token && String(parsedJSON.token).toUpperCase().startsWith("ESC-")) {
+          isEscrowCode = true
+        }
+      } catch {}
+    }
+
+    if (cleanToken.toUpperCase().startsWith("ESC-") || cleanToken.toUpperCase().startsWith("ESC-QR-")) {
+      isEscrowCode = true
+    }
 
     try {
-      // Si el código pertenece a una orden Escrow (#ESC-XXXXX o ESC-QR-XXXXX)
-      if (cleanToken.toUpperCase().startsWith("ESC-")) {
+      // Si el código pertenece a una orden Escrow (#ESC-XXXXX o ESC-QR-XXXXX) o estamos en el apartado de custodia
+      if (isEscrowCode || operatorTab === "custodia_compras") {
         const escrowRes = await liberarFondosEscrow(
           supabase,
           cleanToken,
@@ -321,7 +341,7 @@ export function PuntoRecoleccionView() {
 
         if (escrowRes.success && escrowRes.order) {
           setVerifiedPackage({
-            name: `${escrowRes.order.buyerName} (Comprador Escrow)`,
+            name: escrowRes.order.buyerName,
             email: escrowRes.order.buyerEmail || "",
             count: escrowRes.order.items.length,
             points: 0,
@@ -333,12 +353,16 @@ export function PuntoRecoleccionView() {
               talla: i.prenda.talla,
             })),
             prendasResumen: escrowRes.mensaje,
+            isEscrow: true,
+            orderCode: escrowRes.order.orderCode,
+            totalLiberado: escrowRes.totalLiberado,
           })
 
           setScannerStatus("success")
           await loadDBRecords()
+          await loadEscrowOrders()
           return
-        } else {
+        } else if (isEscrowCode) {
           setScannerErrorMsg(escrowRes.mensaje || "Código de Custodia no válido.")
           setScannerStatus("error")
           return
@@ -361,6 +385,7 @@ export function PuntoRecoleccionView() {
           points: res.puntos,
           prendas: res.prendas || [],
           prendasResumen: res.prendasResumen,
+          isEscrow: false,
         })
 
         // Sincronizar en localStorage el saldo local de puntos para pruebas inmediatas
@@ -1171,8 +1196,17 @@ export function PuntoRecoleccionView() {
         <div className="p-1 space-y-4 max-h-[85vh] overflow-y-auto">
           <div className="bg-zinc-900 text-white p-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs">
-              <Scan className="w-4 h-4 text-emerald-400" />
-              <span className="font-medium">Escáner de Donación</span>
+              {operatorTab === "custodia_compras" || verifiedPackage?.isEscrow ? (
+                <>
+                  <ShieldCheck className="w-4 h-4 text-amber-400" />
+                  <span className="font-medium">Escáner de Custodia (Compras & Rentas)</span>
+                </>
+              ) : (
+                <>
+                  <Scan className="w-4 h-4 text-emerald-400" />
+                  <span className="font-medium">Escáner de Donación</span>
+                </>
+              )}
             </div>
             <span className="text-[10px] font-mono text-zinc-400 uppercase">San Patricio</span>
           </div>
@@ -1193,12 +1227,14 @@ export function PuntoRecoleccionView() {
                 <canvas ref={canvasRef} className="hidden" />
 
                 {/* Centered Square Viewfinder Frame */}
-                <div className="relative w-48 h-48 sm:w-52 sm:h-52 border-2 border-emerald-400 rounded-lg z-10 flex items-center justify-center shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] pointer-events-none">
+                <div className={`relative w-48 h-48 sm:w-52 sm:h-52 border-2 rounded-lg z-10 flex items-center justify-center shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] pointer-events-none ${
+                  operatorTab === "custodia_compras" ? "border-amber-400" : "border-emerald-400"
+                }`}>
                   {/* Corner Accents */}
-                  <div className="absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 border-emerald-400" />
-                  <div className="absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 border-emerald-400" />
-                  <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 border-emerald-400" />
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 border-emerald-400" />
+                  <div className={`absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 ${operatorTab === "custodia_compras" ? "border-amber-400" : "border-emerald-400"}`} />
+                  <div className={`absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 ${operatorTab === "custodia_compras" ? "border-amber-400" : "border-emerald-400"}`} />
+                  <div className={`absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 ${operatorTab === "custodia_compras" ? "border-amber-400" : "border-emerald-400"}`} />
+                  <div className={`absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 ${operatorTab === "custodia_compras" ? "border-amber-400" : "border-emerald-400"}`} />
                 </div>
 
                 {!cameraActive && (
@@ -1206,13 +1242,15 @@ export function PuntoRecoleccionView() {
                     {cameraError ? (
                       <CameraOff className="w-9 h-9 text-amber-400 mb-1" />
                     ) : (
-                      <Camera className="w-9 h-9 text-emerald-400/80 animate-pulse mb-1" />
+                      <Camera className={`w-9 h-9 animate-pulse mb-1 ${operatorTab === "custodia_compras" ? "text-amber-400/80" : "text-emerald-400/80"}`} />
                     )}
                     <p className="text-xs text-zinc-200 font-mono">
                       {cameraError ? "Sin acceso a cámara" : "Iniciando cámara..."}
                     </p>
                     <p className="text-[10px] text-zinc-400 font-mono max-w-xs">
-                      Enfoque el código QR en el recuadro central o ingrese el código manualmente abajo
+                      {operatorTab === "custodia_compras"
+                        ? "Enfoque el código QR de la compra o ingrese el folio/token abajo"
+                        : "Enfoque el código QR en el recuadro central o ingrese el código manualmente abajo"}
                     </p>
                   </div>
                 )}
@@ -1228,12 +1266,14 @@ export function PuntoRecoleccionView() {
               <div className="space-y-3 border-t border-zinc-200 pt-3">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] text-zinc-500 uppercase font-mono tracking-wider font-semibold">
-                    Código del ticket QR:
+                    {operatorTab === "custodia_compras" ? "Folio u Orden QR de Custodia:" : "Código del ticket QR:"}
                   </label>
 
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-[11px] text-emerald-700 font-medium hover:underline flex items-center gap-1"
+                    className={`text-[11px] font-medium hover:underline flex items-center gap-1 ${
+                      operatorTab === "custodia_compras" ? "text-amber-700" : "text-emerald-700"
+                    }`}
                   >
                     <Upload className="w-3.5 h-3.5" />
                     <span>Subir imagen con QR</span>
@@ -1251,7 +1291,7 @@ export function PuntoRecoleccionView() {
                   <Input
                     value={manualTicketInput}
                     onChange={(e) => setManualTicketInput(e.target.value)}
-                    placeholder="Ej. TKT-SR8829X"
+                    placeholder={operatorTab === "custodia_compras" ? "Ej. ESC-1001 o ESC-QR-8829" : "Ej. TKT-SR8829X"}
                     className="h-10 text-xs rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900 font-mono uppercase"
                   />
                   <button
@@ -1262,12 +1302,107 @@ export function PuntoRecoleccionView() {
                     }}
                     className="px-4 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold shrink-0 disabled:opacity-50"
                   >
-                    {scannerStatus === "scanning" ? "Procesando..." : "Validar Ticket"}
+                    {scannerStatus === "scanning" ? "Procesando..." : operatorTab === "custodia_compras" ? "Liberar Custodia" : "Validar Ticket"}
                   </button>
                 </div>
               </div>
             </div>
+          ) : verifiedPackage?.isEscrow ? (
+            /* ESCROW PURCHASE / RENTAL DELIVERY SUCCESS SCREEN */
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="py-5 flex flex-col items-center text-center space-y-4 bg-amber-50/70 border border-amber-200 p-5"
+            >
+              <div className="w-13 h-13 bg-amber-500 text-white rounded-full flex items-center justify-center shadow-md">
+                <ShieldCheck className="w-8 h-8" />
+              </div>
+
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-900 bg-amber-200 px-2.5 py-0.5 rounded-full border border-amber-300">
+                  Folio Escrow #{verifiedPackage.orderCode}
+                </span>
+                <h4 className="font-serif text-xl font-semibold text-zinc-900 mt-1">
+                  ¡Entrega de Compra Verificada y Pago Liberado!
+                </h4>
+                <p className="text-xs text-zinc-600 mt-0.5">
+                  La ropa se ha entregado al comprador y los fondos se liberaron al vendedor.
+                </p>
+              </div>
+
+              {/* Buyer Identity Card */}
+              <div className="w-full text-left bg-white border border-zinc-200 p-3.5 flex flex-col gap-2 shadow-xs">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
+                  <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 font-semibold">Comprador:</span>
+                  <span className="text-xs font-bold text-zinc-900">{verifiedPackage?.name}</span>
+                </div>
+                {verifiedPackage?.email && (
+                  <div className="flex items-center justify-between border-b border-zinc-100 pb-2 text-xs">
+                    <span className="text-zinc-500">Correo:</span>
+                    <span className="font-mono text-zinc-700">{verifiedPackage.email}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-500">Prendas entregadas:</span>
+                  <span className="font-semibold text-zinc-900 bg-amber-100 text-amber-900 px-2 py-0.5 font-mono">
+                    {verifiedPackage?.count} {verifiedPackage?.count === 1 ? "prenda" : "prendas"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Garments Inspection Grid Checklist */}
+              {verifiedPackage?.prendas && verifiedPackage.prendas.length > 0 && (
+                <div className="w-full text-left space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-700 font-semibold flex items-center gap-1">
+                      <Shirt className="w-3.5 h-3.5 text-amber-600" />
+                      Prendas entregadas al comprador ({verifiedPackage.prendas.length}):
+                    </p>
+                    <span className="text-[10px] text-amber-900 bg-amber-100 px-2 py-0.5 font-medium">✓ Entregadas</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 bg-zinc-100 border border-zinc-200">
+                    {verifiedPackage.prendas.map((p: any, idx: number) => (
+                      <div key={p.id || idx} className="bg-white border border-zinc-200 p-2 flex items-center gap-2 text-left">
+                        {p.image_url ? (
+                          <img src={p.image_url} alt={p.name} className="w-10 h-10 object-cover shrink-0 border border-zinc-200" />
+                        ) : (
+                          <div className="w-10 h-10 bg-zinc-200 flex items-center justify-center shrink-0">
+                            <Shirt className="w-5 h-5 text-zinc-400" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-zinc-900 truncate">{p.name || p.categoria || "Prenda"}</p>
+                          <p className="text-[10px] text-zinc-500 truncate">
+                            {p.category || "General"} {p.talla ? `· Talla ${p.talla}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Botón principal de recepción justo debajo de las fotos de la ropa */}
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setScannerStatus("idle")
+                  setIsScannerOpen(false)
+                }}
+                className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold tracking-wide flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
+              >
+                <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400" />
+                <span>Confirmar Entrega de Ropa a {verifiedPackage?.name}</span>
+              </motion.button>
+
+              <div className="w-full bg-emerald-100 border border-emerald-300 px-4 py-2 font-mono text-[11px] text-emerald-950 font-bold flex items-center justify-center gap-2">
+                <DollarSign className="w-4 h-4 text-emerald-700" />
+                <span>¡${verifiedPackage?.totalLiberado} MXN Liberados de Custodia al Vendedor!</span>
+              </div>
+            </motion.div>
           ) : (
+            /* DONATION SUCCESS SCREEN */
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

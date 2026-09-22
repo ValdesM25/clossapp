@@ -311,11 +311,21 @@ export async function validarTicketQR(
       try {
         parsedJSON = JSON.parse(qrInput)
         if (parsedJSON.tkt) tokenToSearch = parsedJSON.tkt
+        else if (parsedJSON.token) tokenToSearch = parsedJSON.token
+        else if (parsedJSON.esc) tokenToSearch = parsedJSON.esc
         else if (parsedJSON.qrToken) tokenToSearch = parsedJSON.qrToken
 
         if (parsedJSON.id) ticketIdFromJSON = parsedJSON.id
         else if (parsedJSON.ticketId) ticketIdFromJSON = parsedJSON.ticketId
       } catch {}
+    }
+
+    // Si el código pertenece a una orden en custodia (Escrow / Compra)
+    if (
+      tokenToSearch.toUpperCase().startsWith("ESC-") ||
+      (parsedJSON && (parsedJSON.esc || (parsedJSON.token && String(parsedJSON.token).toUpperCase().startsWith("ESC-"))))
+    ) {
+      throw new Error("Este código QR pertenece a una Entrega de Compra en Custodia (Marketplace), no a un ticket de donación. Por favor usa la pestaña 'Entregas de Compras y Renta'.")
     }
 
     // Buscar ticket por token o id en la tabla donacion_tickets

@@ -188,36 +188,53 @@ export async function liberarFondosEscrow(
 }> {
   try {
     const cleanToken = qrTokenOrCode.trim()
+    const searchTokens: string[] = [cleanToken]
+
+    if (cleanToken.startsWith("{") && cleanToken.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(cleanToken)
+        if (parsed.token) searchTokens.push(String(parsed.token).trim())
+        if (parsed.esc) searchTokens.push(String(parsed.esc).trim())
+        if (parsed.orderCode) searchTokens.push(String(parsed.orderCode).trim())
+        if (parsed.id) searchTokens.push(String(parsed.id).trim())
+      } catch {}
+    }
+
     const allOrders = await fetchUserEscrowOrders(supabase)
-    let target = allOrders.find((o) => o.qrToken === cleanToken || o.orderCode === cleanToken || o.id === cleanToken)
+    let target = allOrders.find((o) =>
+      searchTokens.some((st) => o.qrToken === st || o.orderCode === st || o.id === st)
+    )
 
     if (!target) {
       // Intentar buscar en DB directamente
-      const { data } = await supabase
-        .from("escrow_ordenes")
-        .select("*")
-        .or(`qr_token.eq.${cleanToken},order_code.eq.${cleanToken}`)
-        .maybeSingle()
+      for (const st of searchTokens) {
+        const { data } = await supabase
+          .from("escrow_ordenes")
+          .select("*")
+          .or(`qr_token.eq.${st},order_code.eq.${st},id.eq.${st}`)
+          .maybeSingle()
 
-      if (data) {
-        target = {
-          id: data.id,
-          orderCode: data.order_code,
-          qrToken: data.qr_token,
-          buyerUserId: data.buyer_user_id || "guest",
-          buyerName: data.buyer_name || "Comprador ClossApp",
-          buyerEmail: data.buyer_email || "",
-          items: Array.isArray(data.items) ? data.items : [],
-          subtotal: Number(data.subtotal || 0),
-          garantiaEscrow: Number(data.garantia_escrow || 0),
-          totalPagado: Number(data.total_pagado || 0),
-          metodoPago: data.metodo_pago || "tarjeta",
-          status: data.status || "pago_en_custodia",
-          puntoAcopioId: data.punto_acopio_id || "norte",
-          puntoAcopioNombre: data.punto_acopio_nombre || "Centro de Acopio Norte",
-          createdAt: data.created_at,
-          validatedAt: data.validated_at,
-          validatedBy: data.validated_by,
+        if (data) {
+          target = {
+            id: data.id,
+            orderCode: data.order_code,
+            qrToken: data.qr_token,
+            buyerUserId: data.buyer_user_id || "guest",
+            buyerName: data.buyer_name || "Comprador ClossApp",
+            buyerEmail: data.buyer_email || "",
+            items: Array.isArray(data.items) ? data.items : [],
+            subtotal: Number(data.subtotal || 0),
+            garantiaEscrow: Number(data.garantia_escrow || 0),
+            totalPagado: Number(data.total_pagado || 0),
+            metodoPago: data.metodo_pago || "tarjeta",
+            status: data.status || "pago_en_custodia",
+            puntoAcopioId: data.punto_acopio_id || "norte",
+            puntoAcopioNombre: data.punto_acopio_nombre || "Centro de Acopio Norte",
+            createdAt: data.created_at,
+            validatedAt: data.validated_at,
+            validatedBy: data.validated_by,
+          }
+          break
         }
       }
     }
