@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, ShieldCheck, QrCode, Clock, CheckCircle2, Store, Package } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -24,15 +24,48 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
   const [selectedQR, setSelectedQR] = useState<EscrowOrder | null>(null)
   const [filter, setFilter] = useState<"todos" | "custodia" | "liberado">("todos")
 
-  useEffect(() => {
-    if (open) {
-      setLoading(true)
-      fetchUserEscrowOrders(supabase, userId, userEmail)
-        .then((res) => setOrders(res))
-        .catch((err) => console.error(err))
-        .finally(() => setLoading(false))
+  const loadOrders = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setLoading(true)
+    try {
+      const res = await fetchUserEscrowOrders(supabase, userId, userEmail)
+      setOrders(res)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      if (showSpinner) setLoading(false)
     }
-  }, [open, supabase, userId, userEmail])
+  }, [supabase, userId, userEmail])
+
+  useEffect(() => {
+    if (!open) return
+
+    loadOrders(true)
+
+    // Intervalo de sondeo cada 3 segundos para actualización inmediata
+    const interval = setInterval(() => {
+      loadOrders(false)
+    }, 3000)
+
+    // Event listeners para sincronización entre pestañas y componentes
+    const handleSync = () => loadOrders(false)
+    window.addEventListener("storage", handleSync)
+    window.addEventListener("clossapp_escrow_updated", handleSync)
+
+    // Suscripción Realtime en Supabase
+    const channel = supabase
+      .channel("realtime:escrow_ordenes_modal")
+      .on("postgres_changes", { event: "*", schema: "public", table: "escrow_ordenes" }, () => {
+        loadOrders(false)
+      })
+      .subscribe()
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener("storage", handleSync)
+      window.removeEventListener("clossapp_escrow_updated", handleSync)
+      supabase.removeChannel(channel)
+    }
+  }, [open, loadOrders, supabase])
 
   if (!open) return null
 

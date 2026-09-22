@@ -147,14 +147,31 @@ export async function fetchUserEscrowOrders(
 
   const map = new Map<string, EscrowOrder>()
   localOrders.forEach((o) => map.set(o.orderCode || o.id, o))
+
   dbOrders.forEach((o) => {
-    const existing = map.get(o.orderCode || o.id)
-    if (!existing || o.status === "entregado_y_liberado") {
-      map.set(o.orderCode || o.id, o)
+    const key = o.orderCode || o.id
+    const existing = map.get(key)
+    if (!existing) {
+      map.set(key, o)
     } else {
-      map.set(o.orderCode || o.id, { ...existing, ...o })
+      const isReleased = existing.status === "entregado_y_liberado" || o.status === "entregado_y_liberado"
+      const merged: EscrowOrder = {
+        ...existing,
+        ...o,
+        status: isReleased ? "entregado_y_liberado" : o.status || existing.status,
+        validatedAt: o.validatedAt || existing.validatedAt,
+        validatedBy: o.validatedBy || existing.validatedBy,
+      }
+      map.set(key, merged)
     }
   })
+
+  // Sincronizar de vuelta a localStorage si se detectó alguna orden liberada en BD
+  if (typeof window !== "undefined" && map.size > 0) {
+    try {
+      localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(Array.from(map.values())))
+    } catch {}
+  }
 
   // Si no hay ninguna orden ni en BD ni en localStorage (ej. en iPad / nuevo dispositivo / invitado), sembrar órdenes demo
   if (map.size === 0) {

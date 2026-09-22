@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Search, Tag, ShoppingBag, ShieldCheck, PackageCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -46,14 +46,36 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
   const [showOrdersModal, setShowOrdersModal] = useState(false)
   const [escrowOrdersCount, setEscrowOrdersCount] = useState(0)
 
+  const loadEscrowOrdersCount = useCallback(async () => {
+    try {
+      const orders = await fetchUserEscrowOrders(supabase, userId, userEmail)
+      const active = orders.filter((o) => o.status === "pago_en_custodia")
+      setEscrowOrdersCount(active.length)
+    } catch (err) {
+      console.error(err)
+    }
+  }, [supabase, userId, userEmail])
+
   useEffect(() => {
-    fetchUserEscrowOrders(supabase, userId, userEmail)
-      .then((orders) => {
-        const active = orders.filter((o) => o.status === "pago_en_custodia")
-        setEscrowOrdersCount(active.length)
+    loadEscrowOrdersCount()
+
+    const handleSync = () => loadEscrowOrdersCount()
+    window.addEventListener("storage", handleSync)
+    window.addEventListener("clossapp_escrow_updated", handleSync)
+
+    const channel = supabase
+      .channel("realtime:marketplace_escrow_count")
+      .on("postgres_changes", { event: "*", schema: "public", table: "escrow_ordenes" }, () => {
+        loadEscrowOrdersCount()
       })
-      .catch((err) => console.error(err))
-  }, [supabase, userId, userEmail, showOrdersModal, showCheckoutModal])
+      .subscribe()
+
+    return () => {
+      window.removeEventListener("storage", handleSync)
+      window.removeEventListener("clossapp_escrow_updated", handleSync)
+      supabase.removeChannel(channel)
+    }
+  }, [loadEscrowOrdersCount, supabase, showOrdersModal, showCheckoutModal])
 
   const currentItems = marketTab === "comprar" ? items : rentaItems
   const filtered = activeFilter === "Todos" ? currentItems : currentItems.filter((i) => i.category === activeFilter)
