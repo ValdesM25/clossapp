@@ -42,43 +42,69 @@ export async function createEscrowOrder(
     createdAt: new Date().toISOString(),
   }
 
-  // Intentar guardar en la BD de Supabase (tabla `escrow_ordenes`)
+  // Intentar guardar en la BD de Supabase (tabla `escrow_ordenes` y `donacion_tickets`)
   try {
+    const cleanItems = JSON.parse(JSON.stringify(input.items))
     const validUserId =
       input.buyerUserId && input.buyerUserId !== "guest" && input.buyerUserId.includes("-")
         ? input.buyerUserId
-        : null
+        : "guest"
 
-    const payload = {
-      order_code: orderCode,
-      qr_token: qrToken,
-      buyer_user_id: validUserId || "guest",
-      buyer_name: newOrder.buyerName,
-      buyer_email: newOrder.buyerEmail,
-      items: input.items,
-      subtotal: input.subtotal,
-      garantia_escrow: 0.0,
-      total_pagado: input.subtotal,
-      metodo_pago: input.metodoPago,
-      status: "pago_en_custodia",
-      punto_acopio_id: newOrder.puntoAcopioId,
-      punto_acopio_nombre: newOrder.puntoAcopioNombre,
+    // 1. Inserción en `escrow_ordenes`
+    try {
+      const payloadEscrow = {
+        order_code: orderCode,
+        qr_token: qrToken,
+        buyer_user_id: validUserId,
+        buyer_name: newOrder.buyerName,
+        buyer_email: newOrder.buyerEmail,
+        items: cleanItems,
+        subtotal: input.subtotal,
+        garantia_escrow: 0.0,
+        total_pagado: input.subtotal,
+        metodo_pago: input.metodoPago,
+        status: "pago_en_custodia",
+        punto_acopio_id: newOrder.puntoAcopioId,
+        punto_acopio_nombre: newOrder.puntoAcopioNombre,
+      }
+
+      const { data: escrowData, error: escrowError } = await supabase
+        .from("escrow_ordenes")
+        .insert(payloadEscrow)
+        .select("*")
+        .maybeSingle()
+
+      if (escrowData?.id) {
+        newOrder.id = escrowData.id
+        newOrder.createdAt = escrowData.created_at || newOrder.createdAt
+      } else if (escrowError) {
+        console.warn("createEscrowOrder escrow_ordenes notice:", escrowError.message || escrowError)
+      }
+    } catch (e) {
+      console.warn("createEscrowOrder escrow_ordenes catch notice:", e)
     }
 
-    const { data, error } = await supabase
-      .from("escrow_ordenes")
-      .insert(payload)
-      .select("*")
-      .maybeSingle()
+    // 2. Inserción de respaldo infalible en `donacion_tickets`
+    try {
+      const payloadTicket = {
+        qr_token: qrToken,
+        user_id: validUserId,
+        donor_name: newOrder.buyerName,
+        donor_email: newOrder.buyerEmail || "",
+        punto_acopio_id: newOrder.puntoAcopioId,
+        punto_acopio_nombre: newOrder.puntoAcopioNombre,
+        status: "pago_en_custodia",
+        cantidad_prendas: input.items.length || 1,
+        prendas_ids: cleanItems,
+        puntos_otorgados: Math.round(input.subtotal),
+      }
 
-    if (error) {
-      console.error("createEscrowOrder Supabase insert error:", error.message || error)
-    } else if (data?.id) {
-      newOrder.id = data.id
-      newOrder.createdAt = data.created_at || newOrder.createdAt
+      await supabase.from("donacion_tickets").insert(payloadTicket)
+    } catch (e) {
+      console.warn("createEscrowOrder donacion_tickets backup notice:", e)
     }
   } catch (err) {
-    console.warn("createEscrowOrder DB notice (using local escrow state):", err)
+    console.warn("createEscrowOrder DB notice:", err)
   }
 
   // Guardar siempre en localStorage para disponibilidad local inmediata
@@ -111,40 +137,79 @@ export async function fetchUserEscrowOrders(
 ): Promise<EscrowOrder[]> {
   let dbOrders: EscrowOrder[] = []
 
+  // 1. Consultar la tabla `escrow_ordenes` en Supabase
   try {
-    // Consultar TODAS las órdenes de la BD de Supabase para sincronizar entre dispositivos (Laptop, iPad, Celular)
     const { data, error } = await supabase
       .from("escrow_ordenes")
       .select("*")
       .order("created_at", { ascending: false })
 
-    if (error) {
-      console.warn("fetchUserEscrowOrders Supabase notice:", error.message || error)
-    }
-
     if (data && data.length > 0) {
-      dbOrders = data.map((o) => ({
-        id: o.id,
-        orderCode: o.order_code,
-        qrToken: o.qr_token,
-        buyerUserId: o.buyer_user_id || "guest",
-        buyerName: o.buyer_name || "Comprador ClossApp",
-        buyerEmail: o.buyer_email || "",
-        items: Array.isArray(o.items) ? o.items : [],
-        subtotal: Number(o.subtotal || 0),
-        garantiaEscrow: Number(o.garantia_escrow || 0),
-        totalPagado: Number(o.total_pagado || 0),
-        metodoPago: o.metodo_pago || "tarjeta",
-        status: o.status || "pago_en_custodia",
-        puntoAcopioId: o.punto_acopio_id || "norte",
-        puntoAcopioNombre: o.punto_acopio_nombre || "Centro de Acopio Norte",
-        createdAt: o.created_at,
-        validatedAt: o.validated_at,
-        validatedBy: o.validated_by,
-      }))
+      data.forEach((o) => {
+        dbOrders.push({
+          id: o.id,
+          orderCode: o.order_code,
+          qrToken: o.qr_token,
+          buyerUserId: o.buyer_user_id || "guest",
+          buyerName: o.buyer_name || "Comprador ClossApp",
+          buyerEmail: o.buyer_email || "",
+          items: Array.isArray(o.items) ? o.items : [],
+          subtotal: Number(o.subtotal || 0),
+          garantiaEscrow: Number(o.garantia_escrow || 0),
+          totalPagado: Number(o.total_pagado || 0),
+          metodoPago: o.metodo_pago || "tarjeta",
+          status: o.status || "pago_en_custodia",
+          puntoAcopioId: o.punto_acopio_id || "norte",
+          puntoAcopioNombre: o.punto_acopio_nombre || "Centro de Acopio Norte",
+          createdAt: o.created_at,
+          validatedAt: o.validated_at,
+          validatedBy: o.validated_by,
+        })
+      })
     }
   } catch (err) {
-    console.warn("fetchUserEscrowOrders DB notice:", err)
+    console.warn("fetchUserEscrowOrders escrow_ordenes notice:", err)
+  }
+
+  // 2. Consultar la tabla `donacion_tickets` para obtener órdenes respaldadas en custodia
+  try {
+    const { data: ticketData } = await supabase
+      .from("donacion_tickets")
+      .select("*")
+      .or("status.eq.pago_en_custodia,status.eq.entregado_y_liberado")
+      .order("created_at", { ascending: false })
+
+    if (ticketData && ticketData.length > 0) {
+      ticketData.forEach((t) => {
+        const rawToken = t.qr_token || ""
+        const code = rawToken.startsWith("ESC-")
+          ? rawToken.replace("ESC-QR-", "ESC-")
+          : rawToken
+        const items = Array.isArray(t.prendas_ids) ? t.prendas_ids : []
+
+        dbOrders.push({
+          id: t.id,
+          orderCode: code,
+          qrToken: rawToken,
+          buyerUserId: t.user_id || "guest",
+          buyerName: t.donor_name || "Comprador ClossApp",
+          buyerEmail: t.donor_email || "",
+          items,
+          subtotal: Number(t.puntos_otorgados || 0),
+          garantiaEscrow: 0,
+          totalPagado: Number(t.puntos_otorgados || 0),
+          metodoPago: "tarjeta",
+          status: t.status === "entregado_y_liberado" ? "entregado_y_liberado" : "pago_en_custodia",
+          puntoAcopioId: t.punto_acopio_id || "norte",
+          puntoAcopioNombre: t.punto_acopio_nombre || "Centro de Acopio Norte",
+          createdAt: t.created_at,
+          validatedAt: t.validated_at,
+          validatedBy: t.validated_by,
+        })
+      })
+    }
+  } catch (err) {
+    console.warn("fetchUserEscrowOrders donacion_tickets notice:", err)
   }
 
   // Combinar con localStorage
@@ -408,7 +473,7 @@ export async function liberarFondosEscrow(
     const validatedTime = new Date().toISOString()
     const totalLiberado = target.totalPagado
 
-    // Actualizar en Supabase DB
+    // Actualizar en Supabase DB en ambas tablas para garantizar la sincronización
     try {
       await supabase
         .from("escrow_ordenes")
@@ -419,7 +484,20 @@ export async function liberarFondosEscrow(
         })
         .or(`qr_token.eq.${target.qrToken},order_code.eq.${target.orderCode},order_code.eq.${normalizeCode(target.orderCode)}`)
     } catch (err) {
-      console.warn("liberarFondosEscrow DB update notice:", err)
+      console.warn("liberarFondosEscrow escrow_ordenes DB update notice:", err)
+    }
+
+    try {
+      await supabase
+        .from("donacion_tickets")
+        .update({
+          status: "entregado_y_liberado",
+          validated_at: validatedTime,
+          validated_by: centroId,
+        })
+        .or(`qr_token.eq.${target.qrToken},id.eq.${target.id}`)
+    } catch (err) {
+      console.warn("liberarFondosEscrow donacion_tickets DB update notice:", err)
     }
 
     // Registrar en la bitácora SQL `acopio_registros`
