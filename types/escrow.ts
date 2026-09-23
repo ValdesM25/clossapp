@@ -12,7 +12,12 @@ export interface CartItem {
   sellerName?: string
 }
 
-export type EscrowStatus = "pago_en_custodia" | "listo_en_punto" | "entregado_y_liberado" | "cancelado"
+export type EscrowStatus =
+  | "pago_en_custodia"
+  | "listo_en_punto"
+  | "en_renta_cliente"
+  | "entregado_y_liberado"
+  | "cancelado"
 export type MetodoPagoEscrow = "tarjeta" | "puntos" | "saldo"
 
 export interface EscrowOrder {

@@ -38,6 +38,7 @@ import {
   AlertCircle,
   Eye,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { useAuthContext } from "@/context/auth-context"
 import { Input } from "@/components/ui/input"
 import { CenteredModal } from "@/components/shared/centered-modal"
@@ -50,7 +51,7 @@ import {
   DONANTES_DEMO,
   type DonanteRegistrado,
 } from "@/services/donaciones.service"
-import { liberarFondosEscrow, fetchUserEscrowOrders } from "@/services/escrow.service"
+import { liberarFondosEscrow, fetchUserEscrowOrders, confirmarEntregaRentaCliente } from "@/services/escrow.service"
 import type { AcopioRegistroDB } from "@/types/donaciones"
 import type { EscrowOrder } from "@/types/escrow"
 
@@ -73,8 +74,8 @@ export function PuntoRecoleccionView() {
   const { userName, userEmail, logout } = useAuthContext()
   const supabase = createBrowserSupabaseClient()
 
-  // Mode Selection: "donaciones" | "custodia_compras"
-  const [operatorTab, setOperatorTab] = useState<"donaciones" | "custodia_compras">("donaciones")
+  // Mode Selection: "donaciones" | "custodia_compras" | "custodia_rentas"
+  const [operatorTab, setOperatorTab] = useState<"donaciones" | "custodia_compras" | "custodia_rentas">("donaciones")
 
   // Escrow orders state (Compras y Rentas)
   const [escrowOrders, setEscrowOrders] = useState<EscrowOrder[]>([])
@@ -621,9 +622,9 @@ export function PuntoRecoleccionView() {
           </div>
         </div>
 
-        {/* DUAL MODE TAB BAR: DONACIONES vs COMPRAS Y RENTA EN CUSTODIA */}
-        <div className="bg-zinc-950 border-t border-zinc-800 px-4">
-          <div className="max-w-6xl mx-auto flex items-center gap-2">
+        {/* TRIPLE MODE TAB BAR: DONACIONES vs COMPRAS vs RENTAS */}
+        <div className="bg-zinc-950 border-t border-zinc-800 px-4 overflow-x-auto">
+          <div className="max-w-6xl mx-auto flex items-center gap-2 min-w-max">
             <button
               onClick={() => setOperatorTab("donaciones")}
               className={`py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
@@ -648,9 +649,24 @@ export function PuntoRecoleccionView() {
               }`}
             >
               <ShieldCheck className="w-4 h-4 text-amber-400" />
-              <span>2. Entregas de Compras y Renta (Custodia)</span>
+              <span>2. Custodia Compras</span>
               <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono text-[10px] px-2 py-0.5 rounded-full">
                 {escrowPendientes.length} por entregar
+              </span>
+            </button>
+
+            <button
+              onClick={() => setOperatorTab("custodia_rentas")}
+              className={`py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+                operatorTab === "custodia_rentas"
+                  ? "border-purple-400 text-purple-300 bg-purple-950/40"
+                  : "border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/60"
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              <span>3. Custodia Rentas (2 QRs)</span>
+              <span className="bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono text-[10px] px-2 py-0.5 rounded-full">
+                {escrowOrders.filter((o) => o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length} ordenes
               </span>
             </button>
           </div>
@@ -937,8 +953,8 @@ export function PuntoRecoleccionView() {
               )}
             </section>
           </>
-        ) : (
-          /* OPERATOR TAB 2: INTERFAZ DE COMPRAS Y RENTA EN CUSTODIA (MARKETPLACE / ESCROW) */
+        ) : operatorTab === "custodia_compras" ? (
+          /* OPERATOR TAB 2: INTERFAZ DE COMPRAS EN CUSTODIA (MARKETPLACE / ESCROW) */
           <div className="space-y-6">
             {/* Banner Custodia */}
             <div className="bg-gradient-to-r from-amber-950 via-zinc-900 to-amber-950 text-white p-5 border border-amber-900/60 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
@@ -1192,7 +1208,204 @@ export function PuntoRecoleccionView() {
               )}
             </section>
           </div>
+        ) : (
+          /* PESTAÑA DEDICADA 3: CUSTODIA RENTAS (2 PASOS QR) */
+          <div className="space-y-6">
+            {/* Banner Header Rentas */}
+            <div className="bg-gradient-to-r from-purple-950 via-zinc-900 to-purple-950 text-white p-5 border border-purple-800/60 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md">
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase font-mono tracking-widest text-purple-300 bg-purple-900/80 px-2.5 py-1 border border-purple-700/50 inline-block mb-1">
+                  Módulo de Gestión de Rentas
+                </span>
+                <h2 className="font-serif text-xl sm:text-2xl text-white">
+                  Custodia y Seguimiento de Rentas en 2 Pasos QR
+                </h2>
+                <p className="text-xs text-purple-200/80 max-w-2xl leading-relaxed">
+                  Controla la entrega inicial de la prenda al cliente (<strong>QR #1 Recolección</strong>) y valida el retorno de la prenda tras el evento para lavado (<strong>QR #2 Devolución y Liberación de Fondos</strong>).
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setScannerStatus("idle")
+                  setScannerErrorMsg(null)
+                  setIsScannerOpen(true)
+                }}
+                className="px-5 py-3 bg-purple-500 hover:bg-purple-400 text-zinc-950 font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all shrink-0 cursor-pointer"
+              >
+                <QrCode className="w-4 h-4 text-zinc-950" />
+                <span>Escanear QR de Renta (Paso 1 ó Paso 2)</span>
+              </button>
+            </div>
+
+            {/* KPIs Rentas */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono font-semibold uppercase text-amber-800 tracking-wider block">
+                    Paso 1: Por Entregar al Cliente
+                  </span>
+                  <p className="font-serif text-2xl font-bold text-amber-950 mt-1">
+                    {escrowOrders.filter((o) => o.status === "pago_en_custodia" && o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length}
+                  </p>
+                  <p className="text-[11px] text-amber-700 mt-0.5">Pendientes de escanear QR #1</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center font-bold">
+                  1
+                </div>
+              </div>
+
+              <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono font-semibold uppercase text-purple-800 tracking-wider block">
+                    Paso 2: En Manos del Cliente
+                  </span>
+                  <p className="font-serif text-2xl font-bold text-purple-950 mt-1">
+                    {escrowOrders.filter((o) => o.status === "en_renta_cliente" && o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length}
+                  </p>
+                  <p className="text-[11px] text-purple-700 mt-0.5">Pendientes de escanear QR #2 (Retorno)</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-purple-200 text-purple-800 flex items-center justify-center font-bold">
+                  2
+                </div>
+              </div>
+
+              <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono font-semibold uppercase text-emerald-800 tracking-wider block">
+                    Completadas y Lavadas
+                  </span>
+                  <p className="font-serif text-2xl font-bold text-emerald-950 mt-1">
+                    {escrowOrders.filter((o) => o.status === "entregado_y_liberado" && o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length}
+                  </p>
+                  <p className="text-[11px] text-emerald-700 mt-0.5">Fondos liberados al propietario</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-emerald-200 text-emerald-800 flex items-center justify-center font-bold">
+                  ✓
+                </div>
+              </div>
+            </div>
+
+            {/* Listado de Rentas */}
+            <section className="bg-white border border-zinc-200 p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-3">
+                <div>
+                  <h3 className="font-serif text-base font-semibold text-zinc-900">
+                    Control de Órdenes de Renta
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    Listado de prendas rentadas con estado de recolección y devolución.
+                  </p>
+                </div>
+
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar por comprador o folio..."
+                    className="pl-8 text-xs h-9 border-zinc-300"
+                  />
+                </div>
+              </div>
+
+              {escrowOrders.filter((o) => o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length === 0 ? (
+                <div className="p-12 text-center text-xs text-zinc-400 border border-dashed border-zinc-200">
+                  No hay órdenes de renta registradas actualmente.
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-100 border border-zinc-200">
+                  {escrowOrders
+                    .filter((o) => o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta))
+                    .filter(
+                      (o) =>
+                        o.buyerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        o.orderCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        o.qrToken.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map((o) => {
+                      const isPaso1 = o.status === "pago_en_custodia"
+                      const isPaso2 = o.status === "en_renta_cliente"
+                      const isCompletado = o.status === "entregado_y_liberado"
+                      const fechaRentaItem = o.items.find((i) => i.fechaRenta)?.fechaRenta
+
+                      return (
+                        <div key={o.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white hover:bg-zinc-50/50">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs font-bold text-zinc-900">Folio #{o.orderCode}</span>
+                              <span
+                                className={cn(
+                                  "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border",
+                                  isPaso1 && "bg-amber-50 text-amber-800 border-amber-200",
+                                  isPaso2 && "bg-purple-50 text-purple-800 border-purple-200",
+                                  isCompletado && "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                )}
+                              >
+                                {isPaso1 ? "Paso 1: Pendiente Recolección (QR #1)" : isPaso2 ? "Paso 2: En Evento / Retorno (QR #2)" : "✓ Devolución y Lavado Completado"}
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-zinc-800 font-medium">
+                              Cliente: <strong>{o.buyerName}</strong> ({o.buyerEmail || "Sin correo"})
+                            </p>
+
+                            <div className="text-[11px] text-zinc-600 space-y-0.5">
+                              {o.items.map((i) => (
+                                <div key={i.id} className="flex items-center gap-2">
+                                  <span>• Prenda: <strong>{i.prenda.name}</strong> (${i.precio} MXN)</span>
+                                </div>
+                              ))}
+                              {fechaRentaItem && (
+                                <p className="text-purple-700 font-semibold">
+                                  📅 Fecha de Evento: {fechaRentaItem} (Día posterior reservado para Lavado)
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row items-end md:items-center gap-2 shrink-0 border-t md:border-t-0 pt-2 md:pt-0 border-zinc-100">
+                            {isPaso1 && (
+                              <button
+                                onClick={() => {
+                                  setSelectedEscrowOrder(o)
+                                  setIsEscrowVerifyModalOpen(true)
+                                }}
+                                className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded flex items-center gap-1.5 shadow-xs"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>1/2: Entregar a Cliente</span>
+                              </button>
+                            )}
+
+                            {isPaso2 && (
+                              <button
+                                onClick={() => {
+                                  setSelectedEscrowOrder(o)
+                                  setIsEscrowVerifyModalOpen(true)
+                                }}
+                                className="px-3.5 py-2 bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold rounded flex items-center gap-1.5 shadow-xs"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>2/2: Recibir y Lavar</span>
+                              </button>
+                            )}
+
+                            {isCompletado && (
+                              <span className="text-emerald-700 text-xs font-bold flex items-center gap-1">
+                                <Check className="w-4 h-4" /> Prenda Lavada y Fondos Liberados
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
+              )}
+            </section>
+          </div>
         )}
+
       </main>
 
 

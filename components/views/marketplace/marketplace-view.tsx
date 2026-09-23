@@ -30,7 +30,7 @@ interface MarketplaceViewProps {
 export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
   const { userId, userEmail, isGuest } = useAuthContext()
   const { prendas } = usePrendasContext()
-  const { itemCount, setIsCartOpen } = useCartContext()
+  const { itemCount, setIsCartOpen, addToCart } = useCartContext()
   const supabase = createBrowserSupabaseClient()
 
   const {
@@ -83,10 +83,22 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
   const isDonar = marketTab === "donar"
 
   async function handleApartar(fechaRenta?: string) {
-    const ok = await apartar(selectedItem!, isRenta ? "rentar" : "comprar", fechaRenta)
-    if (ok) {
-      setTimeout(() => setSelectedItem(null), 2000)
-      onApartar()
+    if (selectedItem) {
+      if (isRenta && fechaRenta) {
+        addToCart(selectedItem, "renta", fechaRenta)
+        setSelectedItem(null)
+        setShowCheckoutModal(true)
+      } else if (!isRenta) {
+        addToCart(selectedItem, "compra")
+        setSelectedItem(null)
+        setShowCheckoutModal(true)
+      } else {
+        const ok = await apartar(selectedItem, "comprar", fechaRenta)
+        if (ok) {
+          setTimeout(() => setSelectedItem(null), 2000)
+          onApartar()
+        }
+      }
     }
   }
 
@@ -103,8 +115,8 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Botón Mis Pedidos (solo para la sección de Comprar) */}
-          {marketTab === "comprar" && (
+          {/* Botón Mis Pedidos (para Comprar y Rentar) */}
+          {(marketTab === "comprar" || marketTab === "rentar") && (
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={() => setShowOrdersModal(true)}
@@ -121,8 +133,8 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
             </motion.button>
           )}
 
-          {/* Botón Carrito de Compras (solo para la sección de Comprar) */}
-          {marketTab === "comprar" && (
+          {/* Botón Carrito de Compras/Rentas (para Comprar y Rentar) */}
+          {(marketTab === "comprar" || marketTab === "rentar") && (
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={() => setIsCartOpen(true)}

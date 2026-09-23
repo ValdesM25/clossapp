@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
-import type { CartItem, EscrowOrder, MetodoPagoEscrow } from "@/types/escrow"
+import type { CartItem, EscrowOrder, MetodoPagoEscrow, EscrowStatus } from "@/types/escrow"
 import type { AcopioRegistroDB } from "@/types/donaciones"
 import { DEMO_ESCROW_ORDERS } from "@/constants/demo-data"
 
@@ -176,7 +176,7 @@ export async function fetchUserEscrowOrders(
     const { data: ticketData } = await supabase
       .from("donacion_tickets")
       .select("*")
-      .or("status.eq.pago_en_custodia,status.eq.entregado_y_liberado")
+      .or("status.eq.pago_en_custodia,status.eq.en_renta_cliente,status.eq.entregado_y_liberado")
       .order("created_at", { ascending: false })
 
     if (ticketData && ticketData.length > 0) {
@@ -199,7 +199,7 @@ export async function fetchUserEscrowOrders(
           garantiaEscrow: 0,
           totalPagado: Number(t.puntos_otorgados || 0),
           metodoPago: "tarjeta",
-          status: t.status === "entregado_y_liberado" ? "entregado_y_liberado" : "pago_en_custodia",
+          status: (t.status as EscrowStatus) || "pago_en_custodia",
           puntoAcopioId: t.punto_acopio_id || "norte",
           puntoAcopioNombre: t.punto_acopio_nombre || "Centro de Acopio Norte",
           createdAt: t.created_at,
@@ -574,6 +574,90 @@ export async function liberarFondosEscrow(
       success: false,
       totalLiberado: 0,
       mensaje: "Error al procesar la liberación de fondos.",
+    }
+  }
+}
+
+/**
+ * Paso 1/2 del ciclo de Renta: El operador confirma la RECOLECCIÓN de la prenda por el cliente.
+ * Cambia el estado a "en_renta_cliente".
+ */
+export async function confirmarEntregaRentaCliente(
+  supabase: SupabaseClient,
+  qrTokenOrCode: string,
+  centroId: string,
+  centroNombre?: string
+): Promise<{
+  success: boolean
+  order?: EscrowOrder
+  mensaje: string
+}> {
+  try {
+    const allOrders = await fetchUserEscrowOrders(supabase)
+    const normToken = normalizeCode(qrTokenOrCode)
+
+    const target = allOrders.find(
+      (o) =>
+        normalizeCode(o.qrToken) === normToken ||
+        normalizeCode(o.orderCode) === normToken ||
+        o.id === qrTokenOrCode
+    )
+
+    if (!target) {
+      return {
+        success: false,
+        mensaje: "Orden de Renta no encontrada. Verifica el código QR #1 de recolección.",
+      }
+    }
+
+    const validatedTime = new Date().toISOString()
+
+    // Actualizar estado a `en_renta_cliente` en Supabase DB
+    try {
+      await supabase
+        .from("escrow_ordenes")
+        .update({ status: "en_renta_cliente" })
+        .or(`qr_token.eq.${target.qrToken},order_code.eq.${target.orderCode}`)
+    } catch {}
+
+    try {
+      await supabase
+        .from("donacion_tickets")
+        .update({ status: "en_renta_cliente" })
+        .or(`qr_token.eq.${target.qrToken},id.eq.${target.id}`)
+    } catch {}
+
+    const updatedOrder: EscrowOrder = {
+      ...target,
+      status: "en_renta_cliente",
+      validatedAt: validatedTime,
+      validatedBy: centroId,
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        const localStr = localStorage.getItem("clossapp_escrow_orders_v1")
+        const list: EscrowOrder[] = localStr ? JSON.parse(localStr) : []
+        const updatedList = list.map((o) =>
+          normalizeCode(o.orderCode) === normalizeCode(target.orderCode) || o.id === target.id
+            ? { ...o, status: "en_renta_cliente" as EscrowStatus }
+            : o
+        )
+        localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(updatedList))
+        window.dispatchEvent(new Event("storage"))
+        window.dispatchEvent(new CustomEvent("clossapp_escrow_updated", { detail: { order: updatedOrder } }))
+      } catch {}
+    }
+
+    return {
+      success: true,
+      order: updatedOrder,
+      mensaje: "¡Recolección de Renta confirmada! La prenda ha sido entregada al cliente (Paso 1/2).",
+    }
+  } catch (err) {
+    return {
+      success: false,
+      mensaje: "Error al procesar la entrega de renta al cliente.",
     }
   }
 }

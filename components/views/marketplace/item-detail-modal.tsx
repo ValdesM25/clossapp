@@ -86,6 +86,7 @@ export function ItemDetailModal({ item, isRenta, apartSuccess, aparting, isGuest
               </div>
             ) : isRenta && showFecha ? (
               <RentDatePicker
+                prendaId={item?.id}
                 onConfirm={(fecha) => {
                   if (item) {
                     onApartar(fecha)

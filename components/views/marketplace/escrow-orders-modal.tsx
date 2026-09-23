@@ -144,6 +144,10 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
           ) : (
             filteredOrders.map((order) => {
               const isCustodia = order.status === "pago_en_custodia"
+              const isEnRenta = order.status === "en_renta_cliente"
+              const isLiberado = order.status === "entregado_y_liberado"
+              const isRentaOrder = order.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)
+
               return (
                 <div
                   key={order.id}
@@ -151,7 +155,9 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                 >
                   <div className="flex items-start justify-between border-b border-zinc-100 pb-2">
                     <div>
-                      <span className="text-[9px] sm:text-[10px] text-zinc-400 font-mono block">Folio #{order.orderCode}</span>
+                      <span className="text-[9px] sm:text-[10px] text-zinc-400 font-mono block">
+                        Folio #{order.orderCode} {isRentaOrder ? "• Renta" : "• Compra"}
+                      </span>
                       <h4 className="font-serif text-xs sm:text-sm font-semibold text-zinc-900 mt-0.5">
                         ${order.totalPagado} MXN
                       </h4>
@@ -160,14 +166,19 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                     <span
                       className={cn(
                         "text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full flex items-center gap-1 border",
-                        isCustodia
-                          ? "bg-amber-50 text-amber-800 border-amber-200"
-                          : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        isCustodia && "bg-amber-50 text-amber-800 border-amber-200",
+                        isEnRenta && "bg-purple-50 text-purple-800 border-purple-200",
+                        isLiberado && "bg-emerald-50 text-emerald-800 border-emerald-200"
                       )}
                     >
                       {isCustodia ? (
                         <>
-                          <Clock className="w-3 h-3 text-amber-600 animate-pulse" /> Fondos en Custodia
+                          <Clock className="w-3 h-3 text-amber-600 animate-pulse" />{" "}
+                          {isRentaOrder ? "Paso 1: Recolección" : "En Custodia"}
+                        </>
+                      ) : isEnRenta ? (
+                        <>
+                          <Clock className="w-3 h-3 text-purple-600 animate-pulse" /> Paso 2: Devolución
                         </>
                       ) : (
                         <>
@@ -179,18 +190,28 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
 
                   {/* Items detail */}
                   <div className="space-y-1 text-xs text-zinc-700">
-                    <p className="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Artículos:</p>
+                    <p className="text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+                      Artículos:
+                    </p>
                     {order.items.map((it) => (
-                      <div key={it.id} className="flex items-center justify-between text-zinc-800 text-[11px] sm:text-xs">
-                        <span className="truncate pr-2">• {it.prenda.name}</span>
-                        <span className="font-mono text-zinc-600 shrink-0">${it.precio} MXN</span>
+                      <div key={it.id} className="flex flex-col text-zinc-800 text-[11px] sm:text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="truncate pr-2 font-medium">• {it.prenda.name}</span>
+                          <span className="font-mono text-zinc-600 shrink-0">${it.precio} MXN</span>
+                        </div>
+                        {it.fechaRenta && (
+                          <span className="text-[10px] text-purple-700 font-medium pl-3">
+                            📅 Fecha evento: {it.fechaRenta}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-zinc-100 text-[10px] sm:text-[11px] text-zinc-500">
                     <span className="flex items-center gap-1 truncate pr-2">
-                      <Store className="w-3.5 h-3.5 text-zinc-400 shrink-0" /> <span className="truncate">{order.puntoAcopioNombre}</span>
+                      <Store className="w-3.5 h-3.5 text-zinc-400 shrink-0" />{" "}
+                      <span className="truncate">{order.puntoAcopioNombre}</span>
                     </span>
 
                     {isCustodia ? (
@@ -198,10 +219,18 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                         onClick={() => setSelectedQR(order)}
                         className="bg-zinc-900 text-white font-medium px-2.5 py-1.5 rounded text-[11px] sm:text-xs flex items-center gap-1 hover:bg-zinc-800 transition-colors shrink-0"
                       >
-                        <QrCode className="w-3.5 h-3.5 text-emerald-400" /> Ver QR
+                        <QrCode className="w-3.5 h-3.5 text-amber-400" />{" "}
+                        {isRentaOrder ? "Ver QR #1 Recolección" : "Ver QR Custodia"}
+                      </button>
+                    ) : isEnRenta ? (
+                      <button
+                        onClick={() => setSelectedQR(order)}
+                        className="bg-purple-950 text-white font-medium px-2.5 py-1.5 rounded text-[11px] sm:text-xs flex items-center gap-1 hover:bg-purple-900 transition-colors shrink-0"
+                      >
+                        <QrCode className="w-3.5 h-3.5 text-purple-300" /> Ver QR #2 Devolución
                       </button>
                     ) : (
-                      <span className="text-emerald-700 font-medium shrink-0">✓ Entregado y Pagado</span>
+                      <span className="text-emerald-700 font-medium shrink-0">✓ Completado y Liberado</span>
                     )}
                   </div>
                 </div>
@@ -219,8 +248,19 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
               className="bg-white p-4 sm:p-6 rounded-xl max-w-sm w-full text-center space-y-3 sm:space-y-4 z-[130]"
             >
               <div className="flex justify-between items-center border-b pb-2">
-                <span className="font-mono text-xs font-bold text-zinc-900">Orden {selectedQR.orderCode}</span>
-                <button onClick={() => setSelectedQR(null)} className="p-1 text-zinc-400 hover:text-zinc-900" aria-label="Cerrar QR">
+                <div>
+                  <span className="font-mono text-xs font-bold text-zinc-900">Orden {selectedQR.orderCode}</span>
+                  <span className="text-[10px] text-zinc-500 block">
+                    {selectedQR.status === "pago_en_custodia"
+                      ? "Paso 1: Recolección de Renta"
+                      : "Paso 2: Devolución y Lavado"}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setSelectedQR(null)}
+                  className="p-1 text-zinc-400 hover:text-zinc-900"
+                  aria-label="Cerrar QR"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -232,6 +272,7 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                       esc: selectedQR.orderCode,
                       token: selectedQR.qrToken,
                       buyer: selectedQR.buyerName,
+                      status: selectedQR.status,
                       total: selectedQR.totalPagado,
                       items: selectedQR.items.map((i) => i.prenda.name),
                     })}
@@ -241,8 +282,10 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                   />
                 </div>
                 <p className="font-mono text-xs text-zinc-900 mt-2.5 font-bold tracking-wider">{selectedQR.qrToken}</p>
-                <p className="text-[10px] sm:text-[11px] text-emerald-800 font-medium mt-1">
-                  Muestra este QR en el Punto de Recolección para verificar tu entrega y liberar los fondos al vendedor.
+                <p className="text-[10px] sm:text-[11px] text-zinc-700 font-medium mt-1">
+                  {selectedQR.status === "pago_en_custodia"
+                    ? "Muestra este QR #1 en el Punto de Recolección para RECOGER tu prenda rentada (Paso 1/2)."
+                    : "Muestra este QR #2 al DEVOLVER tu prenda para mandarla a lavandería y liberar los fondos al vendedor (Paso 2/2)."}
                 </p>
               </div>
 
