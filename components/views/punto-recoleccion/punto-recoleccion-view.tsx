@@ -332,46 +332,160 @@ export function PuntoRecoleccionView() {
     }
 
     try {
-      // Si el código pertenece a una orden Escrow (#ESC-XXXXX o ESC-QR-XXXXX) o estamos en la pestaña de custodia
-      if (isEscrowCode || operatorTab === "custodia_compras") {
-        const escrowRes = await liberarFondosEscrow(
-          supabase,
-          cleanToken,
-          "norte",
-          userName || "Centro de Acopio Norte"
+      // Si el código pertenece a una orden Escrow (#ESC-XXXXX o ESC-QR-XXXXX) o estamos en las pestañas de custodia
+      if (isEscrowCode || operatorTab === "custodia_compras" || operatorTab === "custodia_rentas") {
+        const allEscrow = await fetchUserEscrowOrders(supabase)
+        const normToken = cleanToken.toUpperCase().replace(/^#/, "")
+
+        const target = allEscrow.find(
+          (o) =>
+            o.qrToken.toUpperCase().replace(/^#/, "") === normToken ||
+            o.orderCode.toUpperCase().replace(/^#/, "") === normToken ||
+            o.id === cleanToken
         )
 
-        if (escrowRes.success && escrowRes.order) {
-          setVerifiedPackage({
-            name: escrowRes.order.buyerName,
-            email: escrowRes.order.buyerEmail || "",
-            count: escrowRes.order.items.length,
-            points: 0,
-            prendas: escrowRes.order.items.map((i: any) => ({
-              id: i.id,
-              name: i.prenda.name,
-              category: i.prenda.category,
-              image_url: i.prenda.image_url,
-              talla: i.prenda.talla,
-            })),
-            prendasResumen: escrowRes.mensaje,
-            isEscrow: true,
-            orderCode: escrowRes.order.orderCode,
-            totalLiberado: escrowRes.totalLiberado,
-          })
-
-          setScannerStatus("success")
-          await loadDBRecords()
-          await loadEscrowOrders()
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(new CustomEvent("clossapp_escrow_updated", { detail: { order: escrowRes.order } }))
-            window.dispatchEvent(new Event("storage"))
-          }
-          return
-        } else if (isEscrowCode) {
-          setScannerErrorMsg(escrowRes.mensaje || "Código de Custodia no válido.")
+        if (!target) {
+          setScannerErrorMsg("Código de Custodia no encontrado. Verifica el folio o QR.")
           setScannerStatus("error")
           return
+        }
+
+        const isRentalOrder = target.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)
+
+        // Validación 1: Si escaneamos una Renta en la pestaña de Compras -> Rechazar y pedir cambiar de pestaña
+        if (operatorTab === "custodia_compras" && isRentalOrder) {
+          setScannerErrorMsg("Esta orden es de RENTA. Por favor cambia a la pestaña '3. Custodia Rentas' para procesar la entrega o devolución.")
+          setScannerStatus("error")
+          return
+        }
+
+        // Validación 2: Si escaneamos una Compra en la pestaña de Rentas -> Rechazar y pedir cambiar de pestaña
+        if (operatorTab === "custodia_rentas" && !isRentalOrder) {
+          setScannerErrorMsg("Esta orden es de COMPRA. Por favor cambia a la pestaña '2. Custodia Compras' para procesarla.")
+          setScannerStatus("error")
+          return
+        }
+
+        // Si es una orden de Renta: Procesar según el paso actual (Paso 1 vs Paso 2)
+        if (isRentalOrder) {
+          if (target.status === "pago_en_custodia") {
+            // PASO 1/2: Recolección y entrega inicial al cliente
+            const res1 = await confirmarEntregaRentaCliente(
+              supabase,
+              cleanToken,
+              "norte",
+              userName || "Centro de Acopio Norte"
+            )
+
+            if (res1.success && res1.order) {
+              setVerifiedPackage({
+                name: res1.order.buyerName,
+                email: res1.order.buyerEmail || "",
+                count: res1.order.items.length,
+                points: 0,
+                prendas: res1.order.items.map((i: any) => ({
+                  id: i.id,
+                  name: i.prenda.name,
+                  category: i.prenda.category,
+                  image_url: i.prenda.image_url,
+                  talla: i.prenda.talla,
+                })),
+                prendasResumen: "Paso 1/2 Completo: Prenda entregada al cliente para el evento. (Falta devolución posterior)",
+                isEscrow: true,
+                orderCode: res1.order.orderCode,
+                totalLiberado: 0,
+              })
+              setScannerStatus("success")
+              await loadDBRecords()
+              await loadEscrowOrders()
+              return
+            } else {
+              setScannerErrorMsg(res1.mensaje || "Error al procesar el Paso 1 de recolección.")
+              setScannerStatus("error")
+              return
+            }
+          } else if (target.status === "en_renta_cliente") {
+            // PASO 2/2: Retorno tras evento, envío a lavado y liberación de fondos
+            const res2 = await liberarFondosEscrow(
+              supabase,
+              cleanToken,
+              "norte",
+              userName || "Centro de Acopio Norte"
+            )
+
+            if (res2.success && res2.order) {
+              setVerifiedPackage({
+                name: res2.order.buyerName,
+                email: res2.order.buyerEmail || "",
+                count: res2.order.items.length,
+                points: 0,
+                prendas: res2.order.items.map((i: any) => ({
+                  id: i.id,
+                  name: i.prenda.name,
+                  category: i.prenda.category,
+                  image_url: i.prenda.image_url,
+                  talla: i.prenda.talla,
+                })),
+                prendasResumen: "Paso 2/2 Completo: Prenda recibida de devolución, enviada a lavado y fondos liberados al propietario.",
+                isEscrow: true,
+                orderCode: res2.order.orderCode,
+                totalLiberado: res2.totalLiberado,
+              })
+              setScannerStatus("success")
+              await loadDBRecords()
+              await loadEscrowOrders()
+              return
+            } else {
+              setScannerErrorMsg(res2.mensaje || "Error al procesar la devolución y lavado.")
+              setScannerStatus("error")
+              return
+            }
+          } else if (target.status === "entregado_y_liberado") {
+            setScannerErrorMsg("Esta orden de renta ya completó sus 2 pasos (Devolución y Lavado finalizados anteriormente).")
+            setScannerStatus("error")
+            return
+          }
+        } else {
+          // Es una Compra estándar
+          const escrowRes = await liberarFondosEscrow(
+            supabase,
+            cleanToken,
+            "norte",
+            userName || "Centro de Acopio Norte"
+          )
+
+          if (escrowRes.success && escrowRes.order) {
+            setVerifiedPackage({
+              name: escrowRes.order.buyerName,
+              email: escrowRes.order.buyerEmail || "",
+              count: escrowRes.order.items.length,
+              points: 0,
+              prendas: escrowRes.order.items.map((i: any) => ({
+                id: i.id,
+                name: i.prenda.name,
+                category: i.prenda.category,
+                image_url: i.prenda.image_url,
+                talla: i.prenda.talla,
+              })),
+              prendasResumen: escrowRes.mensaje,
+              isEscrow: true,
+              orderCode: escrowRes.order.orderCode,
+              totalLiberado: escrowRes.totalLiberado,
+            })
+
+            setScannerStatus("success")
+            await loadDBRecords()
+            await loadEscrowOrders()
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("clossapp_escrow_updated", { detail: { order: escrowRes.order } }))
+              window.dispatchEvent(new Event("storage"))
+            }
+            return
+          } else if (isEscrowCode) {
+            setScannerErrorMsg(escrowRes.mensaje || "Código de Custodia no válido.")
+            setScannerStatus("error")
+            return
+          }
         }
       }
 
@@ -664,7 +778,7 @@ export function PuntoRecoleccionView() {
               }`}
             >
               <Sparkles className="w-4 h-4 text-purple-400" />
-              <span>3. Custodia Rentas (2 QRs)</span>
+              <span>3. Custodia Rentas</span>
               <span className="bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono text-[10px] px-2 py-0.5 rounded-full">
                 {escrowOrders.filter((o) => o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length} ordenes
               </span>
