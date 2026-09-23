@@ -154,6 +154,72 @@ export async function fetchUserEscrowOrders(
     } catch {}
   }
 
+  // Auto-sincronizar a Supabase DB cualquier orden real local que no exista aún en la nube
+  const unSyncedLocal = localOrders.filter(
+    (lo) =>
+      !lo.id.startsWith("escrow_demo_") &&
+      lo.orderCode !== "ESC-48291" &&
+      lo.orderCode !== "ESC-93820" &&
+      !dbOrders.some(
+        (dbo) => normalizeCode(dbo.orderCode) === normalizeCode(lo.orderCode) || dbo.id === lo.id
+      )
+  )
+
+  if (unSyncedLocal.length > 0) {
+    for (const lo of unSyncedLocal) {
+      try {
+        const validUserId =
+          lo.buyerUserId && lo.buyerUserId !== "guest" && lo.buyerUserId.includes("-")
+            ? lo.buyerUserId
+            : "guest"
+
+        const { data: insertedData } = await supabase
+          .from("escrow_ordenes")
+          .insert({
+            order_code: lo.orderCode,
+            qr_token: lo.qrToken,
+            buyer_user_id: validUserId,
+            buyer_name: lo.buyerName || "Comprador ClossApp",
+            buyer_email: lo.buyerEmail || "",
+            items: lo.items,
+            subtotal: lo.subtotal,
+            garantia_escrow: lo.garantiaEscrow || 0,
+            total_pagado: lo.totalPagado,
+            metodo_pago: lo.metodoPago,
+            status: lo.status || "pago_en_custodia",
+            punto_acopio_id: lo.puntoAcopioId || "norte",
+            punto_acopio_nombre: lo.puntoAcopioNombre || "Centro de Acopio Norte",
+          })
+          .select("*")
+          .maybeSingle()
+
+        if (insertedData) {
+          dbOrders.push({
+            id: insertedData.id,
+            orderCode: insertedData.order_code,
+            qrToken: insertedData.qr_token,
+            buyerUserId: insertedData.buyer_user_id || "guest",
+            buyerName: insertedData.buyer_name || lo.buyerName,
+            buyerEmail: insertedData.buyer_email || lo.buyerEmail || "",
+            items: Array.isArray(insertedData.items) ? insertedData.items : lo.items,
+            subtotal: Number(insertedData.subtotal || lo.subtotal),
+            garantiaEscrow: Number(insertedData.garantia_escrow || 0),
+            totalPagado: Number(insertedData.total_pagado || lo.totalPagado),
+            metodoPago: insertedData.metodo_pago || lo.metodoPago,
+            status: insertedData.status || lo.status,
+            puntoAcopioId: insertedData.punto_acopio_id || lo.puntoAcopioId,
+            puntoAcopioNombre: insertedData.punto_acopio_nombre || lo.puntoAcopioNombre,
+            createdAt: insertedData.created_at || lo.createdAt,
+            validatedAt: insertedData.validated_at || lo.validatedAt,
+            validatedBy: insertedData.validated_by || lo.validatedBy,
+          })
+        }
+      } catch (err) {
+        console.warn("Auto-syncing escrow order to DB notice:", err)
+      }
+    }
+  }
+
   const map = new Map<string, EscrowOrder>()
 
   // 1. Agregar órdenes de localStorage
