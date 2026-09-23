@@ -94,6 +94,11 @@ export async function createEscrowOrder(
   return newOrder
 }
 
+function normalizeCode(str?: string | null): string {
+  if (!str) return ""
+  return str.trim().toUpperCase().replace(/^#/, "")
+}
+
 /**
  * Obtiene las órdenes en custodia asociadas a un usuario o todas si es operador.
  */
@@ -107,7 +112,7 @@ export async function fetchUserEscrowOrders(
   try {
     let query = supabase.from("escrow_ordenes").select("*").order("created_at", { ascending: false })
     if (userId && userId !== "guest" && userId !== "punto_centro_norte") {
-      query = query.or(`buyer_user_id.eq.${userId},buyer_user_id.is.null`)
+      query = query.or(`buyer_user_id.eq.${userId},buyer_user_id.eq.guest,buyer_user_id.is.null`)
     }
 
     const { data } = await query
@@ -146,10 +151,13 @@ export async function fetchUserEscrowOrders(
   }
 
   const map = new Map<string, EscrowOrder>()
-  localOrders.forEach((o) => map.set(o.orderCode || o.id, o))
+  localOrders.forEach((o) => {
+    const key = normalizeCode(o.orderCode) || o.id
+    map.set(key, o)
+  })
 
   dbOrders.forEach((o) => {
-    const key = o.orderCode || o.id
+    const key = normalizeCode(o.orderCode) || o.id
     const existing = map.get(key)
     if (!existing) {
       map.set(key, o)
@@ -166,28 +174,24 @@ export async function fetchUserEscrowOrders(
     }
   })
 
-  // Sincronizar de vuelta a localStorage si se detectó alguna orden liberada en BD
-  if (typeof window !== "undefined" && map.size > 0) {
-    try {
-      localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(Array.from(map.values())))
-    } catch {}
-  }
-
-  // Si no hay ninguna orden ni en BD ni en localStorage (ej. en iPad / nuevo dispositivo / invitado), sembrar órdenes demo
+  // Si no hay ninguna orden ni en BD ni en localStorage, sembrar órdenes demo
   if (map.size === 0) {
-    DEMO_ESCROW_ORDERS.forEach((o) => map.set(o.orderCode || o.id, o as EscrowOrder))
+    DEMO_ESCROW_ORDERS.forEach((o) => map.set(normalizeCode(o.orderCode) || o.id, o as EscrowOrder))
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(DEMO_ESCROW_ORDERS))
       } catch {}
     }
+  } else if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(Array.from(map.values())))
+    } catch {}
   }
 
   return Array.from(map.values()).sort(
     (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
   )
 }
-
 
 /**
  * Procesa la verificación en el Punto de Recolección y LIBERA LOS FONDOS retenidos al vendedor.
@@ -205,30 +209,57 @@ export async function liberarFondosEscrow(
 }> {
   try {
     const cleanToken = qrTokenOrCode.trim()
-    const searchTokens: string[] = [cleanToken]
+    const searchTokens = new Set<string>()
+
+    const addToken = (t: string) => {
+      if (!t) return
+      const raw = t.trim()
+      const norm = normalizeCode(raw)
+      if (raw) searchTokens.add(raw)
+      if (norm) searchTokens.add(norm)
+    }
+
+    addToken(cleanToken)
 
     if (cleanToken.startsWith("{") && cleanToken.endsWith("}")) {
       try {
         const parsed = JSON.parse(cleanToken)
-        if (parsed.token) searchTokens.push(String(parsed.token).trim())
-        if (parsed.esc) searchTokens.push(String(parsed.esc).trim())
-        if (parsed.orderCode) searchTokens.push(String(parsed.orderCode).trim())
-        if (parsed.id) searchTokens.push(String(parsed.id).trim())
+        if (parsed.token) addToken(String(parsed.token))
+        if (parsed.esc) addToken(String(parsed.esc))
+        if (parsed.orderCode) addToken(String(parsed.orderCode))
+        if (parsed.id) addToken(String(parsed.id))
       } catch {}
     }
 
+    const tokenList = Array.from(searchTokens)
     const allOrders = await fetchUserEscrowOrders(supabase)
-    let target = allOrders.find((o) =>
-      searchTokens.some((st) => o.qrToken === st || o.orderCode === st || o.id === st)
-    )
+
+    let target = allOrders.find((o) => {
+      const normQr = normalizeCode(o.qrToken)
+      const normCode = normalizeCode(o.orderCode)
+      const normId = normalizeCode(o.id)
+
+      return tokenList.some((st) => {
+        const normSt = normalizeCode(st)
+        return (
+          normQr === normSt ||
+          normCode === normSt ||
+          normId === normSt ||
+          o.qrToken === st ||
+          o.orderCode === st ||
+          o.id === st
+        )
+      })
+    })
 
     if (!target) {
-      // Intentar buscar en DB directamente
-      for (const st of searchTokens) {
+      // Intentar buscar en DB directamente por token o código
+      for (const st of tokenList) {
+        const normSt = normalizeCode(st)
         const { data } = await supabase
           .from("escrow_ordenes")
           .select("*")
-          .or(`qr_token.eq.${st},order_code.eq.${st},id.eq.${st}`)
+          .or(`qr_token.eq.${st},order_code.eq.${st},order_code.eq.${normSt},id.eq.${st}`)
           .maybeSingle()
 
         if (data) {
@@ -277,7 +308,7 @@ export async function liberarFondosEscrow(
           validated_at: validatedTime,
           validated_by: centroId,
         })
-        .or(`qr_token.eq.${target.qrToken},order_code.eq.${target.orderCode}`)
+        .or(`qr_token.eq.${target.qrToken},order_code.eq.${target.orderCode},order_code.eq.${normalizeCode(target.orderCode)}`)
     } catch (err) {
       console.warn("liberarFondosEscrow DB update notice:", err)
     }
@@ -293,7 +324,7 @@ export async function liberarFondosEscrow(
         cantidad_prendas: target.items.length || 1,
         puntos_otorgados: 0,
         fecha_registro: validatedTime,
-        observaciones: `ENTREGA Y LIBERACIÓN DE CUSTODIA (Escrow #${target.orderCode}): $${totalLiberado} MXN liberados al vendedor. Productos: ${prendaResumen}`,
+        observaciones: `ENTREGA Y LIBERACIÓN DE CUSTODIA (#${target.orderCode}): $${totalLiberado} MXN liberados al vendedor. Productos: ${prendaResumen}`,
       })
     } catch (err) {
       console.warn("liberarFondosEscrow acopio log notice:", err)
@@ -311,8 +342,12 @@ export async function liberarFondosEscrow(
       try {
         const localStr = localStorage.getItem("clossapp_escrow_orders_v1")
         const list: EscrowOrder[] = localStr ? JSON.parse(localStr) : []
-        const updatedList = list.map((o) => (o.orderCode === target.orderCode ? updatedOrder : o))
-        if (!updatedList.some((o) => o.orderCode === target.orderCode)) {
+        const updatedList = list.map((o) =>
+          normalizeCode(o.orderCode) === normalizeCode(target.orderCode) || o.id === target.id
+            ? { ...o, status: "entregado_y_liberado", validatedAt: validatedTime, validatedBy: centroId }
+            : o
+        )
+        if (!updatedList.some((o) => normalizeCode(o.orderCode) === normalizeCode(target.orderCode) || o.id === target.id)) {
           updatedList.unshift(updatedOrder)
         }
         localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(updatedList))
@@ -331,7 +366,7 @@ export async function liberarFondosEscrow(
           cantidad_prendas: target.items.length || 1,
           puntos_otorgados: 0,
           fecha_registro: validatedTime,
-          observaciones: `ENTREGA Y LIBERACIÓN DE CUSTODIA (Escrow #${target.orderCode}): $${totalLiberado} MXN liberados al vendedor. Productos: ${prendaResumen}`,
+          observaciones: `ENTREGA Y LIBERACIÓN DE CUSTODIA (#${target.orderCode}): $${totalLiberado} MXN liberados al vendedor. Productos: ${prendaResumen}`,
         })
         localStorage.setItem("clossapp_local_acopio_registros_v1", JSON.stringify(localRegs))
 
@@ -344,7 +379,7 @@ export async function liberarFondosEscrow(
       success: true,
       order: updatedOrder,
       totalLiberado,
-      mensaje: `¡Entrega confirmada! Se han liberado $${totalLiberado} MXN de Custodia al vendedor.`,
+      mensaje: `¡Entrega confirmada! Se han liberado $${totalLiberado} MXN al vendedor.`,
     }
   } catch (err) {
     console.error("liberarFondosEscrow error:", err)

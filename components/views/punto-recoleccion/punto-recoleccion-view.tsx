@@ -311,6 +311,7 @@ export function PuntoRecoleccionView() {
     setScannerErrorMsg(null)
 
     const cleanToken = token.trim()
+    const upperClean = cleanToken.toUpperCase().replace(/^#/, "")
     let isEscrowCode = false
     let parsedJSON: any = null
 
@@ -319,18 +320,18 @@ export function PuntoRecoleccionView() {
         parsedJSON = JSON.parse(cleanToken)
         if (parsedJSON.esc) {
           isEscrowCode = true
-        } else if (parsedJSON.token && String(parsedJSON.token).toUpperCase().startsWith("ESC-")) {
+        } else if (parsedJSON.token && String(parsedJSON.token).toUpperCase().replace(/^#/, "").startsWith("ESC-")) {
           isEscrowCode = true
         }
       } catch {}
     }
 
-    if (cleanToken.toUpperCase().startsWith("ESC-") || cleanToken.toUpperCase().startsWith("ESC-QR-")) {
+    if (upperClean.startsWith("ESC-") || upperClean.startsWith("ESC-QR-")) {
       isEscrowCode = true
     }
 
     try {
-      // Si el código pertenece a una orden Escrow (#ESC-XXXXX o ESC-QR-XXXXX) o estamos en el apartado de custodia
+      // Si el código pertenece a una orden Escrow (#ESC-XXXXX o ESC-QR-XXXXX) o estamos en la pestaña de custodia
       if (isEscrowCode || operatorTab === "custodia_compras") {
         const escrowRes = await liberarFondosEscrow(
           supabase,
@@ -361,6 +362,10 @@ export function PuntoRecoleccionView() {
           setScannerStatus("success")
           await loadDBRecords()
           await loadEscrowOrders()
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("clossapp_escrow_updated", { detail: { order: escrowRes.order } }))
+            window.dispatchEvent(new Event("storage"))
+          }
           return
         } else if (isEscrowCode) {
           setScannerErrorMsg(escrowRes.mensaje || "Código de Custodia no válido.")
