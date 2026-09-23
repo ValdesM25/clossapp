@@ -335,14 +335,28 @@ export function PuntoRecoleccionView() {
       // Si el código pertenece a una orden Escrow (#ESC-XXXXX o ESC-QR-XXXXX) o estamos en las pestañas de custodia
       if (isEscrowCode || operatorTab === "custodia_compras" || operatorTab === "custodia_rentas") {
         const allEscrow = await fetchUserEscrowOrders(supabase)
-        const normToken = cleanToken.toUpperCase().replace(/^#/, "")
+        
+        const searchTokens = new Set<string>()
+        const addSearchToken = (t: string) => {
+          if (!t) return
+          searchTokens.add(t.trim())
+          searchTokens.add(t.trim().toUpperCase().replace(/^#/, ""))
+        }
 
-        const target = allEscrow.find(
-          (o) =>
-            o.qrToken.toUpperCase().replace(/^#/, "") === normToken ||
-            o.orderCode.toUpperCase().replace(/^#/, "") === normToken ||
-            o.id === cleanToken
-        )
+        addSearchToken(cleanToken)
+        if (parsedJSON) {
+          if (parsedJSON.token) addSearchToken(String(parsedJSON.token))
+          if (parsedJSON.esc) addSearchToken(String(parsedJSON.esc))
+          if (parsedJSON.id) addSearchToken(String(parsedJSON.id))
+        }
+
+        const tokenArray = Array.from(searchTokens)
+
+        const target = allEscrow.find((o) => {
+          const oToken = o.qrToken.toUpperCase().replace(/^#/, "")
+          const oCode = o.orderCode.toUpperCase().replace(/^#/, "")
+          return tokenArray.some((st) => st === oToken || st === oCode || st === o.id || st === o.qrToken || st === o.orderCode)
+        })
 
         if (!target) {
           setScannerErrorMsg("Código de Custodia no encontrado. Verifica el folio o QR.")

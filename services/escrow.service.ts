@@ -593,15 +593,93 @@ export async function confirmarEntregaRentaCliente(
   mensaje: string
 }> {
   try {
-    const allOrders = await fetchUserEscrowOrders(supabase)
-    const normToken = normalizeCode(qrTokenOrCode)
+    const searchTokens = new Set<string>()
+    const addToken = (t: string) => {
+      if (!t) return
+      searchTokens.add(t.trim())
+      searchTokens.add(normalizeCode(t))
+    }
 
-    const target = allOrders.find(
-      (o) =>
-        normalizeCode(o.qrToken) === normToken ||
-        normalizeCode(o.orderCode) === normToken ||
-        o.id === qrTokenOrCode
-    )
+    addToken(qrTokenOrCode)
+
+    if (qrTokenOrCode.startsWith("{") && qrTokenOrCode.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(qrTokenOrCode)
+        if (parsed.token) addToken(String(parsed.token))
+        if (parsed.esc) addToken(String(parsed.esc))
+        if (parsed.id) addToken(String(parsed.id))
+      } catch {}
+    }
+
+    const tokenList = Array.from(searchTokens)
+    const allOrders = await fetchUserEscrowOrders(supabase)
+
+    let target = allOrders.find((o) => {
+      const normQr = normalizeCode(o.qrToken)
+      const normCode = normalizeCode(o.orderCode)
+      const normId = normalizeCode(o.id)
+
+      return tokenList.some((st) => {
+        const normSt = normalizeCode(st)
+        return (
+          normQr === normSt ||
+          normCode === normSt ||
+          normId === normSt ||
+          o.qrToken === st ||
+          o.orderCode === st ||
+          o.id === st
+        )
+      })
+    })
+
+    if (!target) {
+      // Fallback: buscar directamente en la BD
+      try {
+        const { data: dbAll } = await supabase.from("escrow_ordenes").select("*")
+        if (dbAll && dbAll.length > 0) {
+          const match = dbAll.find((row: any) => {
+            const rowQr = normalizeCode(row.qr_token)
+            const rowCode = normalizeCode(row.order_code)
+            const rowId = normalizeCode(row.id)
+            return tokenList.some((st) => {
+              const normSt = normalizeCode(st)
+              return (
+                rowQr === normSt ||
+                rowCode === normSt ||
+                rowId === normSt ||
+                row.qr_token === st ||
+                row.order_code === st ||
+                row.id === st
+              )
+            })
+          })
+
+          if (match) {
+            target = {
+              id: match.id,
+              orderCode: match.order_code,
+              qrToken: match.qr_token,
+              buyerUserId: match.buyer_user_id || "guest",
+              buyerName: match.buyer_name || "Comprador ClossApp",
+              buyerEmail: match.buyer_email || "",
+              items: Array.isArray(match.items) ? match.items : [],
+              subtotal: Number(match.subtotal || 0),
+              garantiaEscrow: Number(match.garantia_escrow || 0),
+              totalPagado: Number(match.total_pagado || 0),
+              metodoPago: match.metodo_pago || "tarjeta",
+              status: match.status || "pago_en_custodia",
+              puntoAcopioId: match.punto_acopio_id || "norte",
+              puntoAcopioNombre: match.punto_acopio_nombre || "Centro de Acopio Norte",
+              createdAt: match.created_at,
+              validatedAt: match.validated_at,
+              validatedBy: match.validated_by,
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("confirmarEntregaRentaCliente direct DB lookup notice:", err)
+      }
+    }
 
     if (!target) {
       return {
