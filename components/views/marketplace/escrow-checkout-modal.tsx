@@ -69,7 +69,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
         <div className="p-3.5 sm:p-4 bg-zinc-900 text-white flex items-center justify-between border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-400" />
-            <h3 className="font-serif text-sm sm:text-base text-white">Pago Seguro en Custodia (Escrow)</h3>
+            <h3 className="font-serif text-sm sm:text-base text-white">Pago Seguro en Custodia</h3>
           </div>
           <button onClick={onClose} className="p-1 text-zinc-400 hover:text-white transition-colors" aria-label="Cerrar">
             <X className="w-5 h-5" />
@@ -96,7 +96,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
             <div className="p-3.5 sm:p-4 bg-zinc-50 border border-zinc-200 rounded-lg text-left space-y-3">
               <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
                 <div>
-                  <p className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-widest">Folio Escrow</p>
+                  <p className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-widest">Folio de Pedido</p>
                   <p className="font-mono text-sm sm:text-base font-bold text-zinc-900">{completedOrder.orderCode}</p>
                 </div>
                 <div className="text-right">
@@ -143,7 +143,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
               onClick={onClose}
               className="w-full bg-zinc-900 text-white font-medium text-xs py-3 rounded hover:bg-zinc-800 transition-colors"
             >
-              Cerrar y Ver Mis Custodias
+              Cerrar y Ver Mis Pedidos
             </button>
           </div>
         ) : (

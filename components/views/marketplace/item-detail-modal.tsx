@@ -31,9 +31,9 @@ export function ItemDetailModal({ item, isRenta, apartSuccess, aparting, isGuest
   function handleApartar() {
     if (isRenta && !showFecha) {
       setShowFecha(true)
-    } else {
+    } else if (!isRenta) {
       if (item) {
-        addToCart(item, isRenta ? "renta" : "compra")
+        addToCart(item, "compra")
         handleClose()
       }
     }
@@ -88,8 +88,7 @@ export function ItemDetailModal({ item, isRenta, apartSuccess, aparting, isGuest
               <RentDatePicker
                 onConfirm={(fecha) => {
                   if (item) {
-                    addToCart(item, "renta", fecha)
-                    handleClose()
+                    onApartar(fecha)
                   }
                 }}
                 onCancel={() => setShowFecha(false)}
@@ -100,7 +99,7 @@ export function ItemDetailModal({ item, isRenta, apartSuccess, aparting, isGuest
                 className={cn("w-full py-3 text-sm font-medium tracking-wide flex items-center justify-center gap-2 rounded",
                   isGuest ? "bg-zinc-100 text-zinc-400 cursor-default" : "bg-zinc-900 text-white hover:bg-zinc-800 transition-colors disabled:opacity-50")}>
                 {aparting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4 text-emerald-400" />}
-                {isGuest ? "Solo lectura" : aparting ? "Procesando..." : isRenta ? "Agregar Renta al Carrito" : "Agregar al Carrito de Custodia"}
+                {isGuest ? "Solo lectura" : aparting ? "Procesando..." : isRenta ? "Solicitar Renta" : "Agregar al Carrito de Custodia"}
               </motion.button>
             )}
           </div>

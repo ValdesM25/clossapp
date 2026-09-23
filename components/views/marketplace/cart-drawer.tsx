@@ -224,7 +224,7 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
                   </div>
                   <div className="flex justify-between text-emerald-700 font-medium">
                     <span className="flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5" /> Custodia & Escrow ClossApp
+                      <ShieldCheck className="w-3.5 h-3.5" /> Custodia Segura ClossApp
                     </span>
                     <span>$0.00 (Gratis)</span>
                   </div>

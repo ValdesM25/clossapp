@@ -87,7 +87,7 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
         <div className="p-3.5 sm:p-4 bg-zinc-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-400" />
-            <h3 className="font-serif text-sm sm:text-base text-white">Mis Compras en Custodia (Escrow)</h3>
+            <h3 className="font-serif text-sm sm:text-base text-white">Mis Pedidos</h3>
           </div>
           <button onClick={onClose} className="p-1 text-zinc-400 hover:text-white transition-colors" aria-label="Cerrar">
             <X className="w-5 h-5" />
