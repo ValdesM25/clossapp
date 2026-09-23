@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, ShieldCheck, QrCode, Clock, CheckCircle2, Store, Package } from "lucide-react"
+import { X, ShieldCheck, QrCode, Clock, CheckCircle2, Store, Package, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { QRCodeSVG } from "qrcode.react"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
-import { fetchUserEscrowOrders } from "@/services/escrow.service"
+import { fetchUserEscrowOrders, clearAllEscrowOrders } from "@/services/escrow.service"
 import type { EscrowOrder } from "@/types/escrow"
 
 interface EscrowOrdersModalProps {
@@ -35,6 +35,13 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
       if (showSpinner) setLoading(false)
     }
   }, [supabase, userId, userEmail])
+
+  const handleClearAll = async () => {
+    if (!confirm("¿Deseas eliminar todas las órdenes del área de venta?")) return
+    setLoading(true)
+    await clearAllEscrowOrders(supabase)
+    await loadOrders(true)
+  }
 
   useEffect(() => {
     if (!open) return
@@ -89,9 +96,21 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
             <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-400" />
             <h3 className="font-serif text-sm sm:text-base text-white">Mis Pedidos</h3>
           </div>
-          <button onClick={onClose} className="p-1 text-zinc-400 hover:text-white transition-colors" aria-label="Cerrar">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {orders.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                className="flex items-center gap-1 text-xs text-rose-400 hover:text-rose-300 bg-rose-950/60 hover:bg-rose-900/80 px-2 py-1 rounded border border-rose-800/50 transition-colors"
+                title="Vaciar todas las órdenes"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Vaciar</span>
+              </button>
+            )}
+            <button onClick={onClose} className="p-1 text-zinc-400 hover:text-white transition-colors" aria-label="Cerrar">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tabs Filter */}

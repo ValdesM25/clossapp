@@ -247,36 +247,43 @@ export async function fetchUserEscrowOrders(
     }
   })
 
-  // Filtrar demo orders si existen órdenes reales creadas por el usuario
+  // Filtrar demo orders y obtener la lista real
   const allOrdersList = Array.from(map.values())
   const realOrders = allOrdersList.filter(
     (o) => !o.id.startsWith("escrow_demo_") && o.orderCode !== "ESC-48291" && o.orderCode !== "ESC-93820"
   )
 
-  const finalList = realOrders.length > 0 ? realOrders : allOrdersList
-
-  // Si no hay ninguna orden (ni en BD ni local ni demo), sembrar demo
-  if (finalList.length === 0) {
-    DEMO_ESCROW_ORDERS.forEach((o) => map.set(normalizeCode(o.orderCode) || o.id, o as EscrowOrder))
-    const demoList = Array.from(map.values())
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(demoList))
-      } catch {}
-    }
-    return demoList
-  }
-
-  // Guardar la lista unificada en localStorage de este dispositivo
   if (typeof window !== "undefined") {
     try {
-      localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(finalList))
+      localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(realOrders))
     } catch {}
   }
 
-  return finalList.sort(
+  return realOrders.sort(
     (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
   )
+}
+
+/**
+ * Elimina TODAS las órdenes en custodia (área de venta) tanto de Supabase DB como de localStorage.
+ */
+export async function clearAllEscrowOrders(supabase: SupabaseClient): Promise<boolean> {
+  try {
+    await supabase.from("escrow_ordenes").delete().neq("id", "00000000-0000-0000-0000-000000000000")
+  } catch (err) {
+    console.warn("clearAllEscrowOrders DB delete notice:", err)
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem("clossapp_escrow_orders_v1")
+      localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify([]))
+      window.dispatchEvent(new Event("storage"))
+      window.dispatchEvent(new CustomEvent("clossapp_escrow_updated", { detail: { cleared: true } }))
+    } catch {}
+  }
+
+  return true
 }
 
 /**
