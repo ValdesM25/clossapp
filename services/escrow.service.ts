@@ -110,12 +110,16 @@ export async function fetchUserEscrowOrders(
   let dbOrders: EscrowOrder[] = []
 
   try {
-    let query = supabase.from("escrow_ordenes").select("*").order("created_at", { ascending: false })
-    if (userId && userId !== "guest" && userId !== "punto_centro_norte") {
-      query = query.or(`buyer_user_id.eq.${userId},buyer_user_id.eq.guest,buyer_user_id.is.null`)
+    // Consultar TODAS las órdenes de la BD de Supabase para sincronizar entre dispositivos (Laptop, iPad, Celular)
+    const { data, error } = await supabase
+      .from("escrow_ordenes")
+      .select("*")
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.warn("fetchUserEscrowOrders Supabase notice:", error.message || error)
     }
 
-    const { data } = await query
     if (data && data.length > 0) {
       dbOrders = data.map((o) => ({
         id: o.id,
@@ -151,11 +155,14 @@ export async function fetchUserEscrowOrders(
   }
 
   const map = new Map<string, EscrowOrder>()
+
+  // 1. Agregar órdenes de localStorage
   localOrders.forEach((o) => {
     const key = normalizeCode(o.orderCode) || o.id
     map.set(key, o)
   })
 
+  // 2. Fusionar u sobrescribir con órdenes de la BD en la nube (la BD tiene prioridad)
   dbOrders.forEach((o) => {
     const key = normalizeCode(o.orderCode) || o.id
     const existing = map.get(key)
@@ -174,21 +181,34 @@ export async function fetchUserEscrowOrders(
     }
   })
 
-  // Si no hay ninguna orden ni en BD ni en localStorage, sembrar órdenes demo
-  if (map.size === 0) {
+  // Filtrar demo orders si existen órdenes reales creadas por el usuario
+  const allOrdersList = Array.from(map.values())
+  const realOrders = allOrdersList.filter(
+    (o) => !o.id.startsWith("escrow_demo_") && o.orderCode !== "ESC-48291" && o.orderCode !== "ESC-93820"
+  )
+
+  const finalList = realOrders.length > 0 ? realOrders : allOrdersList
+
+  // Si no hay ninguna orden (ni en BD ni local ni demo), sembrar demo
+  if (finalList.length === 0) {
     DEMO_ESCROW_ORDERS.forEach((o) => map.set(normalizeCode(o.orderCode) || o.id, o as EscrowOrder))
+    const demoList = Array.from(map.values())
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(DEMO_ESCROW_ORDERS))
+        localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(demoList))
       } catch {}
     }
-  } else if (typeof window !== "undefined") {
+    return demoList
+  }
+
+  // Guardar la lista unificada en localStorage de este dispositivo
+  if (typeof window !== "undefined") {
     try {
-      localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(Array.from(map.values())))
+      localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(finalList))
     } catch {}
   }
 
-  return Array.from(map.values()).sort(
+  return finalList.sort(
     (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
   )
 }
