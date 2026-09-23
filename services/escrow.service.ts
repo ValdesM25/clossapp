@@ -65,13 +65,15 @@ export async function createEscrowOrder(
       punto_acopio_nombre: newOrder.puntoAcopioNombre,
     }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("escrow_ordenes")
       .insert(payload)
       .select("*")
       .maybeSingle()
 
-    if (data?.id) {
+    if (error) {
+      console.error("createEscrowOrder Supabase insert error:", error.message || error)
+    } else if (data?.id) {
       newOrder.id = data.id
       newOrder.createdAt = data.created_at || newOrder.createdAt
     }
@@ -346,37 +348,51 @@ export async function liberarFondosEscrow(
     })
 
     if (!target) {
-      // Intentar buscar en DB directamente por token o código
-      for (const st of tokenList) {
-        const normSt = normalizeCode(st)
-        const { data } = await supabase
-          .from("escrow_ordenes")
-          .select("*")
-          .or(`qr_token.eq.${st},order_code.eq.${st},order_code.eq.${normSt},id.eq.${st}`)
-          .maybeSingle()
+      // Intentar consultar la lista completa de BD directamente si no estuvo en memoria local
+      try {
+        const { data: dbAll } = await supabase.from("escrow_ordenes").select("*")
+        if (dbAll && dbAll.length > 0) {
+          const match = dbAll.find((row: any) => {
+            const rowQr = normalizeCode(row.qr_token)
+            const rowCode = normalizeCode(row.order_code)
+            const rowId = normalizeCode(row.id)
+            return tokenList.some((st) => {
+              const normSt = normalizeCode(st)
+              return (
+                rowQr === normSt ||
+                rowCode === normSt ||
+                rowId === normSt ||
+                row.qr_token === st ||
+                row.order_code === st ||
+                row.id === st
+              )
+            })
+          })
 
-        if (data) {
-          target = {
-            id: data.id,
-            orderCode: data.order_code,
-            qrToken: data.qr_token,
-            buyerUserId: data.buyer_user_id || "guest",
-            buyerName: data.buyer_name || "Comprador ClossApp",
-            buyerEmail: data.buyer_email || "",
-            items: Array.isArray(data.items) ? data.items : [],
-            subtotal: Number(data.subtotal || 0),
-            garantiaEscrow: Number(data.garantia_escrow || 0),
-            totalPagado: Number(data.total_pagado || 0),
-            metodoPago: data.metodo_pago || "tarjeta",
-            status: data.status || "pago_en_custodia",
-            puntoAcopioId: data.punto_acopio_id || "norte",
-            puntoAcopioNombre: data.punto_acopio_nombre || "Centro de Acopio Norte",
-            createdAt: data.created_at,
-            validatedAt: data.validated_at,
-            validatedBy: data.validated_by,
+          if (match) {
+            target = {
+              id: match.id,
+              orderCode: match.order_code,
+              qrToken: match.qr_token,
+              buyerUserId: match.buyer_user_id || "guest",
+              buyerName: match.buyer_name || "Comprador ClossApp",
+              buyerEmail: match.buyer_email || "",
+              items: Array.isArray(match.items) ? match.items : [],
+              subtotal: Number(match.subtotal || 0),
+              garantiaEscrow: Number(match.garantia_escrow || 0),
+              totalPagado: Number(match.total_pagado || 0),
+              metodoPago: match.metodo_pago || "tarjeta",
+              status: match.status || "pago_en_custodia",
+              puntoAcopioId: match.punto_acopio_id || "norte",
+              puntoAcopioNombre: match.punto_acopio_nombre || "Centro de Acopio Norte",
+              createdAt: match.created_at,
+              validatedAt: match.validated_at,
+              validatedBy: match.validated_by,
+            }
           }
-          break
         }
+      } catch (err) {
+        console.warn("liberarFondosEscrow direct DB lookup notice:", err)
       }
     }
 
