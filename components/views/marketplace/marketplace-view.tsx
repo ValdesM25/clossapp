@@ -37,7 +37,7 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
     marketTab, setMarketTab, activeFilter, setActiveFilter,
     items, rentaItems, loading, aparting, apartSuccess,
     sellMode, setSellMode, selling, rentaError,
-    apartar, publish,
+    publish,
   } = useMarketplace(userId, isGuest)
 
   const [selectedItem, setSelectedItem] = useState<Prenda | null>(null)
@@ -92,12 +92,6 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
         addToCart(selectedItem, "compra")
         setSelectedItem(null)
         setShowCheckoutModal(true)
-      } else {
-        const ok = await apartar(selectedItem, "comprar", fechaRenta)
-        if (ok) {
-          setTimeout(() => setSelectedItem(null), 2000)
-          onApartar()
-        }
       }
     }
   }
