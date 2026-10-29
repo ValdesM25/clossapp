@@ -14,10 +14,12 @@ type AuthContextValue = {
   isGuest: boolean
   isRecoleccion: boolean
   isAuthenticated: boolean
+  /** true mientras se comprueba si hay una sesion guardada al abrir la app. */
+  initializing: boolean
   login: (email: string, password: string) => Promise<void>
   loginAsGuest: () => void
   loginAsRecoleccion: () => void
-  logout: () => void
+  logout: () => Promise<void>
   updateProfile: (data: {
     name?: string
     email?: string

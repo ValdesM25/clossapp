@@ -18,9 +18,23 @@ import { ArmarioView } from "@/components/views/armario/armario-view"
 import { PlanesView } from "@/components/views/planes/planes-view"
 import { PuntoRecoleccionView } from "@/components/views/punto-recoleccion/punto-recoleccion-view"
 
-function AppShell() {
-  const { userMode, isRecoleccion } = useAuthContext()
+/**
+ * Se muestra mientras se comprueba si hay sesion guardada. Sin esto la app
+ * instalada mostraria el login por un instante en cada apertura, incluso
+ * teniendo la sesion iniciada.
+ */
+function SplashScreen() {
+  return (
+    <div className="flex h-screen items-center justify-center bg-white">
+      <img src="/logo.svg" alt="Clossapp" className="h-12 w-auto animate-pulse" />
+    </div>
+  )
+}
 
+function AppShell() {
+  const { userMode, isRecoleccion, initializing } = useAuthContext()
+
+  if (initializing) return <SplashScreen />
   if (!userMode) return <LoginView />
 
   // Collection Point / Punto de Recolección isolated portal mode

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { SerwistProvider } from '@serwist/turbopack/react'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -18,6 +19,17 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
+  applicationName: 'Clossapp',
+  // Safari no lee el manifest: la pantalla completa y el titulo del icono en
+  // iOS salen de aca.
+  appleWebApp: {
+    capable: true,
+    title: 'Clossapp',
+    statusBarStyle: 'default',
+  },
+  formatDetection: {
+    telephone: false,
+  },
 }
 
 export const viewport: Viewport = {
@@ -25,6 +37,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#ffffff',
+  // Que el contenido llegue hasta los bordes en pantallas con notch; el
+  // espacio del indicador de inicio lo maneja pb-safe en la barra inferior.
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
@@ -35,7 +51,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="font-sans antialiased">
-        {children}
+        <SerwistProvider swUrl="/serwist/sw.js">
+          {children}
+        </SerwistProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

@@ -39,7 +39,11 @@ export const config = {
     /*
      * Match all request paths except static files and Next.js internals.
      * This ensures the session cookie is refreshed on every navigation.
+     *
+     * Assets de la PWA excluidos a proposito: el service worker, el manifest y
+     * la pagina offline no necesitan sesion, y hacerlos pasar por aca dispara
+     * una llamada a Supabase por cada pedido.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|serwist/|sw.js|manifest.webmanifest|offline|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }

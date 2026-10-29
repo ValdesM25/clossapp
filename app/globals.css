@@ -3,6 +3,16 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/**
+ * Margen inferior que respeta el area segura del dispositivo. En una PWA
+ * instalada en iPhone, el indicador de inicio se come los ultimos ~34px: sin
+ * esto la barra de navegacion queda por debajo. Incluye el espacio base para
+ * no tener que combinarla con pb-6, que competiria por la misma propiedad.
+ */
+@utility pb-safe {
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

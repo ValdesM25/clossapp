@@ -17,16 +17,12 @@ const PrendasContext = createContext<PrendasContextValue | null>(null)
 
 export function PrendasProvider({ children }: { children: ReactNode }) {
   const { userId, isGuest } = useAuthContext()
-
-  if (isGuest || !userId) {
-    return <>{children}</>
-  }
-
-  return <PrendasProviderInner userId={userId} isGuest={isGuest}>{children}</PrendasProviderInner>
-}
-
-function PrendasProviderInner({ userId, isGuest, children }: { userId: string; isGuest: boolean; children: ReactNode }) {
+  // El provider se monta siempre. Antes se salteaba para invitadas, pero
+  // AuthenticatedShell consume el contexto igual, asi que "Explorar como
+  // invitada" reventaba. usePrendas ya distingue el caso: a las invitadas les
+  // devuelve las prendas de demo sin tocar Supabase.
   const { prendas, loading, refresh, addPrenda, deletePrenda } = usePrendas(userId, isGuest)
+
   return (
     <PrendasContext.Provider value={{ prendas, loading, refresh, addPrenda, deletePrenda }}>
       {children}
