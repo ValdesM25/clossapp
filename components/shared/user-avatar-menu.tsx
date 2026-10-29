@@ -139,7 +139,7 @@ export function UserAvatarMenu() {
                 <p className="text-xs font-serif text-zinc-900 truncate">{userName || "Usuario"}</p>
                 <p className="text-[11px] text-zinc-400 truncate">{userEmail || "sin@correo.com"}</p>
                 <span className="mt-1 text-[9px] uppercase tracking-widest px-1.5 py-0.5 border border-zinc-200 text-zinc-500 w-fit">
-                  {isGuest ? "Modo Invitado" : plan === "gratis" ? "Plan Gratis" : "Cuenta Premium"}
+                  {isGuest ? "Modo demo" : plan === "gratis" ? "Plan Gratis" : "Cuenta Premium"}
                 </span>
               </div>
             </div>

@@ -18,6 +18,8 @@ import { ArmarioView } from "@/components/views/armario/armario-view"
 import { PlanesView } from "@/components/views/planes/planes-view"
 import { PuntoRecoleccionView } from "@/components/views/punto-recoleccion/punto-recoleccion-view"
 import { OnboardingView } from "@/components/views/onboarding/onboarding-view"
+import { TourGuiado } from "@/components/shared/tour-guiado"
+import { PASOS_DEMO_ACOPIO, PASOS_DEMO_USUARIO } from "@/constants/tour"
 
 /**
  * Se muestra mientras se comprueba si hay sesion guardada. Sin esto la app
@@ -32,6 +34,32 @@ function SplashScreen() {
   )
 }
 
+/** Pastilla fija del modo demo: recuerda que todo es de ejemplo y deja repetir la guía o salir. */
+function BarraDemo({ abajo }: { abajo: string }) {
+  const { demo, tourActivo, iniciarTour, logout } = useAuthContext()
+  if (!demo || tourActivo) return null
+  return (
+    <div role="status" className={`fixed ${abajo} left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 whitespace-nowrap bg-zinc-900 text-white text-[11px] px-4 py-2 shadow-lg`}>
+      <span className="uppercase tracking-widest text-emerald-300">Modo demo</span>
+      <button type="button" onClick={iniciarTour} className="underline underline-offset-2">Ver guía</button>
+      <button type="button" onClick={() => void logout()} className="text-zinc-300 hover:text-white">Salir</button>
+    </div>
+  )
+}
+
+function GuiaDemo() {
+  const { demo, tourActivo, cerrarTour, logout } = useAuthContext()
+  if (!demo || !tourActivo) return null
+  return (
+    <TourGuiado
+      key={demo}
+      pasos={demo === "acopio" ? PASOS_DEMO_ACOPIO : PASOS_DEMO_USUARIO}
+      onCerrar={cerrarTour}
+      accionFinal={demo === "usuario" ? { texto: "Crear mi cuenta", onClick: () => void logout() } : undefined}
+    />
+  )
+}
+
 function AppShell() {
   const { userMode, isRecoleccion, initializing, mostrarOnboarding, estilo, terminarOnboarding } = useAuthContext()
 
@@ -43,6 +71,8 @@ function AppShell() {
     return (
       <div className="overflow-y-auto h-screen bg-zinc-50">
         <PuntoRecoleccionView />
+        <BarraDemo abajo="bottom-4" />
+        <GuiaDemo />
       </div>
     )
   }
@@ -52,7 +82,14 @@ function AppShell() {
     return <OnboardingView inicial={estilo} onTerminar={(e) => void terminarOnboarding(e)} />
   }
 
-  return <AuthenticatedShell />
+  return (
+    <>
+      <AuthenticatedShell />
+      {/* Encima de la barra de navegación inferior. */}
+      <BarraDemo abajo="bottom-24" />
+      <GuiaDemo />
+    </>
+  )
 }
 
 function AuthenticatedShell() {

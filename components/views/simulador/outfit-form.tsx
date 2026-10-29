@@ -25,7 +25,7 @@ export function OutfitForm({
   showSuggestions, setShowSuggestions, suggestions, errorMsg, onGenerate,
 }: OutfitFormProps) {
   return (
-    <div className="mx-4 border border-zinc-200 p-5 flex flex-col gap-4">
+    <div data-tour="simulador-form" className="mx-4 border border-zinc-200 p-5 flex flex-col gap-4">
       {/* Ocasión */}
       <div>
         <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block">Ocasión</label>

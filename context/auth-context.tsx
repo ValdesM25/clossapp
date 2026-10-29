@@ -6,6 +6,7 @@ import type { UserMode } from "@/types"
 import type { Plan } from "@/constants/planes"
 import type { EstiloPerfil } from "@/constants/onboarding"
 import type { ProveedorSocial } from "@/services/auth.service"
+import type { TipoDemo } from "@/lib/demo"
 
 type AuthContextValue = {
   userMode: UserMode | null
@@ -31,7 +32,12 @@ type AuthContextValue = {
   loginWithProvider: (provider: ProveedorSocial) => Promise<void>
   resetPassword: (email: string, captchaToken?: string) => Promise<void>
   clearError: () => void
-  loginAsGuest: () => void
+  /** Modo demo activo ("usuario" o "acopio"); null en cuentas reales. */
+  demo: TipoDemo | null
+  tourActivo: boolean
+  iniciarTour: () => void
+  cerrarTour: () => void
+  entrarModoDemo: (tipo: TipoDemo) => void
   logout: () => Promise<void>
   updateProfile: (data: {
     name?: string

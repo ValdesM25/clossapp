@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { DonacionTicket, AcopioRegistroDB, PuntoAcopioDB } from "@/types/donaciones"
 import { PUNTOS_ACOPIO } from "@/constants/donaciones"
+import { esDemo, puntosPorDonacion } from "@/lib/demo"
 
 /** Puntos con los que arranca toda cuenta (la base usa el mismo número en mis_puntos). */
 export const PUNTOS_BASE = 150
@@ -263,6 +264,8 @@ export async function validarTicketQR(
     throw new Error("Este código QR pertenece a una Entrega de Compra en Custodia (Marketplace), no a un ticket de donación. Por favor usa la pestaña 'Entregas de Compras y Renta'.")
   }
 
+  if (esDemo()) return simularValidacion(token, cantidadRecibida)
+
   const { data, error } = await supabase.rpc("validar_donacion_qr", {
     p_token: token,
     p_cantidad: cantidadRecibida ?? null,
@@ -286,6 +289,33 @@ export async function validarTicketQR(
     prendas,
     prendasResumen: nombres.length ? nombres.join(", ") : `${cantidad} prendas registradas`,
     registroId: data.registro_id ?? undefined,
+  }
+}
+
+const CLAVE_REGISTROS_LOCALES = "clossapp_local_acopio_registros_v1"
+
+function agregarRegistroLocal(reg: AcopioRegistroDB): void {
+  const lista: AcopioRegistroDB[] = JSON.parse(localStorage.getItem(CLAVE_REGISTROS_LOCALES) ?? "[]")
+  localStorage.setItem(CLAVE_REGISTROS_LOCALES, JSON.stringify([reg, ...lista]))
+}
+
+/** Demo: cualquier código de donación "funciona" y queda en la bitácora local. */
+async function simularValidacion(token: string, cantidad?: number) {
+  await new Promise((r) => setTimeout(r, 700))
+  const prendas = [{ name: "Blusa de lino" }, { name: "Jeans azules" }, { name: "Suéter gris" }, { name: "Vestido floral" }, { name: "Chamarra" }]
+  const n = cantidad ?? prendas.length
+  const puntos = puntosPorDonacion(n)
+  const registroId = `demo_reg_${Date.now()}`
+  agregarRegistroLocal({
+    id: registroId, ticket_id: null, punto_acopio_id: "demo", punto_acopio_nombre: "Centro Demo Clossapp",
+    donor_user_id: null, donor_name: "Mariela Morales (ejemplo)", donor_email: "",
+    cantidad_prendas: n, puntos_otorgados: puntos, fecha_registro: new Date().toISOString(),
+    observaciones: `Donación de ejemplo verificada por QR (${token})`,
+  })
+  return {
+    success: true, puntos, donorName: "Mariela Morales (ejemplo)", donorEmail: "mariela@ejemplo.com",
+    cantidadPrendas: n, prendas: prendas.slice(0, n), prendasResumen: prendas.slice(0, n).map((p) => p.name).join(", "),
+    registroId,
   }
 }
 
@@ -341,6 +371,16 @@ export async function registrarDonacionPresencial(
     categoria: string
   }
 ): Promise<AcopioRegistroDB | null> {
+  if (esDemo()) {
+    const reg: AcopioRegistroDB = {
+      id: `demo_reg_${Date.now()}`, ticket_id: null, punto_acopio_id: input.puntoAcopioId,
+      punto_acopio_nombre: input.puntoAcopioNombre, donor_user_id: null, donor_name: input.donorName,
+      donor_email: "", cantidad_prendas: input.cantidadPrendas, puntos_otorgados: input.puntos,
+      fecha_registro: new Date().toISOString(), observaciones: `Registro presencial de ejemplo - Categoría: ${input.categoria}`,
+    }
+    agregarRegistroLocal(reg)
+    return reg
+  }
   try {
     const { data, error } = await supabase
       .from("acopio_registros")

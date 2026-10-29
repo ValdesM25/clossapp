@@ -34,6 +34,7 @@ Mauri pidió:
 | 1 | `feat/registro-planes` | Registro abierto, seguridad, plan gratis/premium | [fase-1-registro-planes.md](fase-1-registro-planes.md) |
 | 2 | `feat/onboarding-estilo` | Recorrido de estilo y estadísticas de compra, prompt personalizado | [fase-2-onboarding-estilo.md](fase-2-onboarding-estilo.md) |
 | 3 | `feat/armario-al-dia` | Compra reciente con puntos, puntos/donaciones seguros, banner y push | [fase-3-armario-al-dia.md](fase-3-armario-al-dia.md) |
+| 3b | `feat/modo-demo` | El modo invitado pasa a modo demo (usuario y centro de acopio) con recorrido guiado | [fase-3b-modo-demo.md](fase-3b-modo-demo.md) |
 
 La PWA va primero porque toca los mismos archivos de login (`hooks/use-auth.ts`, `services/auth.service.ts`, `middleware.ts`) que la fase 1. Si se hicieran al revés, habría conflictos dos veces.
 

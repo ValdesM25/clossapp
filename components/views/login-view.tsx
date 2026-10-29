@@ -25,7 +25,7 @@ const TEXTO_BOTON: Record<Modo, string> = {
 }
 
 export function LoginView() {
-  const { login, register, loginWithProvider, resetPassword, clearError, loginAsGuest, loading, error } = useAuthContext()
+  const { login, register, loginWithProvider, resetPassword, clearError, entrarModoDemo, loading, error } = useAuthContext()
   const [modo, setModo] = useState<Modo>("entrar")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -166,10 +166,21 @@ export function LoginView() {
                 )}
               </div>
 
-              <motion.button whileTap={{ scale: 0.98 }} onClick={loginAsGuest}
-                className="w-full h-11 border border-zinc-300 text-zinc-600 text-xs font-medium tracking-wide hover:border-zinc-400 transition-colors">
-                Explorar como invitada
-              </motion.button>
+              {/* Modo demo: datos de ejemplo y recorrido guiado; no toca cuentas reales. */}
+              <div className="border border-zinc-200 p-3 space-y-2">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-widest text-center">¿Solo quieres conocer Clossapp?</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => entrarModoDemo("usuario")}
+                    className="w-full h-11 border border-zinc-300 text-zinc-700 text-xs font-medium tracking-wide hover:border-zinc-900 transition-colors">
+                    Demo de usuario
+                  </motion.button>
+                  <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => entrarModoDemo("acopio")}
+                    className="w-full h-11 border border-emerald-600 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-900 text-xs font-medium tracking-wide transition-colors">
+                    Demo de centro de acopio
+                  </motion.button>
+                </div>
+                <p className="text-[11px] text-zinc-400 text-center">Datos de ejemplo y una guía paso a paso. Nada se guarda.</p>
+              </div>
 
               {/* El portal de recolección ya no tiene botón público: se entra con la cuenta del centro (perfiles.rol = 'acopio'). */}
               <p className="text-[11px] text-zinc-400 text-center">

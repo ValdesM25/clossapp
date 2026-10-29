@@ -163,7 +163,7 @@ export function PlanesView() {
       </div>
 
       {/* Banner de Puntos por Donaciones */}
-      <div className="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-white p-5 border border-zinc-800 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div data-tour="planes-puntos" className="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-white p-5 border border-zinc-800 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-amber-400/20 border border-amber-400/50 flex items-center justify-center shrink-0">
             <Sparkles className="w-6 h-6 text-amber-400" />

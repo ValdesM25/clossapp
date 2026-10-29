@@ -39,6 +39,7 @@ import {
   Eye,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { esDemo, QR_DONACION_EJEMPLO, QR_CUSTODIA_EJEMPLO, QR_RENTA_EJEMPLO } from "@/lib/demo"
 import { useAuthContext } from "@/context/auth-context"
 import { Input } from "@/components/ui/input"
 import { CenteredModal } from "@/components/shared/centered-modal"
@@ -752,8 +753,9 @@ export function PuntoRecoleccionView() {
 
         {/* TRIPLE MODE TAB BAR: DONACIONES vs COMPRAS vs RENTAS */}
         <div className="bg-zinc-950 border-t border-zinc-800 px-4 overflow-x-auto">
-          <div className="max-w-6xl mx-auto flex items-center gap-2 min-w-max">
+          <div data-tour="acopio-tabs" className="max-w-6xl mx-auto flex items-center gap-2 min-w-max">
             <button
+              data-tour="acopio-tab-donaciones"
               onClick={() => setOperatorTab("donaciones")}
               className={`py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
                 operatorTab === "donaciones"
@@ -769,6 +771,7 @@ export function PuntoRecoleccionView() {
             </button>
 
             <button
+              data-tour="acopio-tab-compras"
               onClick={() => setOperatorTab("custodia_compras")}
               className={`py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
                 operatorTab === "custodia_compras"
@@ -784,6 +787,7 @@ export function PuntoRecoleccionView() {
             </button>
 
             <button
+              data-tour="acopio-tab-rentas"
               onClick={() => setOperatorTab("custodia_rentas")}
               className={`py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
                 operatorTab === "custodia_rentas"
@@ -802,7 +806,7 @@ export function PuntoRecoleccionView() {
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-6xl mx-auto px-4 pt-6 space-y-6">
+      <main data-tour="acopio-panel" className="max-w-6xl mx-auto px-4 pt-6 space-y-6">
         {operatorTab === "donaciones" ? (
           <>
             {/* Banner: Operación de Donaciones e Identificación */}
@@ -828,6 +832,7 @@ export function PuntoRecoleccionView() {
                     setScannerErrorMsg(null)
                     setIsScannerOpen(true)
                   }}
+                  data-tour="acopio-escanear"
                   className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
                 >
                   <Scan className="w-4 h-4 text-zinc-950" />
@@ -846,7 +851,7 @@ export function PuntoRecoleccionView() {
             </div>
 
             {/* SECTION 1: METAS DE ROPA DONADA DEL MES */}
-            <section className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-5">
+            <section data-tour="acopio-metas" className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 pb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
@@ -1001,7 +1006,7 @@ export function PuntoRecoleccionView() {
             </section>
 
             {/* SECTION 3: RECEPTION TOOL & RECENT ACTIVITY LOG */}
-            <section className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-5">
+            <section data-tour="acopio-bitacora" className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-4">
                 <div>
                   <h3 className="font-serif text-lg font-semibold text-zinc-900">
@@ -1538,6 +1543,8 @@ export function PuntoRecoleccionView() {
 
 
       {/* MODAL 1: LIVE QR SCANNER FOR OPERATOR */}
+      {/* Oculto: la guía del modo demo lo usa para cerrar el escáner entre pasos. */}
+      <button type="button" hidden data-tour="acopio-cerrar-scanner" onClick={() => setIsScannerOpen(false)} />
       <CenteredModal open={isScannerOpen} onClose={() => setIsScannerOpen(false)}>
         <div className="p-1 space-y-4 max-h-[85vh] overflow-y-auto">
           <div className="bg-zinc-900 text-white p-3 flex items-center justify-between">
@@ -1651,6 +1658,15 @@ export function PuntoRecoleccionView() {
                     {scannerStatus === "scanning" ? "Procesando..." : operatorTab === "custodia_compras" ? "Liberar Custodia" : "Validar Ticket"}
                   </button>
                 </div>
+
+                {esDemo() && (
+                  <button type="button" data-tour="acopio-qr-ejemplo" disabled={scannerStatus === "scanning"}
+                    onClick={() => handleConfirmTicketValidation(
+                      operatorTab === "donaciones" ? QR_DONACION_EJEMPLO : operatorTab === "custodia_rentas" ? QR_RENTA_EJEMPLO : QR_CUSTODIA_EJEMPLO)}
+                    className="w-full h-10 border border-emerald-600 bg-emerald-50 text-emerald-900 text-xs font-semibold disabled:opacity-50">
+                    Usar QR de ejemplo (demo)
+                  </button>
+                )}
               </div>
             </div>
           ) : verifiedPackage?.isEscrow ? (
