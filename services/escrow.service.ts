@@ -1,7 +1,56 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { CartItem, EscrowOrder, MetodoPagoEscrow, EscrowStatus } from "@/types/escrow"
 import type { AcopioRegistroDB } from "@/types/donaciones"
-import { DEMO_ESCROW_ORDERS } from "@/constants/demo-data"
+import { esDemo } from "@/lib/demo"
+
+// Con cuenta real, todo el escrow vive en la tabla escrow_ordenes y solo cambia
+// por las funciones crear_orden_escrow y escrow_avanzar (el precio lo pone la
+// base). El código con localStorage de cada función queda solo para el modo demo.
+
+function mapOrden(row: any): EscrowOrder {
+  return {
+    id: row.id,
+    orderCode: row.order_code,
+    qrToken: row.qr_token,
+    buyerUserId: row.buyer_user_id ?? "guest",
+    buyerName: row.buyer_name ?? "Comprador ClossApp",
+    buyerEmail: row.buyer_email ?? "",
+    items: Array.isArray(row.items) ? row.items : [],
+    subtotal: Number(row.subtotal ?? 0),
+    garantiaEscrow: Number(row.garantia_escrow ?? 0),
+    totalPagado: Number(row.total_pagado ?? 0),
+    metodoPago: row.metodo_pago ?? "tarjeta",
+    status: row.status ?? "pago_en_custodia",
+    puntoAcopioId: row.punto_acopio_id ?? "norte",
+    puntoAcopioNombre: row.punto_acopio_nombre ?? "Centro de Acopio Norte",
+    createdAt: row.created_at,
+    validatedAt: row.validated_at ?? undefined,
+    validatedBy: row.validated_by ?? undefined,
+  }
+}
+
+/** Texto legible de un error de la base ("CODIGO: mensaje"). */
+function mensajeBase(message: string | undefined, fallback: string): string {
+  return (message ?? "").split(": ").slice(1).join(": ").trim() || fallback
+}
+
+/** El QR puede traer el token directo o un JSON con token/esc/orderCode/id. */
+function tokenDeQR(entrada: string): string {
+  const t = entrada.trim()
+  if (t.startsWith("{") && t.endsWith("}")) {
+    try {
+      const p = JSON.parse(t)
+      return String(p.token ?? p.esc ?? p.orderCode ?? p.id ?? t)
+    } catch {}
+  }
+  return t
+}
+
+async function avanzarOrden(supabase: SupabaseClient, qr: string, accion: "liberar" | "entregar_renta") {
+  const { data, error } = await supabase.rpc("escrow_avanzar", { p_token: tokenDeQR(qr), p_accion: accion })
+  if (error || !data) throw new Error(mensajeBase(error?.message, "No se pudo procesar la orden."))
+  return mapOrden(data)
+}
 
 /**
  * Crea una nueva Orden en Custodia (Escrow) reteniendo el dinero de la compra.
@@ -19,6 +68,17 @@ export async function createEscrowOrder(
     puntoAcopioNombre?: string
   }
 ): Promise<EscrowOrder> {
+  if (!esDemo()) {
+    // Solo se manda qué prendas y fechas; precio y total los calcula la base.
+    const { data, error } = await supabase.rpc("crear_orden_escrow", {
+      p_items: input.items.map((it) => ({ prenda_id: Number(it.prenda.id), tipo: it.tipo, fecha_renta: it.fechaRenta ?? null })),
+      p_metodo: input.metodoPago,
+      p_punto_id: input.puntoAcopioId ?? "norte",
+      p_punto_nombre: input.puntoAcopioNombre ?? "Centro de Acopio Norte",
+    })
+    if (error || !data) throw new Error(mensajeBase(error?.message, "No se pudo crear la orden. Intenta de nuevo."))
+    return mapOrden(data)
+  }
   const codeNum = Math.floor(10000 + Math.random() * 90000)
   const orderCode = `ESC-${codeNum}`
   const qrToken = `ESC-QR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
@@ -135,206 +195,29 @@ export async function fetchUserEscrowOrders(
   userId?: string,
   userEmail?: string
 ): Promise<EscrowOrder[]> {
-  let dbOrders: EscrowOrder[] = []
-
-  // 1. Consultar la tabla `escrow_ordenes` en Supabase
+  if (!esDemo()) {
+    // RLS ya filtra: quien compra, quien vende o el punto de acopio.
+    const { data, error } = await supabase.from("escrow_ordenes").select("*").order("created_at", { ascending: false })
+    if (error) {
+      console.error("fetchUserEscrowOrders:", error.message)
+      return []
+    }
+    return (data ?? []).map(mapOrden)
+  }
+  // Demo: solo las órdenes de ejemplo en localStorage, sin tocar la red.
+  let locales: EscrowOrder[] = []
   try {
-    const { data, error } = await supabase
-      .from("escrow_ordenes")
-      .select("*")
-      .order("created_at", { ascending: false })
-
-    if (data && data.length > 0) {
-      data.forEach((o) => {
-        dbOrders.push({
-          id: o.id,
-          orderCode: o.order_code,
-          qrToken: o.qr_token,
-          buyerUserId: o.buyer_user_id || "guest",
-          buyerName: o.buyer_name || "Comprador ClossApp",
-          buyerEmail: o.buyer_email || "",
-          items: Array.isArray(o.items) ? o.items : [],
-          subtotal: Number(o.subtotal || 0),
-          garantiaEscrow: Number(o.garantia_escrow || 0),
-          totalPagado: Number(o.total_pagado || 0),
-          metodoPago: o.metodo_pago || "tarjeta",
-          status: o.status || "pago_en_custodia",
-          puntoAcopioId: o.punto_acopio_id || "norte",
-          puntoAcopioNombre: o.punto_acopio_nombre || "Centro de Acopio Norte",
-          createdAt: o.created_at,
-          validatedAt: o.validated_at,
-          validatedBy: o.validated_by,
-        })
-      })
-    }
-  } catch (err) {
-    console.warn("fetchUserEscrowOrders escrow_ordenes notice:", err)
-  }
-
-  // 2. Consultar la tabla `donacion_tickets` para obtener órdenes respaldadas en custodia
-  try {
-    const { data: ticketData } = await supabase
-      .from("donacion_tickets")
-      .select("*")
-      .or("status.eq.pago_en_custodia,status.eq.en_renta_cliente,status.eq.entregado_y_liberado")
-      .order("created_at", { ascending: false })
-
-    if (ticketData && ticketData.length > 0) {
-      ticketData.forEach((t) => {
-        const rawToken = t.qr_token || ""
-        const code = rawToken.startsWith("ESC-")
-          ? rawToken.replace("ESC-QR-", "ESC-")
-          : rawToken
-        const items = Array.isArray(t.prendas_ids) ? t.prendas_ids : []
-
-        dbOrders.push({
-          id: t.id,
-          orderCode: code,
-          qrToken: rawToken,
-          buyerUserId: t.user_id || "guest",
-          buyerName: t.donor_name || "Comprador ClossApp",
-          buyerEmail: t.donor_email || "",
-          items,
-          subtotal: Number(t.puntos_otorgados || 0),
-          garantiaEscrow: 0,
-          totalPagado: Number(t.puntos_otorgados || 0),
-          metodoPago: "tarjeta",
-          status: (t.status as EscrowStatus) || "pago_en_custodia",
-          puntoAcopioId: t.punto_acopio_id || "norte",
-          puntoAcopioNombre: t.punto_acopio_nombre || "Centro de Acopio Norte",
-          createdAt: t.created_at,
-          validatedAt: t.validated_at,
-          validatedBy: t.validated_by,
-        })
-      })
-    }
-  } catch (err) {
-    console.warn("fetchUserEscrowOrders donacion_tickets notice:", err)
-  }
-
-  // Combinar con localStorage
-  let localOrders: EscrowOrder[] = []
-  if (typeof window !== "undefined") {
-    try {
-      const localStr = localStorage.getItem("clossapp_escrow_orders_v1")
-      if (localStr) localOrders = JSON.parse(localStr)
-    } catch {}
-  }
-
-  // Auto-sincronizar a Supabase DB cualquier orden real local que no exista aún en la nube
-  const unSyncedLocal = localOrders.filter(
-    (lo) =>
-      !lo.id.startsWith("escrow_demo_") &&
-      lo.orderCode !== "ESC-48291" &&
-      lo.orderCode !== "ESC-93820" &&
-      !dbOrders.some(
-        (dbo) => normalizeCode(dbo.orderCode) === normalizeCode(lo.orderCode) || dbo.id === lo.id
-      )
-  )
-
-  if (unSyncedLocal.length > 0) {
-    for (const lo of unSyncedLocal) {
-      try {
-        const validUserId =
-          lo.buyerUserId && lo.buyerUserId !== "guest" && lo.buyerUserId.includes("-")
-            ? lo.buyerUserId
-            : "guest"
-
-        const { data: insertedData } = await supabase
-          .from("escrow_ordenes")
-          .insert({
-            order_code: lo.orderCode,
-            qr_token: lo.qrToken,
-            buyer_user_id: validUserId,
-            buyer_name: lo.buyerName || "Comprador ClossApp",
-            buyer_email: lo.buyerEmail || "",
-            items: lo.items,
-            subtotal: lo.subtotal,
-            garantia_escrow: lo.garantiaEscrow || 0,
-            total_pagado: lo.totalPagado,
-            metodo_pago: lo.metodoPago,
-            status: lo.status || "pago_en_custodia",
-            punto_acopio_id: lo.puntoAcopioId || "norte",
-            punto_acopio_nombre: lo.puntoAcopioNombre || "Centro de Acopio Norte",
-          })
-          .select("*")
-          .maybeSingle()
-
-        if (insertedData) {
-          dbOrders.push({
-            id: insertedData.id,
-            orderCode: insertedData.order_code,
-            qrToken: insertedData.qr_token,
-            buyerUserId: insertedData.buyer_user_id || "guest",
-            buyerName: insertedData.buyer_name || lo.buyerName,
-            buyerEmail: insertedData.buyer_email || lo.buyerEmail || "",
-            items: Array.isArray(insertedData.items) ? insertedData.items : lo.items,
-            subtotal: Number(insertedData.subtotal || lo.subtotal),
-            garantiaEscrow: Number(insertedData.garantia_escrow || 0),
-            totalPagado: Number(insertedData.total_pagado || lo.totalPagado),
-            metodoPago: insertedData.metodo_pago || lo.metodoPago,
-            status: insertedData.status || lo.status,
-            puntoAcopioId: insertedData.punto_acopio_id || lo.puntoAcopioId,
-            puntoAcopioNombre: insertedData.punto_acopio_nombre || lo.puntoAcopioNombre,
-            createdAt: insertedData.created_at || lo.createdAt,
-            validatedAt: insertedData.validated_at || lo.validatedAt,
-            validatedBy: insertedData.validated_by || lo.validatedBy,
-          })
-        }
-      } catch (err) {
-        console.warn("Auto-syncing escrow order to DB notice:", err)
-      }
-    }
-  }
-
-  const map = new Map<string, EscrowOrder>()
-
-  // 1. Agregar órdenes de localStorage
-  localOrders.forEach((o) => {
-    const key = normalizeCode(o.orderCode) || o.id
-    map.set(key, o)
-  })
-
-  // 2. Fusionar u sobrescribir con órdenes de la BD en la nube (la BD tiene prioridad)
-  dbOrders.forEach((o) => {
-    const key = normalizeCode(o.orderCode) || o.id
-    const existing = map.get(key)
-    if (!existing) {
-      map.set(key, o)
-    } else {
-      const isReleased = existing.status === "entregado_y_liberado" || o.status === "entregado_y_liberado"
-      const merged: EscrowOrder = {
-        ...existing,
-        ...o,
-        status: isReleased ? "entregado_y_liberado" : o.status || existing.status,
-        validatedAt: o.validatedAt || existing.validatedAt,
-        validatedBy: o.validatedBy || existing.validatedBy,
-      }
-      map.set(key, merged)
-    }
-  })
-
-  // Filtrar demo orders y obtener la lista real
-  const allOrdersList = Array.from(map.values())
-  const realOrders = allOrdersList.filter(
-    (o) => !o.id.startsWith("escrow_demo_") && o.orderCode !== "ESC-48291" && o.orderCode !== "ESC-93820"
-  )
-
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(realOrders))
-    } catch {}
-  }
-
-  return realOrders.sort(
-    (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-  )
+    locales = JSON.parse(localStorage.getItem("clossapp_escrow_orders_v1") ?? "[]")
+  } catch {}
+  return locales.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
 }
 
 /**
  * Elimina TODAS las órdenes en custodia (área de venta) tanto de Supabase DB como de localStorage.
  */
 export async function clearAllEscrowOrders(supabase: SupabaseClient): Promise<boolean> {
+  // Borrar órdenes reales no se permite desde la app: son pagos en custodia.
+  if (!esDemo()) return false
   try {
     await supabase.from("escrow_ordenes").delete().neq("id", "00000000-0000-0000-0000-000000000000")
   } catch (err) {
@@ -367,6 +250,17 @@ export async function liberarFondosEscrow(
   totalLiberado: number
   mensaje: string
 }> {
+  if (!esDemo()) {
+    try {
+      const order = await avanzarOrden(supabase, qrTokenOrCode, "liberar")
+      return {
+        success: true, order, totalLiberado: order.totalPagado,
+        mensaje: `¡Entrega confirmada! Se liberaron $${order.totalPagado} MXN a quien vendió.`,
+      }
+    } catch (err) {
+      return { success: false, totalLiberado: 0, mensaje: err instanceof Error ? err.message : "Error al liberar la orden." }
+    }
+  }
   try {
     const cleanToken = qrTokenOrCode.trim()
     const searchTokens = new Set<string>()
@@ -592,6 +486,14 @@ export async function confirmarEntregaRentaCliente(
   order?: EscrowOrder
   mensaje: string
 }> {
+  if (!esDemo()) {
+    try {
+      const order = await avanzarOrden(supabase, qrTokenOrCode, "entregar_renta")
+      return { success: true, order, mensaje: "¡Entrega de renta confirmada! La prenda va con el cliente (Paso 1/2)." }
+    } catch (err) {
+      return { success: false, mensaje: err instanceof Error ? err.message : "Error al entregar la renta." }
+    }
+  }
   try {
     const searchTokens = new Set<string>()
     const addToken = (t: string) => {

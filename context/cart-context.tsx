@@ -45,13 +45,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = useCallback(
     (prenda: Prenda, tipo: TipoItemCarrito = "compra", fechaRenta?: string) => {
+      // Precio solo para mostrar: el total real lo calcula la base al crear la orden.
+      // Sin precio publicado no se puede comprar ni rentar (antes se inventaba 250 o 450).
+      const price = Number(tipo === "renta" ? prenda.precio_renta : prenda.precio) || 0
+      if (price <= 0) return
       setCart((prev) => {
         // Evitar duplicados de la misma prenda en el carrito
         if (prev.some((item) => item.prenda.id === prenda.id)) {
           return prev
         }
 
-        const price = tipo === "renta" ? (prenda.precio_renta || 250) : (prenda.precio || 450)
         const newItem: CartItem = {
           id: `cart_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,
           prenda,

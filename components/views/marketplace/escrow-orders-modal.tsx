@@ -8,6 +8,7 @@ import { QRCodeSVG } from "qrcode.react"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { fetchUserEscrowOrders, clearAllEscrowOrders } from "@/services/escrow.service"
+import { esDemo } from "@/lib/demo"
 import type { EscrowOrder } from "@/types/escrow"
 
 interface EscrowOrdersModalProps {
@@ -97,7 +98,8 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
             <h3 className="font-serif text-sm sm:text-base text-white">Mis Pedidos</h3>
           </div>
           <div className="flex items-center gap-2">
-            {orders.length > 0 && (
+            {/* Solo en demo: las órdenes reales son pagos en custodia y no se borran. */}
+            {esDemo() && orders.length > 0 && (
               <button
                 onClick={handleClearAll}
                 className="flex items-center gap-1 text-xs text-rose-400 hover:text-rose-300 bg-rose-950/60 hover:bg-rose-900/80 px-2 py-1 rounded border border-rose-800/50 transition-colors"

@@ -27,6 +27,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
   const [expiracion, setExpiracion] = useState("12/28")
   const [cvc, setCvc] = useState("123")
   const [processing, setProcessing] = useState(false)
+  const [errorPago, setErrorPago] = useState<string | null>(null)
   const [completedOrder, setCompletedOrder] = useState<EscrowOrder | null>(null)
 
   if (!open) return null
@@ -34,6 +35,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
   async function handleConfirmPayment() {
     if (cart.length === 0) return
     setProcessing(true)
+    setErrorPago(null)
 
     try {
       const order = await createEscrowOrder(supabase, {
@@ -52,6 +54,8 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
       onOrderCreated(order)
     } catch (err) {
       console.error("Error creating escrow order:", err)
+      // Ej. la prenda ya se vendió o la fecha de renta se ocupó mientras pagabas.
+      setErrorPago(err instanceof Error ? err.message : "No se pudo completar el pago. Intenta de nuevo.")
     } finally {
       setProcessing(false)
     }
@@ -242,6 +246,10 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
                   </div>
                 </div>
               </div>
+            )}
+
+            {errorPago && (
+              <p role="alert" className="text-xs text-red-600 border border-red-200 bg-red-50 px-3 py-2">{errorPago}</p>
             )}
 
             {/* Action Buttons */}

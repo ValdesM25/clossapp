@@ -34,8 +34,10 @@ export function useMarketplace(userId: string, isGuest: boolean) {
         fetchVentaItems(supabase),
         fetchRentaItems(supabase),
       ])
-      setItems(venta.length ? venta : STATIC_MARKET)
-      setRentaItems(renta.length ? renta : STATIC_RENTA)
+      // Con cuenta real se muestra lo real aunque esté vacío: las prendas de
+      // ejemplo no existen en la base y su compra fallaría.
+      setItems(venta)
+      setRentaItems(renta)
     } catch (err) {
       console.error("Error fetching marketplace:", err instanceof Error ? err.message : JSON.stringify(err))
     } finally {
