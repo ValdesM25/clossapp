@@ -30,7 +30,7 @@ export function useDonaciones(userId?: string, userName?: string, userEmail?: st
       const [pacopio, userTkts, userPts, imp, regs] = await Promise.all([
         fetchPuntosAcopio(supabase),
         fetchUserTickets(supabase, userId),
-        fetchUserPuntos(supabase, userId, userName, userEmail),
+        fetchUserPuntos(supabase, isGuest ? undefined : userId),
         fetchAcopioImpacto(supabase),
         fetchAcopioRegistros(supabase),
       ])
@@ -45,7 +45,7 @@ export function useDonaciones(userId?: string, userName?: string, userEmail?: st
     } finally {
       setLoading(false)
     }
-  }, [supabase, userId, userName, userEmail])
+  }, [supabase, userId, userName, userEmail, isGuest])
 
   useEffect(() => {
     refresh()

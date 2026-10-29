@@ -2,6 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { DonacionTicket, AcopioRegistroDB, PuntoAcopioDB } from "@/types/donaciones"
 import { PUNTOS_ACOPIO } from "@/constants/donaciones"
 
+/** Puntos con los que arranca toda cuenta (la base usa el mismo número en mis_puntos). */
+export const PUNTOS_BASE = 150
+
 /**
  * Obtiene la lista de Puntos de Acopio registrados en la BD.
  */
@@ -103,95 +106,31 @@ export async function fetchUserTickets(
 }
 
 /**
- * Calcula el saldo total de puntos de un usuario desde la BD y/or registros de acopio / localStorage.
+ * Saldo de puntos de la usuaria con sesión: 150 de base + movimientos de
+ * puntos_historial. Lo calcula la base (mis_puntos); el navegador ya no
+ * suma ni guarda puntos por su cuenta.
  */
-export async function fetchUserPuntos(
-  supabase: SupabaseClient,
-  userId?: string,
-  donorName?: string,
-  donorEmail?: string
-): Promise<number> {
-  let dbPuntosSum = 0
-  const effectiveEmail = donorEmail || (userId === "guest" || !userId ? "mariela@clossapp.com" : undefined)
-
-  // 1. Consultar la tabla `puntos_historial` en Supabase DB
-  if (userId && userId !== "guest") {
-    try {
-      const { data, error } = await supabase
-        .from("puntos_historial")
-        .select("puntos")
-        .eq("user_id", userId)
-
-      if (!error && data && data.length > 0) {
-        dbPuntosSum += data.reduce((acc, row) => acc + (row.puntos || 0), 0)
-      }
-    } catch (err) {
-      console.warn("fetchUserPuntos DB error:", err)
-    }
+export async function fetchUserPuntos(supabase: SupabaseClient, userId?: string): Promise<number> {
+  if (!userId || userId === "guest") return PUNTOS_BASE
+  const { data, error } = await supabase.rpc("mis_puntos")
+  if (error) {
+    console.warn("fetchUserPuntos:", error.message)
+    return PUNTOS_BASE
   }
-
-  // 2. Sumar donaciones en `acopio_registros` desde Supabase BD (por user_id, email o nombre)
-  try {
-    const filters: string[] = []
-    if (userId && userId !== "guest") {
-      filters.push(`donor_user_id.eq.${userId}`)
-    }
-    if (effectiveEmail) {
-      filters.push(`donor_email.eq.${effectiveEmail}`)
-    }
-    if (donorName && donorName !== "Donante ClossApp") {
-      filters.push(`donor_name.eq.${donorName}`)
-    }
-
-    let query = supabase.from("acopio_registros").select("puntos_otorgados")
-    if (filters.length > 0) {
-      query = query.or(filters.join(","))
-    }
-
-    const { data, error } = await query
-    if (!error && data && data.length > 0) {
-      const acopioPts = data.reduce((acc, row) => acc + (row.puntos_otorgados || 0), 0)
-      if (acopioPts > dbPuntosSum) {
-        dbPuntosSum = acopioPts
-      }
-    }
-  } catch (err) {
-    console.warn("fetchUserPuntos acopio_registros error:", err)
-  }
-
-  // 3. El saldo final unificado es la base de 150 pts + los puntos ganados en la nube en Supabase
-  const totalUnificado = 150 + dbPuntosSum
-
-  // Sincronizar en el almacenamiento local de este dispositivo para alinear la memoria del navegador
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem("clossapp_user_puntos_v1", totalUnificado.toString())
-    } catch {}
-  }
-
-  return totalUnificado
+  return typeof data === "number" ? data : PUNTOS_BASE
 }
 
-/**
- * Calcula el impacto acumulado de donaciones desde la BD.
- */
+/** Prendas donadas en total (público, sin datos personales). */
 export async function fetchAcopioImpacto(
   supabase: SupabaseClient
 ): Promise<{ prendasDonadas: number; familiasApoyadas: number }> {
-  try {
-    const { data, error } = await supabase
-      .from("acopio_registros")
-      .select("cantidad_prendas")
-
-    if (error || !data) return { prendasDonadas: 0, familiasApoyadas: 0 }
-
-    const prendasDonadas = data.reduce((sum, r) => sum + (r.cantidad_prendas || 0), 0)
-    const familiasApoyadas = Math.ceil(prendasDonadas / 4)
-    return { prendasDonadas, familiasApoyadas }
-  } catch (err) {
-    console.error("fetchAcopioImpacto error:", err)
+  const { data, error } = await supabase.rpc("impacto_donaciones")
+  if (error) {
+    console.error("fetchAcopioImpacto:", error.message)
     return { prendasDonadas: 0, familiasApoyadas: 0 }
   }
+  const prendasDonadas = Number(data) || 0
+  return { prendasDonadas, familiasApoyadas: Math.ceil(prendasDonadas / 4) }
 }
 
 /**
@@ -283,15 +222,25 @@ export async function createDonacionTicket(
   return finalTicket
 }
 
+/** Texto legible de un error de las funciones de la base ("CODIGO: mensaje"). */
+function mensajeRpc(message: string | undefined, fallback: string): string {
+  const texto = (message ?? "").split(": ").slice(1).join(": ").trim()
+  return texto || fallback
+}
+
 /**
- * Ejecuta la verificación del QR en el Centro de Acopio y registra en la tabla bitácora `acopio_registros`.
- * Soporta escaneo de token directo ("TKT-...") o de objeto JSON serializado.
+ * Verifica el QR en el punto de recolección. Todo lo decide la base
+ * (validar_donacion_qr): que quien escanea sea una cuenta de acopio, que el
+ * ticket exista y esté pendiente, y cuántos puntos corresponden.
+ * Soporta el token directo ("TKT-...") o el JSON que lleva el QR.
+ * `_centroId` y `_centroNombre` quedan por compatibilidad: el centro sale del perfil de acopio.
  */
 export async function validarTicketQR(
   supabase: SupabaseClient,
   qrInput: string,
-  centroId: string,
-  centroNombre?: string
+  _centroId?: string,
+  _centroNombre?: string,
+  cantidadRecibida?: number
 ): Promise<{
   success: boolean
   puntos: number
@@ -302,302 +251,41 @@ export async function validarTicketQR(
   prendasResumen: string
   registroId?: string
 }> {
-  try {
-    let tokenToSearch = qrInput.trim()
-    let ticketIdFromJSON: string | undefined
-    let parsedJSON: any = null
+  let token = qrInput.trim()
+  if (token.startsWith("{") && token.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(token)
+      token = parsed.tkt || parsed.token || parsed.esc || parsed.qrToken || token
+    } catch {}
+  }
 
-    if (qrInput.startsWith("{") && qrInput.endsWith("}")) {
-      try {
-        parsedJSON = JSON.parse(qrInput)
-        if (parsedJSON.tkt) tokenToSearch = parsedJSON.tkt
-        else if (parsedJSON.token) tokenToSearch = parsedJSON.token
-        else if (parsedJSON.esc) tokenToSearch = parsedJSON.esc
-        else if (parsedJSON.qrToken) tokenToSearch = parsedJSON.qrToken
+  if (token.toUpperCase().startsWith("ESC-")) {
+    throw new Error("Este código QR pertenece a una Entrega de Compra en Custodia (Marketplace), no a un ticket de donación. Por favor usa la pestaña 'Entregas de Compras y Renta'.")
+  }
 
-        if (parsedJSON.id) ticketIdFromJSON = parsedJSON.id
-        else if (parsedJSON.ticketId) ticketIdFromJSON = parsedJSON.ticketId
-      } catch {}
-    }
+  const { data, error } = await supabase.rpc("validar_donacion_qr", {
+    p_token: token,
+    p_cantidad: cantidadRecibida ?? null,
+  })
+  if (error || !data) {
+    throw new Error(mensajeRpc(error?.message, "No se pudo validar la donación. Intenta de nuevo."))
+  }
 
-    // Si el código pertenece a una orden en custodia (Escrow / Compra)
-    if (
-      tokenToSearch.toUpperCase().startsWith("ESC-") ||
-      (parsedJSON && (parsedJSON.esc || (parsedJSON.token && String(parsedJSON.token).toUpperCase().startsWith("ESC-"))))
-    ) {
-      throw new Error("Este código QR pertenece a una Entrega de Compra en Custodia (Marketplace), no a un ticket de donación. Por favor usa la pestaña 'Entregas de Compras y Renta'.")
-    }
+  const prendas: any[] = Array.isArray(data.prendas) ? data.prendas : []
+  const nombres = prendas
+    .map((p: any) => (typeof p === "string" ? p : p?.name || p?.categoria))
+    .filter(Boolean)
+  const cantidad = Number(data.cantidad) || prendas.length || 1
 
-    // Buscar ticket por token o id en la tabla donacion_tickets
-    let query = supabase.from("donacion_tickets").select("*")
-    if (ticketIdFromJSON) {
-      query = query.or(`qr_token.eq.${tokenToSearch},id.eq.${ticketIdFromJSON}`)
-    } else {
-      query = query.eq("qr_token", tokenToSearch)
-    }
-
-    const { data: ticket, error: ticketErr } = await query.maybeSingle()
-
-    if (ticketErr || !ticket) {
-      // Si no existe aún en la BD por ser un QR generado de prueba o invitado, crearlo en la BD como completado
-      const fallbackDonor = parsedJSON?.donorName || parsedJSON?.name || "Donante Verificado"
-      const fallbackEmail = parsedJSON?.donorEmail || ""
-      const fallbackPrendas = Array.isArray(parsedJSON?.prendas) ? parsedJSON.prendas : []
-      const fallbackCount = parsedJSON?.cantidadPrendas || parsedJSON?.cant || (fallbackPrendas.length > 0 ? fallbackPrendas.length : 3)
-      const fallbackPuntos = parsedJSON?.puntos || parsedJSON?.pts || (fallbackCount >= 3 ? 100 + (fallbackCount - 3) * 20 : 50)
-      
-      const nombresList = fallbackPrendas
-        .map((p: any) => p.name || p.categoria || "Prenda")
-        .filter(Boolean)
-      const fallbackResumen = nombresList.length > 0 ? nombresList.join(", ") : `${fallbackCount} prendas entregadas`
-      
-      const cNombre = centroNombre || "Centro de Acopio Norte"
-      const createdNow = new Date().toISOString()
-
-      // 1. Insertar o registrar ticket en donacion_tickets en Supabase DB
-      const { data: newDbTicket } = await supabase
-        .from("donacion_tickets")
-        .insert({
-          qr_token: tokenToSearch,
-          donor_name: fallbackDonor,
-          donor_email: fallbackEmail,
-          punto_acopio_id: centroId,
-          punto_acopio_nombre: cNombre,
-          status: "completado",
-          cantidad_prendas: fallbackCount,
-          prendas_ids: fallbackPrendas,
-          puntos_otorgados: fallbackPuntos,
-          validated_at: createdNow,
-          validated_by: centroId,
-        })
-        .select("id")
-        .maybeSingle()
-
-      const createdTicketId = newDbTicket?.id || ticketIdFromJSON || `tkt_${Date.now()}`
-
-      // 2. Insertar registro en bitácora acopio_registros en Supabase DB
-      const { data: regData } = await supabase
-        .from("acopio_registros")
-        .insert({
-          ticket_id: createdTicketId.includes("-") ? createdTicketId : null,
-          punto_acopio_id: centroId,
-          punto_acopio_nombre: cNombre,
-          donor_name: fallbackDonor,
-          donor_email: fallbackEmail,
-          cantidad_prendas: fallbackCount,
-          puntos_otorgados: fallbackPuntos,
-          fecha_registro: createdNow,
-          observaciones: `Verificación QR (${tokenToSearch}) — Donante: ${fallbackDonor} — ${fallbackResumen}`,
-        })
-        .select("id")
-        .maybeSingle()
-
-      // Sincronizar en localStorage (puntos, tickets completados y acopio registros)
-      if (typeof window !== "undefined") {
-        try {
-          const currentStr = localStorage.getItem("clossapp_user_puntos_v1")
-          const current = currentStr ? parseInt(currentStr, 10) : 150
-          const newTotal = current + fallbackPuntos
-          localStorage.setItem("clossapp_user_puntos_v1", newTotal.toString())
-
-          // Actualizar ticket local a completado
-          const localTktsStr = localStorage.getItem("clossapp_local_tickets_v1")
-          const localTkts: DonacionTicket[] = localTktsStr ? JSON.parse(localTktsStr) : []
-          const existingIndex = localTkts.findIndex((t) => t.qrToken === tokenToSearch || t.id === createdTicketId)
-          if (existingIndex >= 0) {
-            localTkts[existingIndex].status = "completado"
-            localTkts[existingIndex].validatedAt = createdNow
-          } else {
-            localTkts.unshift({
-              id: createdTicketId,
-              qrToken: tokenToSearch,
-              userId: "guest",
-              donorName: fallbackDonor,
-              donorEmail: fallbackEmail,
-              puntoAcopioId: centroId,
-              puntoAcopioNombre: cNombre,
-              status: "completado",
-              prendas: fallbackPrendas,
-              cantidadPrendas: fallbackCount,
-              puntosOtorgados: fallbackPuntos,
-              createdAt: createdNow,
-              validatedAt: createdNow,
-              validatedBy: centroId,
-            })
-          }
-          localStorage.setItem("clossapp_local_tickets_v1", JSON.stringify(localTkts))
-
-          // Registrar acopio local
-          const localRegsStr = localStorage.getItem("clossapp_local_acopio_registros_v1")
-          const localRegs: AcopioRegistroDB[] = localRegsStr ? JSON.parse(localRegsStr) : []
-          localRegs.unshift({
-            id: regData?.id || `rec_${Date.now()}`,
-            ticket_id: createdTicketId,
-            punto_acopio_id: centroId,
-            punto_acopio_nombre: cNombre,
-            donor_user_id: "guest",
-            donor_name: fallbackDonor,
-            donor_email: fallbackEmail,
-            cantidad_prendas: fallbackCount,
-            puntos_otorgados: fallbackPuntos,
-            fecha_registro: createdNow,
-            observaciones: `Verificación QR (${tokenToSearch}) — Donante: ${fallbackDonor} — ${fallbackResumen}`,
-          })
-          localStorage.setItem("clossapp_local_acopio_registros_v1", JSON.stringify(localRegs))
-
-          window.dispatchEvent(new CustomEvent("clossapp_puntos_updated", { detail: { puntos: newTotal } }))
-          window.dispatchEvent(new Event("storage"))
-        } catch {}
-      }
-
-      return {
-        success: true,
-        puntos: fallbackPuntos,
-        donorName: fallbackDonor,
-        donorEmail: fallbackEmail,
-        cantidadPrendas: fallbackCount,
-        prendas: fallbackPrendas,
-        prendasResumen: fallbackResumen,
-        registroId: regData?.id,
-      }
-    }
-
-    const cNombre = centroNombre || ticket.punto_acopio_nombre || "Centro de Acopio Norte"
-    const donorName = ticket.donor_name || parsedJSON?.donorName || "Donante ClossApp"
-    const donorEmail = ticket.donor_email || parsedJSON?.donorEmail || ""
-    const prendas = Array.isArray(ticket.prendas_ids) && ticket.prendas_ids.length > 0 
-      ? ticket.prendas_ids 
-      : (Array.isArray(parsedJSON?.prendas) ? parsedJSON.prendas : [])
-    
-    const count = ticket.cantidad_prendas || parsedJSON?.cantidadPrendas || (prendas.length > 0 ? prendas.length : 1)
-    const puntos = ticket.puntos_otorgados || parsedJSON?.puntos || (count >= 3 ? 100 + (count - 3) * 20 : 50)
-
-    let prendasResumen = `${count} prendas registradas`
-    if (prendas.length > 0) {
-      const nombresPrendas = prendas
-        .map((p: any) => (typeof p === "string" ? p : p.name || p.categoria || "Prenda"))
-        .filter(Boolean)
-      if (nombresPrendas.length > 0) {
-        prendasResumen = nombresPrendas.join(", ")
-      }
-    }
-
-    // Actualizar estado si estaba pendiente
-    let regIdInserted: string | undefined = undefined
-    if (ticket.status !== "completado") {
-      await supabase
-        .from("donacion_tickets")
-        .update({
-          status: "completado",
-          validated_at: new Date().toISOString(),
-          validated_by: centroId,
-        })
-        .eq("id", ticket.id)
-
-      // Insertar registro en bitácora acopio_registros
-      const { data: regData } = await supabase
-        .from("acopio_registros")
-        .insert({
-          ticket_id: ticket.id,
-          punto_acopio_id: centroId,
-          punto_acopio_nombre: cNombre,
-          donor_user_id: ticket.user_id,
-          donor_name: donorName,
-          donor_email: donorEmail,
-          cantidad_prendas: count,
-          puntos_otorgados: puntos,
-          fecha_registro: new Date().toISOString(),
-          observaciones: `Donación entregada por ${donorName}: ${prendasResumen}`,
-        })
-        .select("id")
-        .single()
-
-      if (regData?.id) regIdInserted = regData.id
-
-      // Acreditar puntos en puntos_historial si hay usuario registrado
-      if (ticket.user_id && ticket.user_id !== "guest" && puntos > 0) {
-        await supabase.from("puntos_historial").insert({
-          user_id: ticket.user_id,
-          puntos: puntos,
-          tipo: "donacion",
-          referencia_id: ticket.id,
-          descripcion: `Donación de ${count} prendas verificada en ${cNombre}`,
-        })
-      }
-
-      // Actualizar estado de las prendas en la BD si existen IDs
-      if (prendas.length > 0) {
-        const prendaIds = prendas.map((p: any) => typeof p === "string" ? p : p.id).filter(Boolean)
-        if (prendaIds.length > 0) {
-          await supabase
-            .from("prendas")
-            .update({
-              estado_uso: "Donada",
-              metadata: { donada: true, fecha_donacion: new Date().toISOString() }
-            })
-            .in("id", prendaIds)
-        }
-      }
-    }
-
-    // Sincronizar en localStorage (puntos, actualizar ticket a "completado" y registrar acopio)
-    if (typeof window !== "undefined") {
-      try {
-        const currentStr = localStorage.getItem("clossapp_user_puntos_v1")
-        const current = currentStr ? parseInt(currentStr, 10) : 150
-        const newTotal = current + puntos
-        localStorage.setItem("clossapp_user_puntos_v1", newTotal.toString())
-
-        // Actualizar ticket local
-        const localTktsStr = localStorage.getItem("clossapp_local_tickets_v1")
-        if (localTktsStr) {
-          const localTkts: DonacionTicket[] = JSON.parse(localTktsStr)
-          const updated = localTkts.map((t) => {
-            if (t.qrToken === tokenToSearch || t.id === ticket.id) {
-              return { ...t, status: "completado", validatedAt: new Date().toISOString() }
-            }
-            return t
-          })
-          localStorage.setItem("clossapp_local_tickets_v1", JSON.stringify(updated))
-        }
-
-        // Registrar acopio local
-        const localRegsStr = localStorage.getItem("clossapp_local_acopio_registros_v1")
-        const localRegs: AcopioRegistroDB[] = localRegsStr ? JSON.parse(localRegsStr) : []
-        const newReg: AcopioRegistroDB = {
-          id: regIdInserted || `rec_${Date.now()}`,
-          ticket_id: ticket.id,
-          punto_acopio_id: centroId,
-          punto_acopio_nombre: cNombre,
-          donor_user_id: ticket.user_id,
-          donor_name: donorName,
-          donor_email: donorEmail,
-          cantidad_prendas: count,
-          puntos_otorgados: puntos,
-          fecha_registro: new Date().toISOString(),
-          observaciones: `Donación entregada por ${donorName}: ${prendasResumen}`,
-        }
-        localRegs.unshift(newReg)
-        localStorage.setItem("clossapp_local_acopio_registros_v1", JSON.stringify(localRegs))
-
-        window.dispatchEvent(new CustomEvent("clossapp_puntos_updated", { detail: { puntos: newTotal } }))
-        window.dispatchEvent(new Event("storage"))
-      } catch {}
-    }
-
-    return {
-      success: true,
-      puntos,
-      donorName,
-      donorEmail,
-      cantidadPrendas: count,
-      prendas,
-      prendasResumen,
-      registroId: regIdInserted,
-    }
-  } catch (err) {
-    console.error("validarTicketQR error:", err)
-    throw err
+  return {
+    success: true,
+    puntos: Number(data.puntos) || 0,
+    donorName: data.donor_name || "Donante ClossApp",
+    donorEmail: data.donor_email || "",
+    cantidadPrendas: cantidad,
+    prendas,
+    prendasResumen: nombres.length ? nombres.join(", ") : `${cantidad} prendas registradas`,
+    registroId: data.registro_id ?? undefined,
   }
 }
 

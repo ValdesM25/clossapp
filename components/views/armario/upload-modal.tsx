@@ -16,7 +16,17 @@ interface UploadModalProps {
   onCancel: () => void
 }
 
+// Fecha local (no UTC) en formato YYYY-MM-DD para los límites del input de fecha.
+function fechaLocal(diasAtras = 0): string {
+  const d = new Date()
+  d.setDate(d.getDate() - diasAtras)
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10)
+}
+
 export function UploadModal({ preview, previewForm, analyzing, analyzeError, uploading, updateForm, onConfirm, onCancel }: UploadModalProps) {
+  const compraMarcada = previewForm.comprada_reciente === "si"
+  const hoy = fechaLocal()
+  const hace60 = fechaLocal(60)
   return (
     <div className="p-6 flex flex-col gap-4">
       <p className="font-serif text-zinc-900 text-lg pr-8">Nueva prenda</p>
@@ -88,6 +98,57 @@ export function UploadModal({ preview, previewForm, analyzing, analyzeError, upl
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="border-t border-zinc-100 pt-3 flex flex-col gap-3">
+            <label className="flex items-center gap-2 text-xs text-zinc-700 cursor-pointer">
+              <input type="checkbox" checked={compraMarcada} className="w-4 h-4 accent-zinc-900"
+                onChange={(e) => {
+                  updateForm("comprada_reciente", e.target.checked ? "si" : "")
+                  if (e.target.checked && !previewForm.compra_fecha) updateForm("compra_fecha", hoy)
+                }} />
+              La compré recientemente <span className="text-zinc-400">(+10 puntos)</span>
+            </label>
+
+            {compraMarcada && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Dónde</label>
+                    <Select value={previewForm.compra_lugar} onValueChange={(v) => updateForm("compra_lugar", v)}>
+                      <SelectTrigger className="rounded-none border-zinc-300 focus:ring-0 text-sm h-10"><SelectValue placeholder="Elige" /></SelectTrigger>
+                      <SelectContent className="z-[110]">
+                        <SelectItem value="tienda">Tienda física</SelectItem>
+                        <SelectItem value="online">En línea</SelectItem>
+                        <SelectItem value="segunda_mano">Segunda mano</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Tienda (opcional)</label>
+                    <Input value={previewForm.compra_tienda} maxLength={80}
+                      onChange={(e) => updateForm("compra_tienda", e.target.value)}
+                      placeholder="Ej. Zara"
+                      className="rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900 text-sm" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Precio (MXN)</label>
+                    <Input value={previewForm.compra_precio} type="number" inputMode="decimal" min={0}
+                      onChange={(e) => updateForm("compra_precio", e.target.value)}
+                      placeholder="Ej. 799"
+                      className="rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Fecha</label>
+                    <Input value={previewForm.compra_fecha} type="date" max={hoy} min={hace60}
+                      onChange={(e) => updateForm("compra_fecha", e.target.value)}
+                      className="rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900 text-sm" />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </>
       )}

@@ -8,9 +8,9 @@ import { pageProps } from "@/constants/animation"
 import { CenteredModal } from "@/components/shared/centered-modal"
 import { OPCIONES_CANJE_SUSCRIPCION } from "@/constants/donaciones"
 import type { OpcionCanjeSuscripcion, CanjeRealizado } from "@/types/donaciones"
-
-const STORAGE_PUNTOS_KEY = "clossapp_user_puntos_v1"
-const STORAGE_CANJES_KEY = "clossapp_user_canjes_v1"
+import { useAuthContext } from "@/context/auth-context"
+import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
+import { fetchUserPuntos, PUNTOS_BASE } from "@/services/donaciones.service"
 
 export function PlanesView() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
@@ -18,22 +18,37 @@ export function PlanesView() {
   const [modalOpen, setModalOpen] = useState(false)
 
   // Points & Rewards state
-  const [puntos, setPuntos] = useState<number>(150)
+  const { userId, isGuest } = useAuthContext()
+  const [puntos, setPuntos] = useState<number>(PUNTOS_BASE)
+  const [canjeando, setCanjeando] = useState(false)
+  const [errorCanje, setErrorCanje] = useState<string | null>(null)
   const [canjes, setCanjes] = useState<CanjeRealizado[]>([])
   const [canjeModalOpen, setCanjeModalOpen] = useState(false)
   const [selectedCanje, setSelectedCanje] = useState<OpcionCanjeSuscripcion | null>(null)
   const [canjeExitoso, setCanjeExitoso] = useState<CanjeRealizado | null>(null)
   const [copiedCode, setCopiedCode] = useState(false)
 
+  // Saldo e historial de canjes salen de la base (puntos_historial); antes vivían en localStorage.
   useEffect(() => {
-    try {
-      const savedPuntos = localStorage.getItem(STORAGE_PUNTOS_KEY)
-      if (savedPuntos !== null) setPuntos(parseInt(savedPuntos, 10))
-
-      const savedCanjes = localStorage.getItem(STORAGE_CANJES_KEY)
-      if (savedCanjes) setCanjes(JSON.parse(savedCanjes))
-    } catch {}
-  }, [])
+    if (isGuest) return
+    let activo = true
+    const supabase = createBrowserSupabaseClient()
+    fetchUserPuntos(supabase, userId).then((p) => { if (activo) setPuntos(p) })
+    supabase.from("puntos_historial").select("id, referencia_id, descripcion, puntos, created_at")
+      .eq("tipo", "canje_suscripcion").order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (!activo || !data) return
+        setCanjes(data.map((row) => ({
+          id: row.id,
+          opcionId: row.referencia_id ?? "",
+          titulo: OPCIONES_CANJE_SUSCRIPCION.find((o) => o.id === row.referencia_id)?.titulo ?? "Cupón ClossApp",
+          codigo: row.descripcion ?? "",
+          puntosUsados: Math.abs(row.puntos),
+          fecha: row.created_at,
+        })))
+      })
+    return () => { activo = false }
+  }, [userId, isGuest])
 
   const planes = [
     {
@@ -97,30 +112,30 @@ export function PlanesView() {
     }
   }
 
-  function handleConfirmCanje() {
-    if (!selectedCanje || puntos < selectedCanje.puntosCoste) return
-
-    const nuevoTotal = puntos - selectedCanje.puntosCoste
-    setPuntos(nuevoTotal)
-    try {
-      localStorage.setItem(STORAGE_PUNTOS_KEY, nuevoTotal.toString())
-    } catch {}
-
+  // La base valida el costo y el saldo y genera el código: el cliente no decide nada.
+  async function handleConfirmCanje() {
+    if (!selectedCanje || puntos < selectedCanje.puntosCoste || canjeando) return
+    if (isGuest) { setErrorCanje("Crea una cuenta para canjear tus puntos."); return }
+    setCanjeando(true)
+    setErrorCanje(null)
+    const { data, error } = await createBrowserSupabaseClient().rpc("canjear_puntos", { p_opcion: selectedCanje.id })
+    setCanjeando(false)
+    if (error || !data) {
+      setErrorCanje(error?.message.includes("PUNTOS_INSUFICIENTES")
+        ? "No te alcanzan los puntos para este cupón."
+        : "No se pudo canjear. Intenta de nuevo.")
+      return
+    }
+    setPuntos(data.saldo)
     const nuevoCanje: CanjeRealizado = {
       id: `canje_${Date.now()}`,
       opcionId: selectedCanje.id,
       titulo: selectedCanje.titulo,
-      codigo: `${selectedCanje.codigo}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+      codigo: data.codigo,
       puntosUsados: selectedCanje.puntosCoste,
       fecha: new Date().toISOString(),
     }
-
-    const updated = [nuevoCanje, ...canjes]
-    setCanjes(updated)
-    try {
-      localStorage.setItem(STORAGE_CANJES_KEY, JSON.stringify(updated))
-    } catch {}
-
+    setCanjes((prev) => [nuevoCanje, ...prev])
     setCanjeExitoso(nuevoCanje)
   }
 
@@ -394,6 +409,7 @@ export function PlanesView() {
                 })}
               </div>
 
+              {errorCanje && <p role="alert" className="text-xs text-red-500">{errorCanje}</p>}
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setCanjeModalOpen(false)}
@@ -403,7 +419,7 @@ export function PlanesView() {
                 </button>
                 <motion.button
                   whileTap={{ scale: 0.98 }}
-                  disabled={!selectedCanje || puntos < (selectedCanje?.puntosCoste ?? 0)}
+                  disabled={canjeando || !selectedCanje || puntos < (selectedCanje?.puntosCoste ?? 0)}
                   onClick={handleConfirmCanje}
                   className="flex-1 py-3 bg-zinc-900 text-white text-xs font-medium tracking-wide disabled:opacity-40"
                 >

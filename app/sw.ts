@@ -78,3 +78,29 @@ const serwist = new Serwist({
 })
 
 serwist.addEventListeners()
+
+// Recordatorios push (ver app/api/push/enviar).
+self.addEventListener("push", (event) => {
+  const datos = (() => {
+    try { return event.data?.json() ?? {} } catch { return {} }
+  })() as { title?: string; body?: string; url?: string }
+  event.waitUntil(
+    self.registration.showNotification(datos.title ?? "Clossapp", {
+      body: datos.body,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      data: { url: datos.url ?? "/" },
+    })
+  )
+})
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close()
+  const url = (event.notification.data as { url?: string } | undefined)?.url ?? "/"
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((ventanas) => {
+      const abierta = ventanas.find((v) => "focus" in v)
+      return abierta ? abierta.focus() : self.clients.openWindow(url)
+    })
+  )
+})

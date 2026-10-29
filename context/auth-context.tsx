@@ -32,7 +32,6 @@ type AuthContextValue = {
   resetPassword: (email: string, captchaToken?: string) => Promise<void>
   clearError: () => void
   loginAsGuest: () => void
-  loginAsRecoleccion: () => void
   logout: () => Promise<void>
   updateProfile: (data: {
     name?: string

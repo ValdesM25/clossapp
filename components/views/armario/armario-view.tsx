@@ -15,7 +15,7 @@ import { usePrendas } from "@/hooks/use-prendas"
 import { useReparaciones } from "@/hooks/use-reparaciones"
 import { useImageUpload } from "@/hooks/use-image-upload"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
-import { insertPrenda } from "@/services/prendas.service"
+import { insertPrenda, registrarCompraReciente, type LugarCompra } from "@/services/prendas.service"
 import { LIMITES_GRATIS, MENSAJES_LIMITE } from "@/constants/planes"
 import type { Prenda, ReparacionDB } from "@/types"
 import { UploadModal } from "./upload-modal"
@@ -36,7 +36,7 @@ export function ArmarioView() {
   const [repForm, setRepForm] = useState({ prenda_id: null as string | null, tarea: "", prioridad: "Media" as ReparacionDB["prioridad"] })
   const [savingRep, setSavingRep] = useState(false)
   const [selectedPrenda, setSelectedPrenda] = useState<Prenda | null>(null)
-  const [avisoLimite, setAvisoLimite] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
   const esGratis = plan === "gratis"
   const limiteAlcanzado = esGratis && prendas.length >= LIMITES_GRATIS.prendas
 
@@ -56,7 +56,7 @@ export function ArmarioView() {
   // Se revisa antes de abrir la cámara para no subir una foto que la base va a rechazar.
   function abrirSubida() {
     if (isGuest) return
-    if (limiteAlcanzado) { setAvisoLimite(MENSAJES_LIMITE.prendas); return }
+    if (limiteAlcanzado) { setAviso(MENSAJES_LIMITE.prendas); return }
     fileInputRef.current?.click()
   }
 
@@ -72,7 +72,7 @@ export function ArmarioView() {
     if (!publicUrl) return
     try {
       const supabaseClient = createBrowserSupabaseClient()
-      await insertPrenda(supabaseClient, {
+      const prendaId = await insertPrenda(supabaseClient, {
         user_id: userId,
         name: previewForm.nombre || preview.file.name.replace(/\.[^/.]+$/, ""),
         category: previewForm.categoria || "Sin categoría",
@@ -90,13 +90,30 @@ export function ArmarioView() {
           descripcion: previewForm.descripcion,
         },
       })
+      // La prenda ya quedó guardada; si falla la parte de compra solo se avisa.
+      if (previewForm.comprada_reciente === "si" && previewForm.compra_lugar && previewForm.compra_precio !== "") {
+        try {
+          const puntos = await registrarCompraReciente(supabaseClient, {
+            prendaId,
+            lugar: previewForm.compra_lugar as LugarCompra,
+            tienda: previewForm.compra_tienda,
+            precio: Number(previewForm.compra_precio),
+            fecha: previewForm.compra_fecha,
+          })
+          setAviso(puntos > 0
+            ? `¡Ganaste ${puntos} puntos por registrar tu compra!`
+            : "Guardamos tu compra. Ya llegaste al tope de 100 puntos por compras este mes.")
+        } catch (err) {
+          setAviso(err instanceof Error ? err.message : "No se pudieron guardar los datos de compra.")
+        }
+      }
       refreshPrendas()
       cancelUpload()
     } catch (err) {
       console.error("Error subiendo prenda:", err)
       // El trigger prendas_limite_plan rechaza la 51 aunque la UI no lo haya visto venir.
       if (err instanceof Object && "message" in err && String(err.message).includes("LIMITE_PRENDAS")) {
-        setAvisoLimite(MENSAJES_LIMITE.prendas)
+        setAviso(MENSAJES_LIMITE.prendas)
         cancelUpload()
       }
     }
@@ -168,8 +185,8 @@ export function ArmarioView() {
             <p className="text-[10px] text-zinc-400 tabular-nums">{prendas.length}/{LIMITES_GRATIS.prendas} · Plan gratis</p>
           )}
         </div>
-        {avisoLimite && (
-          <p role="status" className="text-xs text-zinc-600 border border-zinc-200 px-4 py-3 mb-3">{avisoLimite}</p>
+        {aviso && (
+          <p role="status" className="text-xs text-zinc-600 border border-zinc-200 px-4 py-3 mb-3">{aviso}</p>
         )}
         {loading ? <PrendaSkeleton /> : prendas.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-4 border border-zinc-100">
