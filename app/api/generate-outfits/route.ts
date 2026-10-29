@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
+import { exigirCuota } from "@/lib/cuota.server"
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -11,18 +12,14 @@ export type GeneratedOutfit = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { contexto, wardrobe, user_id } = await req.json()
-
-    if (!user_id || user_id === "guest") {
-      return NextResponse.json(
-        { error: "Funciones de IA exclusivas para cuentas premium/registradas" },
-        { status: 403 }
-      )
-    }
+    const { contexto, wardrobe } = await req.json()
 
     if (!wardrobe?.length) {
       return NextResponse.json({ error: "Wardrobe vacío" }, { status: 400 })
     }
+
+    const bloqueo = await exigirCuota("outfit")
+    if (bloqueo) return bloqueo
 
     const wardrobeJson = JSON.stringify(
       wardrobe.map((p: { id: string; name: string; category: string; metadata?: Record<string, string> | null }) => ({

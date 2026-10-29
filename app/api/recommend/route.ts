@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
+import { exigirCuota } from "@/lib/cuota.server"
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(req: NextRequest) {
   try {
-    const { clima, ocasion, prendas, user_id } = await req.json()
+    const { clima, ocasion, prendas } = await req.json()
 
-    // Misma guarda que analyze-prenda, generate-outfits y renta. Sin esto la
-    // ruta queda abierta a cualquiera y consume la API key del servidor.
-    if (!user_id || user_id === "guest") {
-      return NextResponse.json(
-        { error: "Funciones de IA exclusivas para cuentas premium/registradas" },
-        { status: 403 }
-      )
-    }
+    // Sin esto la ruta queda abierta a cualquiera y consume la API key del servidor.
+    const bloqueo = await exigirCuota("outfit")
+    if (bloqueo) return bloqueo
 
     const prendasContext =
       prendas?.length > 0

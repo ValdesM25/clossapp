@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
+import { exigirCuota } from "@/lib/cuota.server"
 import { MAX_IMAGENES, MIN_IMAGENES } from "@/constants/tasacion"
 import type { PrendaAnalysis, PrendaVentaAnalysis } from "@/types/analisis"
 
@@ -53,14 +54,7 @@ No incluyas markdown ni texto adicional.`
 
 export async function POST(req: NextRequest) {
   try {
-    const { imageBase64, imagesBase64, mediaType, user_id, modo } = await req.json()
-
-    if (!user_id || user_id === "guest") {
-      return NextResponse.json(
-        { error: "Funciones de IA exclusivas para cuentas premium/registradas" },
-        { status: 403 }
-      )
-    }
+    const { imageBase64, imagesBase64, mediaType, modo } = await req.json()
 
     // Acepta una sola imagen (alta de prenda) o varias (publicación en venta).
     const imagenes: string[] = Array.isArray(imagesBase64) && imagesBase64.length
@@ -90,6 +84,10 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Se cobra después de validar: un pedido mal formado no gasta análisis.
+    const bloqueo = await exigirCuota("analisis")
+    if (bloqueo) return bloqueo
 
     const media = (mediaType ?? "image/jpeg") as MediaType
 

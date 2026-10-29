@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useCallback, useEffect, useMemo } from "react"
-import { signIn, displayNameFor } from "@/services/auth.service"
+import { signIn, signUp, signInWithProvider, requestPasswordReset, displayNameFor, type ProveedorSocial } from "@/services/auth.service"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import type { UserMode } from "@/types"
+import type { Plan } from "@/constants/planes"
 
 const GUEST = { id: "guest", name: "Invitada" } as const
 
@@ -14,6 +15,8 @@ export function useAuth() {
   const [userEmail, setUserEmail] = useState("mariela@clossapp.com")
   const [userPhone, setUserPhone] = useState("+52 844 123 4567")
   const [userAvatarUrl, setUserAvatarUrl] = useState("https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80")
+  // null mientras no se sabe (o si la tabla perfiles aun no existe): no se bloquea nada.
+  const [plan, setPlan] = useState<Plan | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Arranca en true para no mostrar el login un instante antes de saber si ya
@@ -38,6 +41,8 @@ export function useAuth() {
       setUserId(user.id)
       setUserName(displayNameFor(user.email, GUEST.name))
       if (user.email) setUserEmail(user.email)
+      supabase.from("perfiles").select("plan").eq("user_id", user.id).maybeSingle()
+        .then(({ data }) => { if (active) setPlan((data?.plan as Plan | undefined) ?? null) })
     }
 
     // Supabase guarda la sesion en el navegador; esto la recupera al abrir.
@@ -60,6 +65,7 @@ export function useAuth() {
         setUserId(GUEST.id)
         setUserName(GUEST.name)
         setUserEmail("")
+        setPlan(null)
         return
       }
       adopt(session?.user)
@@ -72,7 +78,7 @@ export function useAuth() {
   }, [supabase])
 
   const login = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, captchaToken?: string) => {
       setLoading(true)
       setError(null)
       try {
@@ -85,7 +91,7 @@ export function useAuth() {
           return
         }
 
-        const { uuid, displayName } = await signIn(supabase, email, password)
+        const { uuid, displayName } = await signIn(supabase, email, password, captchaToken)
         setUserMode("VIP")
         setUserId(uuid)
         setUserName(displayName || email.split("@")[0])
@@ -99,6 +105,38 @@ export function useAuth() {
     },
     [supabase]
   )
+
+  // Envuelve una accion de auth con loading/error compartidos con el login.
+  const conEstado = useCallback(async <T,>(accion: () => Promise<T>): Promise<T> => {
+    setLoading(true)
+    setError(null)
+    try {
+      return await accion()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Algo salió mal. Intenta de nuevo.")
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const register = useCallback(
+    (email: string, password: string, captchaToken?: string) =>
+      conEstado(() => signUp(supabase, email, password, captchaToken)),
+    [supabase, conEstado]
+  )
+
+  const loginWithProvider = useCallback(
+    (provider: ProveedorSocial) => conEstado(() => signInWithProvider(supabase, provider)),
+    [supabase, conEstado]
+  )
+
+  const resetPassword = useCallback(
+    (email: string, captchaToken?: string) => conEstado(() => requestPasswordReset(supabase, email, captchaToken)),
+    [supabase, conEstado]
+  )
+
+  const clearError = useCallback(() => setError(null), [])
 
   const loginAsGuest = useCallback(() => {
     setUserMode("GUEST")
@@ -127,6 +165,7 @@ export function useAuth() {
     setUserId(GUEST.id)
     setUserName(GUEST.name)
     setUserEmail("")
+    setPlan(null)
   }, [supabase])
 
   const updateProfile = useCallback(async (data: {
@@ -151,7 +190,8 @@ export function useAuth() {
   }, [userMode, supabase])
 
   return {
-    userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isRecoleccion, isAuthenticated, initializing,
-    login, loginAsGuest, loginAsRecoleccion, logout, updateProfile, loading, error,
+    userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isRecoleccion, isAuthenticated, initializing, plan,
+    login, register, loginWithProvider, resetPassword, clearError,
+    loginAsGuest, loginAsRecoleccion, logout, updateProfile, loading, error,
   }
 }

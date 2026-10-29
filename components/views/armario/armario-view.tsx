@@ -16,6 +16,7 @@ import { useReparaciones } from "@/hooks/use-reparaciones"
 import { useImageUpload } from "@/hooks/use-image-upload"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { insertPrenda } from "@/services/prendas.service"
+import { LIMITES_GRATIS, MENSAJES_LIMITE } from "@/constants/planes"
 import type { Prenda, ReparacionDB } from "@/types"
 import { UploadModal } from "./upload-modal"
 import { PrendaDetailModal } from "./prenda-detail-modal"
@@ -23,7 +24,7 @@ import { RepairFormModal } from "./repair-form-modal"
 import { RepairList } from "./repair-list"
 
 export function ArmarioView() {
-  const { userId, isGuest } = useAuthContext()
+  const { userId, isGuest, plan } = useAuthContext()
   const { prendas, loading, refresh: refreshPrendas } = usePrendas(userId, isGuest)
   const { reparaciones, loading: loadingRep, add: addRep, complete: completeRep } = useReparaciones(userId, isGuest)
   const {
@@ -35,6 +36,9 @@ export function ArmarioView() {
   const [repForm, setRepForm] = useState({ prenda_id: null as string | null, tarea: "", prioridad: "Media" as ReparacionDB["prioridad"] })
   const [savingRep, setSavingRep] = useState(false)
   const [selectedPrenda, setSelectedPrenda] = useState<Prenda | null>(null)
+  const [avisoLimite, setAvisoLimite] = useState<string | null>(null)
+  const esGratis = plan === "gratis"
+  const limiteAlcanzado = esGratis && prendas.length >= LIMITES_GRATIS.prendas
 
   const [activeCategory, setActiveCategory] = useState("Todas")
   const prendasConRep = new Set(reparaciones.map((r) => r.prenda_id).filter(Boolean))
@@ -48,6 +52,13 @@ export function ArmarioView() {
         p.category?.toLowerCase().includes(activeCategory.toLowerCase()) ||
         (p.metadata as Record<string, string> | null)?.categoria?.toLowerCase().includes(activeCategory.toLowerCase())
       )
+
+  // Se revisa antes de abrir la cámara para no subir una foto que la base va a rechazar.
+  function abrirSubida() {
+    if (isGuest) return
+    if (limiteAlcanzado) { setAvisoLimite(MENSAJES_LIMITE.prendas); return }
+    fileInputRef.current?.click()
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -81,7 +92,14 @@ export function ArmarioView() {
       })
       refreshPrendas()
       cancelUpload()
-    } catch (err) { console.error("Error subiendo prenda:", err) }
+    } catch (err) {
+      console.error("Error subiendo prenda:", err)
+      // El trigger prendas_limite_plan rechaza la 51 aunque la UI no lo haya visto venir.
+      if (err instanceof Object && "message" in err && String(err.message).includes("LIMITE_PRENDAS")) {
+        setAvisoLimite(MENSAJES_LIMITE.prendas)
+        cancelUpload()
+      }
+    }
   }
 
   async function handleSaveRep() {
@@ -144,7 +162,15 @@ export function ArmarioView() {
       </CenteredModal>
 
       <section className="px-4">
-        <p className="text-xs text-zinc-400 uppercase tracking-widest mb-3">Mis Prendas</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs text-zinc-400 uppercase tracking-widest">Mis Prendas</p>
+          {esGratis && (
+            <p className="text-[10px] text-zinc-400 tabular-nums">{prendas.length}/{LIMITES_GRATIS.prendas} · Plan gratis</p>
+          )}
+        </div>
+        {avisoLimite && (
+          <p role="status" className="text-xs text-zinc-600 border border-zinc-200 px-4 py-3 mb-3">{avisoLimite}</p>
+        )}
         {loading ? <PrendaSkeleton /> : prendas.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-4 border border-zinc-100">
             <Shirt className="w-8 h-8 text-zinc-300" />
@@ -152,7 +178,7 @@ export function ArmarioView() {
               <p className="text-sm text-zinc-700">Tu clóset está vacío</p>
               <p className="text-xs text-zinc-400 mt-1">Sube tu primer look</p>
             </div>
-            <motion.button whileTap={{ scale: 0.98 }} onClick={() => fileInputRef.current?.click()}
+            <motion.button whileTap={{ scale: 0.98 }} onClick={abrirSubida}
               className="border border-zinc-900 text-zinc-900 text-xs px-5 py-2 tracking-wide">
               + Agregar prenda
             </motion.button>
@@ -215,7 +241,7 @@ export function ArmarioView() {
 
       <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
 
-      <motion.button whileTap={{ scale: 0.94 }} onClick={() => !isGuest && fileInputRef.current?.click()} disabled={uploading}
+      <motion.button whileTap={{ scale: 0.94 }} onClick={abrirSubida} disabled={uploading}
         className={cn("fixed bottom-28 z-40 shadow-lg w-12 h-12 flex items-center justify-center fab-right",
           isGuest ? "bg-zinc-200 cursor-default" : "bg-zinc-900 text-white disabled:opacity-50")}>
         {uploading ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : isGuest ? <Lock className="w-4 h-4 text-zinc-400" /> : <Plus className="w-5 h-5 text-white" />}
