@@ -43,7 +43,7 @@ export function EstadisticasView({ onSellPrenda }: EstadisticasViewProps) {
         <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 text-zinc-400 animate-spin" /></div>
       ) : (
         <>
-          <KpiGrid kpis={kpis} />
+          <div data-tour="estadisticas"><KpiGrid kpis={kpis} /></div>
           <TopPrendasList prendas={(isGuest ? GUEST_PRENDAS.slice(0, 3) : topPrendas) as PrendaExt[]} isGuest={isGuest} formatDate={fmt} />
           <ForgottenPrendasList prendas={(isGuest ? [] : olvidadas) as PrendaExt[]} isGuest={isGuest} onSell={onSellPrenda} formatDate={fmt} />
         </>

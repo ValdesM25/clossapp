@@ -6,6 +6,7 @@ import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/cl
 import type { UserMode } from "@/types"
 import type { Plan } from "@/constants/planes"
 import type { EstiloPerfil } from "@/constants/onboarding"
+import { entrarDemo, salirDemo, restaurarSiQuedoDemo, type TipoDemo } from "@/lib/demo"
 
 const GUEST = { id: "guest", name: "Invitada" } as const
 
@@ -21,6 +22,9 @@ export function useAuth() {
   const [estilo, setEstilo] = useState<EstiloPerfil | null>(null)
   // true = mostrar el recorrido de estilo (cuenta nueva o abierto desde el menú).
   const [mostrarOnboarding, setMostrarOnboarding] = useState(false)
+  // Modo demo (reemplaza al invitado): datos simulados + recorrido guiado.
+  const [demo, setDemo] = useState<TipoDemo | null>(null)
+  const [tourActivo, setTourActivo] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Arranca en true para no mostrar el login un instante antes de saber si ya
@@ -62,6 +66,8 @@ export function useAuth() {
 
   useEffect(() => {
     let active = true
+    // Si la pestaña se cerró en plena demo, devuelve localStorage a como estaba.
+    restaurarSiQuedoDemo()
 
     const adopt = async (user: { id: string; email?: string | null } | undefined | null) => {
       if (!active || !user) return
@@ -154,14 +160,39 @@ export function useAuth() {
 
   const clearError = useCallback(() => setError(null), [])
 
-  const loginAsGuest = useCallback(() => {
+  const entrarModoDemo = useCallback((tipo: TipoDemo) => {
+    entrarDemo(tipo)
+    setDemo(tipo)
+    setTourActivo(true)
+    if (tipo === "acopio") {
+      setUserMode("RECOLECCION")
+      setUserId("demo_acopio")
+      setUserName("Centro Demo Clossapp")
+      setUserEmail("centro@ejemplo.com")
+      setUserAvatarUrl("https://images.unsplash.com/photo-1578354637658-75508851ed05?w=80&q=80")
+      return
+    }
+    // La demo de usuario reutiliza el modo "GUEST": datos de ejemplo y sin escribir en la base.
     setUserMode("GUEST")
     setUserId(GUEST.id)
-    setUserName("Mariela (Invitada)")
-    setUserEmail("invitada@clossapp.com")
+    setUserName("Mariela (demo)")
+    setUserEmail("mariela@ejemplo.com")
   }, [])
 
+  const iniciarTour = useCallback(() => setTourActivo(true), [])
+  const cerrarTour = useCallback(() => setTourActivo(false), [])
+
   const logout = useCallback(async () => {
+    if (demo) {
+      salirDemo()
+      setDemo(null)
+      setTourActivo(false)
+      setUserMode(null)
+      setUserId(GUEST.id)
+      setUserName(GUEST.name)
+      setUserEmail("")
+      return
+    }
     // Ahora que la sesion sobrevive al cierre, limpiar solo el estado de React
     // no alcanza: sin signOut volveria sola en la proxima apertura.
     try {
@@ -176,7 +207,7 @@ export function useAuth() {
     setPlan(null)
     setEstilo(null)
     setMostrarOnboarding(false)
-  }, [supabase])
+  }, [supabase, demo])
 
   /**
    * Cierra el recorrido. Con `nuevo` guarda las respuestas; sin él (Saltar)
@@ -217,7 +248,8 @@ export function useAuth() {
   return {
     userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isRecoleccion, isAuthenticated, initializing, plan,
     estilo, mostrarOnboarding, abrirOnboarding, terminarOnboarding,
+    demo, tourActivo, iniciarTour, cerrarTour, entrarModoDemo,
     login, register, loginWithProvider, resetPassword, clearError,
-    loginAsGuest, logout, updateProfile, loading, error,
+    logout, updateProfile, loading, error,
   }
 }

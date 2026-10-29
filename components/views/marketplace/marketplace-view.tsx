@@ -162,7 +162,7 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
         </div>
       </div>
 
-      <div className="px-4 flex border-b border-zinc-200">
+      <div data-tour="marketplace" className="px-4 flex border-b border-zinc-200">
         {(["comprar", "rentar", "donar"] as const).map((tab) => (
           <button key={tab} onClick={() => { setMarketTab(tab); setActiveFilter("Todos") }}
             className={cn("flex-1 py-2.5 text-xs font-medium tracking-widest uppercase transition-colors border-b-2 -mb-px",

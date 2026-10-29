@@ -19,12 +19,12 @@ export function BottomNav({ activeView, onNavigate, open, flash }: BottomNavProp
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
           exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}
           className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-safe pointer-events-none">
-          <nav className="w-[92%] max-w-5xl bg-white/80 backdrop-blur-xl border border-zinc-200 px-4 sm:px-6 py-3 flex justify-between items-center shadow-lg pointer-events-auto lg:w-[calc(100%-2rem)]">
+          <nav data-tour="nav" className="w-[92%] max-w-5xl bg-white/80 backdrop-blur-xl border border-zinc-200 px-4 sm:px-6 py-3 flex justify-between items-center shadow-lg pointer-events-auto lg:w-[calc(100%-2rem)]">
             {navItems.map((item) => {
               const isActive = activeView === item.id
               const isFlashing = flash != null && flash === item.id
               return (
-                <motion.button key={item.id} whileTap={{ scale: 0.82 }} onClick={() => onNavigate(item.id)}
+                <motion.button key={item.id} data-tour={`nav-${item.id}`} whileTap={{ scale: 0.82 }} onClick={() => onNavigate(item.id)}
                   className="flex flex-col items-center gap-0.5 relative">
                   {isFlashing && (
                     <motion.span initial={{ scale: 0.5, opacity: 1 }} animate={{ scale: 2.5, opacity: 0 }}

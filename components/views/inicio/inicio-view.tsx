@@ -55,7 +55,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
           <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">{userName}</h1>
           {isGuest && (
             <span className="text-[10px] text-zinc-400 uppercase tracking-widest border border-zinc-200 px-2 py-0.5 mt-1 inline-block">
-              Modo Invitado
+              Modo demo
             </span>
           )}
         </div>
@@ -68,7 +68,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
       )}
 
       {/* SECCIÓN 1: RECOMENDACIÓN DE OUTFIT PARA EL DÍA DE HOY */}
-      <section className="flex flex-col gap-3">
+      <section data-tour="inicio-outfit" className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sun className="w-4 h-4 text-amber-500" />

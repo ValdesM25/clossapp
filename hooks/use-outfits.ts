@@ -46,7 +46,8 @@ export function useOutfits(prendas: Prenda[], userId: string, userName: string, 
   }, [prendas, userId, isGuest])
 
   const elegir = useCallback(async (outfit: { titulo: string; prenda_ids: string[] }, idx: number) => {
-    if (isGuest) return
+    // Demo: se ve igual que en real, pero sin registrar usos en la base.
+    if (isGuest) { setElegidoIdx(idx); return }
     setEligiendoIdx(idx)
     await Promise.all([
       registrarUso(supabase, outfit.prenda_ids),

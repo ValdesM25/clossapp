@@ -80,7 +80,7 @@ export function OutfitCard({
           </motion.div>
         ) : (
           <motion.button whileTap={{ scale: 0.98 }} onClick={onElegir}
-            disabled={isEligiendo || isGuest}
+            disabled={isEligiendo}
             className="w-full py-2.5 border border-zinc-900 text-zinc-900 text-xs font-medium tracking-widest uppercase flex items-center justify-center gap-2 disabled:opacity-40">
             {isEligiendo ? <span className="inline-block w-3.5 h-3.5 border-2 border-zinc-400/30 border-t-zinc-400 rounded-full animate-spin" /> : null}
             {isEligiendo ? "Registrando..." : "Elegir este outfit"}
