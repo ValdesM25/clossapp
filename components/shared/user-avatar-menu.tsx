@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, ChangeEvent } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { User, LogOut, Camera, Lock, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell } from "lucide-react"
+import { User, LogOut, Camera, Lock, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck } from "lucide-react"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { activarPush, pushActivo, pushDisponible } from "@/lib/push"
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function UserAvatarMenu() {
-  const { userName, userEmail, userPhone, userAvatarUrl, userMode, isGuest, plan, logout, updateProfile, abrirOnboarding, userId } = useAuthContext()
+  const { userName, userEmail, userPhone, userAvatarUrl, userMode, isGuest, plan, logout, updateProfile, abrirOnboarding, userId, esAdmin } = useAuthContext()
   const [pushOn, setPushOn] = useState(false)
   const [pushMsg, setPushMsg] = useState<string | null>(null)
   useEffect(() => { pushActivo().then(setPushOn).catch(() => setPushOn(false)) }, [])
@@ -162,6 +162,24 @@ export function UserAvatarMenu() {
             >
               <Sparkles className="w-3.5 h-3.5 text-zinc-500" />
               <span>Mi estilo</span>
+            </DropdownMenuItem>
+          )}
+
+          {userMode === "VIP" && (
+            <DropdownMenuItem asChild className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 cursor-pointer hover:bg-zinc-50 focus:bg-zinc-50 rounded-none transition-colors">
+              <a href="/centros">
+                <Store className="w-3.5 h-3.5 text-zinc-500" />
+                <span>Quiero ser centro de acopio</span>
+              </a>
+            </DropdownMenuItem>
+          )}
+
+          {esAdmin && (
+            <DropdownMenuItem asChild className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 cursor-pointer hover:bg-zinc-50 focus:bg-zinc-50 rounded-none transition-colors">
+              <a href="/admin">
+                <ShieldCheck className="w-3.5 h-3.5 text-zinc-500" />
+                <span>Panel de admin</span>
+              </a>
             </DropdownMenuItem>
           )}
 

@@ -20,6 +20,8 @@ export function useAuth() {
   // null mientras no se sabe (o si la tabla perfiles aun no existe): no se bloquea nada.
   const [plan, setPlan] = useState<Plan | null>(null)
   const [estilo, setEstilo] = useState<EstiloPerfil | null>(null)
+  // Solo muestra el acceso a /admin; los permisos reales los revisa la base.
+  const [esAdmin, setEsAdmin] = useState(false)
   // true = mostrar el recorrido de estilo (cuenta nueva o abierto desde el menú).
   const [mostrarOnboarding, setMostrarOnboarding] = useState(false)
   // Modo demo (reemplaza al invitado): datos simulados + recorrido guiado.
@@ -45,7 +47,7 @@ export function useAuth() {
   const aplicarSesion = useCallback(async (user: { id: string; email?: string | null }) => {
     const { data } = await supabase
       .from("perfiles")
-      .select("plan, estilo, onboarding_completado, rol, punto_acopio_nombre")
+      .select("plan, estilo, onboarding_completado, rol, punto_acopio_nombre, es_admin")
       .eq("user_id", user.id)
       .maybeSingle()
     setUserId(user.id)
@@ -59,6 +61,7 @@ export function useAuth() {
     setUserMode("VIP")
     setUserName(displayNameFor(user.email, GUEST.name))
     if (!data) return
+    setEsAdmin(!!data.es_admin)
     setPlan(data.plan as Plan)
     setEstilo((data.estilo as EstiloPerfil | null) ?? null)
     if (!data.onboarding_completado) setMostrarOnboarding(true)
@@ -96,6 +99,7 @@ export function useAuth() {
         setUserEmail("")
         setPlan(null)
         setEstilo(null)
+        setEsAdmin(false)
         setMostrarOnboarding(false)
         return
       }
@@ -206,6 +210,7 @@ export function useAuth() {
     setUserEmail("")
     setPlan(null)
     setEstilo(null)
+    setEsAdmin(false)
     setMostrarOnboarding(false)
   }, [supabase, demo])
 
@@ -247,7 +252,7 @@ export function useAuth() {
 
   return {
     userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isRecoleccion, isAuthenticated, initializing, plan,
-    estilo, mostrarOnboarding, abrirOnboarding, terminarOnboarding,
+    estilo, mostrarOnboarding, abrirOnboarding, terminarOnboarding, esAdmin,
     demo, tourActivo, iniciarTour, cerrarTour, entrarModoDemo,
     login, register, loginWithProvider, resetPassword, clearError,
     logout, updateProfile, loading, error,

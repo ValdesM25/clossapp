@@ -36,6 +36,7 @@ Mauri pidió:
 | 3 | `feat/armario-al-dia` | Compra reciente con puntos, puntos/donaciones seguros, banner y push | [fase-3-armario-al-dia.md](fase-3-armario-al-dia.md) |
 | 3b | `feat/modo-demo` | El modo invitado pasa a modo demo (usuario y centro de acopio) con recorrido guiado | [fase-3b-modo-demo.md](fase-3b-modo-demo.md) |
 | 4 | `feat/marketplace-escrow` | Marketplace visible desde la base y escrow con su tabla; el precio lo calcula la base | [fase-4-marketplace-escrow.md](fase-4-marketplace-escrow.md) |
+| 5 | `feat/solicitudes-acopio` | Formulario "Quiero ser centro de acopio" y panel de admin | [fase-5-solicitudes-acopio.md](fase-5-solicitudes-acopio.md) |
 
 La PWA va primero porque toca los mismos archivos de login (`hooks/use-auth.ts`, `services/auth.service.ts`, `middleware.ts`) que la fase 1. Si se hicieran al revés, habría conflictos dos veces.
 

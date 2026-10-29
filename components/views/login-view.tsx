@@ -174,7 +174,8 @@ export function LoginView() {
 
               {/* El portal de recolección ya no tiene botón público: se entra con la cuenta del centro (perfiles.rol = 'acopio'). */}
               <p className="text-[11px] text-zinc-400 text-center">
-                ¿Eres un punto de recolección? Entra con el correo de tu centro.
+                ¿Eres un punto de recolección? Entra con el correo de tu centro.{" "}
+                <Link href="/centros" className="underline underline-offset-2 text-zinc-600 hover:text-zinc-900">Quiero ser centro de acopio</Link>
               </p>
 
               <p className="text-[11px] leading-relaxed text-zinc-400 text-center">
