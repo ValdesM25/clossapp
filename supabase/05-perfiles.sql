@@ -129,3 +129,7 @@ $$;
 
 revoke all on function public.consumir_cuota(text) from public, anon;
 grant execute on function public.consumir_cuota(text) to authenticated;
+
+-- Las funciones de trigger no deben quedar expuestas en /rest/v1/rpc.
+revoke execute on function public.crear_perfil_usuario() from public, anon, authenticated;
+revoke execute on function public.prendas_limite_plan() from public, anon, authenticated;
