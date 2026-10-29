@@ -5,6 +5,7 @@ import { signIn, signUp, signInWithProvider, requestPasswordReset, displayNameFo
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import type { UserMode } from "@/types"
 import type { Plan } from "@/constants/planes"
+import type { EstiloPerfil } from "@/constants/onboarding"
 
 const GUEST = { id: "guest", name: "Invitada" } as const
 
@@ -17,6 +18,9 @@ export function useAuth() {
   const [userAvatarUrl, setUserAvatarUrl] = useState("https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80")
   // null mientras no se sabe (o si la tabla perfiles aun no existe): no se bloquea nada.
   const [plan, setPlan] = useState<Plan | null>(null)
+  const [estilo, setEstilo] = useState<EstiloPerfil | null>(null)
+  // true = mostrar el recorrido de estilo (cuenta nueva o abierto desde el menú).
+  const [mostrarOnboarding, setMostrarOnboarding] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Arranca en true para no mostrar el login un instante antes de saber si ya
@@ -41,8 +45,13 @@ export function useAuth() {
       setUserId(user.id)
       setUserName(displayNameFor(user.email, GUEST.name))
       if (user.email) setUserEmail(user.email)
-      supabase.from("perfiles").select("plan").eq("user_id", user.id).maybeSingle()
-        .then(({ data }) => { if (active) setPlan((data?.plan as Plan | undefined) ?? null) })
+      supabase.from("perfiles").select("plan, estilo, onboarding_completado").eq("user_id", user.id).maybeSingle()
+        .then(({ data }) => {
+          if (!active || !data) return
+          setPlan(data.plan as Plan)
+          setEstilo((data.estilo as EstiloPerfil | null) ?? null)
+          if (!data.onboarding_completado) setMostrarOnboarding(true)
+        })
     }
 
     // Supabase guarda la sesion en el navegador; esto la recupera al abrir.
@@ -66,6 +75,8 @@ export function useAuth() {
         setUserName(GUEST.name)
         setUserEmail("")
         setPlan(null)
+        setEstilo(null)
+        setMostrarOnboarding(false)
         return
       }
       adopt(session?.user)
@@ -166,7 +177,24 @@ export function useAuth() {
     setUserName(GUEST.name)
     setUserEmail("")
     setPlan(null)
+    setEstilo(null)
+    setMostrarOnboarding(false)
   }, [supabase])
+
+  /**
+   * Cierra el recorrido. Con `nuevo` guarda las respuestas; sin él (Saltar)
+   * solo lo marca como visto para no volver a mostrarlo al entrar.
+   */
+  const terminarOnboarding = useCallback(async (nuevo?: EstiloPerfil) => {
+    setMostrarOnboarding(false)
+    if (nuevo) setEstilo(nuevo)
+    if (userMode !== "VIP") return
+    const cambios = { onboarding_completado: true, updated_at: new Date().toISOString(), ...(nuevo ? { estilo: nuevo } : {}) }
+    const { error } = await supabase.from("perfiles").update(cambios).eq("user_id", userId)
+    if (error) console.error("[perfil] no se guardó el estilo", error.message)
+  }, [supabase, userId, userMode])
+
+  const abrirOnboarding = useCallback(() => setMostrarOnboarding(true), [])
 
   const updateProfile = useCallback(async (data: {
     name?: string
@@ -191,6 +219,7 @@ export function useAuth() {
 
   return {
     userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isRecoleccion, isAuthenticated, initializing, plan,
+    estilo, mostrarOnboarding, abrirOnboarding, terminarOnboarding,
     login, register, loginWithProvider, resetPassword, clearError,
     loginAsGuest, loginAsRecoleccion, logout, updateProfile, loading, error,
   }

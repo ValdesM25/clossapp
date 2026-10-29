@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Se cobra después de validar: un pedido mal formado no gasta análisis.
-    const bloqueo = await exigirCuota("analisis")
+    const { bloqueo } = await exigirCuota("analisis")
     if (bloqueo) return bloqueo
 
     const media = (mediaType ?? "image/jpeg") as MediaType
