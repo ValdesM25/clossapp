@@ -5,11 +5,18 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { Loader2, Building2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 import { Turnstile, TURNSTILE_SITE_KEY, type TurnstileHandle } from "@/components/shared/turnstile"
 import { useAuthContext } from "@/context/auth-context"
 import type { ProveedorSocial } from "@/services/auth.service"
 
 type Modo = "entrar" | "crear" | "recuperar"
+
+// Proveedores activos, ej. "google,facebook". Se encienden aquí solo después de
+// configurarlos en Supabase; así producción no muestra botones que fallan.
+const PROVEEDORES = (process.env.NEXT_PUBLIC_LOGIN_SOCIAL ?? "").split(",").map((p) => p.trim())
+const CON_GOOGLE = PROVEEDORES.includes("google")
+const CON_FACEBOOK = PROVEEDORES.includes("facebook")
 
 const TEXTO_BOTON: Record<Modo, string> = {
   entrar: "Entrar con correo electrónico",
@@ -99,17 +106,17 @@ export function LoginView() {
             </div>
 
             <div className="space-y-3">
-              {modo !== "recuperar" && (
+              {modo !== "recuperar" && (CON_GOOGLE || CON_FACEBOOK) && (
                 <>
-                  <div className="grid grid-cols-2 gap-2">
-                    <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => social("google")} disabled={loading}
+                  <div className={cn("grid gap-2", CON_GOOGLE && CON_FACEBOOK ? "grid-cols-2" : "grid-cols-1")}>
+                    {CON_GOOGLE && <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => social("google")} disabled={loading}
                       className="h-11 border border-zinc-900 text-zinc-900 text-xs font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
                       <GoogleIcon /> Google
-                    </motion.button>
-                    <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => social("facebook")} disabled={loading}
+                    </motion.button>}
+                    {CON_FACEBOOK && <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => social("facebook")} disabled={loading}
                       className="h-11 border border-zinc-900 text-zinc-900 text-xs font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
                       <FacebookIcon /> Facebook
-                    </motion.button>
+                    </motion.button>}
                   </div>
                   <div className="flex items-center gap-3 py-1" aria-hidden="true">
                     <span className="h-px flex-1 bg-zinc-200" />

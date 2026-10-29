@@ -70,6 +70,7 @@ Esta rama sale de `feat/pwa`, porque los dos tocan el login.
 
 ### `.env.example`
 - Se agregó `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
+- Se agregó `NEXT_PUBLIC_LOGIN_SOCIAL` (ej. `google,facebook`). Los botones de Google y Facebook **solo aparecen si su proveedor está en esta variable**. Así producción no muestra botones que fallan mientras Mauri termina de configurarlos. Decisión mía, tomada antes del primer deploy.
 
 ## Algo que encontré y no cambié
 
@@ -99,6 +100,7 @@ Orden recomendado: primero desplegar el código y después activar el CAPTCHA en
    - *Emails → Templates:* para que los enlaces funcionen aunque se abran en otro dispositivo:
      - Confirm signup: `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email`
      - Reset password: `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=/restablecer`
+   - *Al terminar 2 y 3:* en Vercel, `NEXT_PUBLIC_LOGIN_SOCIAL=google,facebook` y redeploy, para que aparezcan los botones.
    - *Attack Protection:* activar CAPTCHA con Turnstile y pegar la secret key (después de desplegar).
    - *Passwords:* mínimo 8 caracteres, con letras y dígitos.
    - *Rate limits:* revisar los valores por defecto; los de inicio de sesión y registro están bien para empezar.
