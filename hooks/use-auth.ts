@@ -36,22 +36,36 @@ export function useAuth() {
   const isRecoleccion = userMode === "RECOLECCION"
   const isAuthenticated = userMode !== null
 
+  // Fuente única de "quién entró": lee el perfil antes de elegir el modo, así
+  // una cuenta de punto de recolección va directo a su portal sin pasar por la app.
+  const aplicarSesion = useCallback(async (user: { id: string; email?: string | null }) => {
+    const { data } = await supabase
+      .from("perfiles")
+      .select("plan, estilo, onboarding_completado, rol, punto_acopio_nombre")
+      .eq("user_id", user.id)
+      .maybeSingle()
+    setUserId(user.id)
+    if (user.email) setUserEmail(user.email)
+    if (data?.rol === "acopio") {
+      setUserMode("RECOLECCION")
+      setUserName(data.punto_acopio_nombre || "Punto de recolección")
+      setUserAvatarUrl("https://images.unsplash.com/photo-1578354637658-75508851ed05?w=80&q=80")
+      return
+    }
+    setUserMode("VIP")
+    setUserName(displayNameFor(user.email, GUEST.name))
+    if (!data) return
+    setPlan(data.plan as Plan)
+    setEstilo((data.estilo as EstiloPerfil | null) ?? null)
+    if (!data.onboarding_completado) setMostrarOnboarding(true)
+  }, [supabase])
+
   useEffect(() => {
     let active = true
 
-    const adopt = (user: { id: string; email?: string | null } | undefined | null) => {
+    const adopt = async (user: { id: string; email?: string | null } | undefined | null) => {
       if (!active || !user) return
-      setUserMode("VIP")
-      setUserId(user.id)
-      setUserName(displayNameFor(user.email, GUEST.name))
-      if (user.email) setUserEmail(user.email)
-      supabase.from("perfiles").select("plan, estilo, onboarding_completado").eq("user_id", user.id).maybeSingle()
-        .then(({ data }) => {
-          if (!active || !data) return
-          setPlan(data.plan as Plan)
-          setEstilo((data.estilo as EstiloPerfil | null) ?? null)
-          if (!data.onboarding_completado) setMostrarOnboarding(true)
-        })
+      await aplicarSesion(user)
     }
 
     // Supabase guarda la sesion en el navegador; esto la recupera al abrir.
@@ -79,42 +93,33 @@ export function useAuth() {
         setMostrarOnboarding(false)
         return
       }
-      adopt(session?.user)
+      // Solo cuando cambia la cuenta: el refresco de token no necesita releer el perfil.
+      if (event !== "SIGNED_IN" && event !== "USER_UPDATED") return
+      // Fuera del callback: supabase-js se bloquea si se le hacen consultas desde dentro.
+      setTimeout(() => void adopt(session?.user), 0)
     })
 
     return () => {
       active = false
       sub.subscription.unsubscribe()
     }
-  }, [supabase])
+  }, [supabase, aplicarSesion])
 
   const login = useCallback(
     async (email: string, password: string, captchaToken?: string) => {
       setLoading(true)
       setError(null)
       try {
-        if (email.toLowerCase().includes("recoleccion") || email.toLowerCase().includes("acopio") || password === "recoleccion") {
-          setUserMode("RECOLECCION")
-          setUserId("punto_centro_norte")
-          setUserName("Centro de Acopio Norte - San Patricio")
-          setUserEmail(email || "recoleccion@clossapp.com")
-          setUserAvatarUrl("https://images.unsplash.com/photo-1578354637658-75508851ed05?w=80&q=80")
-          return
-        }
-
-        const { uuid, displayName } = await signIn(supabase, email, password, captchaToken)
-        setUserMode("VIP")
-        setUserId(uuid)
-        setUserName(displayName || email.split("@")[0])
-        setUserEmail(email)
+        const { uuid } = await signIn(supabase, email, password, captchaToken)
+        await aplicarSesion({ id: uuid, email })
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Código no reconocido")
+        setError(err instanceof Error ? err.message : "Correo o contraseña incorrectos.")
         throw err
       } finally {
         setLoading(false)
       }
     },
-    [supabase]
+    [supabase, aplicarSesion]
   )
 
   // Envuelve una accion de auth con loading/error compartidos con el login.
@@ -154,14 +159,6 @@ export function useAuth() {
     setUserId(GUEST.id)
     setUserName("Mariela (Invitada)")
     setUserEmail("invitada@clossapp.com")
-  }, [])
-
-  const loginAsRecoleccion = useCallback(() => {
-    setUserMode("RECOLECCION")
-    setUserId("punto_centro_norte")
-    setUserName("Centro de Acopio Norte - San Patricio")
-    setUserEmail("recoleccion@clossapp.com")
-    setUserAvatarUrl("https://images.unsplash.com/photo-1578354637658-75508851ed05?w=80&q=80")
   }, [])
 
   const logout = useCallback(async () => {
@@ -221,6 +218,6 @@ export function useAuth() {
     userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isRecoleccion, isAuthenticated, initializing, plan,
     estilo, mostrarOnboarding, abrirOnboarding, terminarOnboarding,
     login, register, loginWithProvider, resetPassword, clearError,
-    loginAsGuest, loginAsRecoleccion, logout, updateProfile, loading, error,
+    loginAsGuest, logout, updateProfile, loading, error,
   }
 }

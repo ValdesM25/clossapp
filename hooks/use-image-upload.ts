@@ -14,14 +14,23 @@ export interface ImageUploadForm {
   descripcion: string
   talla: string
   estado_uso: string
+  // Compra reciente (opcional): da puntos y alimenta estadísticas. "si" = marcada.
+  comprada_reciente: string
+  compra_lugar: string
+  compra_tienda: string
+  compra_precio: string
+  compra_fecha: string
+}
+
+const FORM_VACIO: ImageUploadForm = {
+  nombre: "", categoria: "", color_principal: "", estilo: "", descripcion: "",
+  talla: "", estado_uso: "",
+  comprada_reciente: "", compra_lugar: "", compra_tienda: "", compra_precio: "", compra_fecha: "",
 }
 
 export function useImageUpload(userId: string, isGuest: boolean) {
   const [preview, setPreview] = useState<{ url: string; file: File } | null>(null)
-  const [previewForm, setPreviewForm] = useState<ImageUploadForm>({
-    nombre: "", categoria: "", color_principal: "", estilo: "", descripcion: "",
-    talla: "", estado_uso: "",
-  })
+  const [previewForm, setPreviewForm] = useState<ImageUploadForm>(FORM_VACIO)
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -32,7 +41,7 @@ export function useImageUpload(userId: string, isGuest: boolean) {
   const selectFile = useCallback((file: File) => {
     if (isGuest) return
     setPreview({ url: URL.createObjectURL(file), file })
-    setPreviewForm({ nombre: "", categoria: "", color_principal: "", estilo: "", descripcion: "", talla: "", estado_uso: "" })
+    setPreviewForm(FORM_VACIO)
     setAnalyzeError(null)
 
     setAnalyzing(true)

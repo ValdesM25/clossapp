@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Loader2, Building2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { Turnstile, TURNSTILE_SITE_KEY, type TurnstileHandle } from "@/components/shared/turnstile"
@@ -25,7 +25,7 @@ const TEXTO_BOTON: Record<Modo, string> = {
 }
 
 export function LoginView() {
-  const { login, register, loginWithProvider, resetPassword, clearError, loginAsGuest, loginAsRecoleccion, loading, error } = useAuthContext()
+  const { login, register, loginWithProvider, resetPassword, clearError, loginAsGuest, loading, error } = useAuthContext()
   const [modo, setModo] = useState<Modo>("entrar")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -166,18 +166,15 @@ export function LoginView() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                <motion.button whileTap={{ scale: 0.98 }} onClick={loginAsGuest}
-                  className="w-full h-11 border border-zinc-300 text-zinc-600 text-xs font-medium tracking-wide hover:border-zinc-400 transition-colors">
-                  Explorar como invitada
-                </motion.button>
+              <motion.button whileTap={{ scale: 0.98 }} onClick={loginAsGuest}
+                className="w-full h-11 border border-zinc-300 text-zinc-600 text-xs font-medium tracking-wide hover:border-zinc-400 transition-colors">
+                Explorar como invitada
+              </motion.button>
 
-                <motion.button whileTap={{ scale: 0.98 }} onClick={loginAsRecoleccion}
-                  className="w-full h-11 border border-emerald-600 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-900 text-xs font-medium tracking-wide flex items-center justify-center gap-1.5 transition-colors">
-                  <Building2 className="w-4 h-4 text-emerald-700" />
-                  Punto de Recolección
-                </motion.button>
-              </div>
+              {/* El portal de recolección ya no tiene botón público: se entra con la cuenta del centro (perfiles.rol = 'acopio'). */}
+              <p className="text-[11px] text-zinc-400 text-center">
+                ¿Eres un punto de recolección? Entra con el correo de tu centro.
+              </p>
 
               <p className="text-[11px] leading-relaxed text-zinc-400 text-center">
                 Al continuar aceptas nuestros{" "}

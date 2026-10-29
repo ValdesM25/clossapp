@@ -5,7 +5,6 @@ import { motion } from "framer-motion"
 import { Loader2, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Sparkles, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
-import { fetchUserEscrowOrders } from "@/services/escrow.service"
 
 interface RentDatePickerProps {
   prendaId?: string
@@ -30,16 +29,11 @@ export function RentDatePicker({ prendaId, onConfirm, onCancel, aparting }: Rent
       const datesSet = new Set<string>()
 
       try {
-        const orders = await fetchUserEscrowOrders(supabase)
-        orders.forEach((o) => {
-          o.items.forEach((item) => {
-            if (!prendaId || item.prenda.id === prendaId) {
-              if (item.fechaRenta) {
-                datesSet.add(item.fechaRenta)
-              }
-            }
-          })
-        })
+        // La base responde con las fechas ocupadas de todas las rentas sin
+        // exponer las órdenes de otras personas (RLS solo deja ver las propias).
+        const { data, error } = await supabase.rpc("fechas_rentadas", { p_prenda_id: prendaId ?? null })
+        if (error) throw error
+        ;(data as string[] | null)?.forEach((fecha) => fecha && datesSet.add(fecha))
       } catch (err) {
         console.warn("Error loading booked dates:", err)
       }

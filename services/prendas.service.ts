@@ -28,9 +28,35 @@ export async function insertPrenda(
     style: string | null
     metadata: Record<string, string>
   }
-): Promise<void> {
-  const { error } = await supabase.from("prendas").insert(payload)
+): Promise<string> {
+  const { data, error } = await supabase.from("prendas").insert(payload).select("id").single()
   if (error) throw error
+  return String(data.id)
+}
+
+export type LugarCompra = "tienda" | "online" | "segunda_mano"
+
+/**
+ * Guarda los datos de compra de una prenda recién subida. La base valida
+ * (prenda propia, fecha de los últimos 60 días) y deja 10 puntos pendientes,
+ * con tope de 100 al mes. Se acreditan a los 14 días si la prenda sigue y se
+ * usó en un outfit (anti-farmeo). Devuelve los puntos pendientes (0 si ya llegó al tope).
+ */
+export async function registrarCompraReciente(
+  supabase: SupabaseClient,
+  input: { prendaId: string; lugar: LugarCompra; tienda: string; precio: number; fecha: string }
+): Promise<number> {
+  const { data, error } = await supabase.rpc("registrar_compra_reciente", {
+    p_prenda_id: Number(input.prendaId),
+    p_lugar: input.lugar,
+    p_tienda: input.tienda,
+    p_precio: input.precio,
+    p_fecha: input.fecha,
+  })
+  if (error) throw new Error(error.message.includes("FECHA_INVALIDA")
+    ? "La fecha de compra debe ser de los últimos 60 días."
+    : "No se pudieron guardar los datos de compra.")
+  return Number(data) || 0
 }
 
 export async function deletePrenda(

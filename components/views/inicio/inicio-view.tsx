@@ -8,6 +8,7 @@ import { pageProps } from "@/constants/animation"
 import { useAuthContext } from "@/context/auth-context"
 import { usePrendasContext } from "@/context/prendas-context"
 import { UserAvatarMenu } from "@/components/shared/user-avatar-menu"
+import { RecordatorioArmario } from "./recordatorio-armario"
 import { GUEST_PRENDAS } from "@/constants/demo-data"
 import type { View, Prenda } from "@/types"
 
@@ -17,7 +18,7 @@ interface InicioViewProps {
 
 export function InicioView({ onNavigate }: InicioViewProps) {
   const { userName, isGuest } = useAuthContext()
-  const { prendas } = usePrendasContext()
+  const { prendas, loading } = usePrendasContext()
   const [wornToday, setWornToday] = useState(false)
 
   // Usar prendas del contexto o las prendas de prueba (filtrando duplicados por nombre)
@@ -60,6 +61,11 @@ export function InicioView({ onNavigate }: InicioViewProps) {
         </div>
         <UserAvatarMenu />
       </div>
+
+      {/* Recordatorio: solo con prendas reales, no con las de demo. */}
+      {!isGuest && !loading && prendas.length > 0 && (
+        <RecordatorioArmario prendas={prendas} onAgregar={() => onNavigate?.("armario")} />
+      )}
 
       {/* SECCIÓN 1: RECOMENDACIÓN DE OUTFIT PARA EL DÍA DE HOY */}
       <section className="flex flex-col gap-3">
