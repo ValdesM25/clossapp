@@ -59,6 +59,10 @@ export const Turnstile = forwardRef<TurnstileHandle, { onToken: (token: string |
           idRef.current = window.turnstile.render(elRef.current, {
             sitekey: TURNSTILE_SITE_KEY,
             language: "es",
+            // Claro y del ancho del formulario; solo se ve si Cloudflare necesita que la persona interactúe.
+            theme: "light",
+            size: "flexible",
+            appearance: "interaction-only",
             callback: (t: string) => onTokenRef.current(t),
             "expired-callback": () => onTokenRef.current(null),
             "error-callback": () => onTokenRef.current(null),
@@ -73,6 +77,6 @@ export const Turnstile = forwardRef<TurnstileHandle, { onToken: (token: string |
     }, [])
 
     if (!TURNSTILE_SITE_KEY) return null
-    return <div ref={elRef} className="flex justify-center min-h-[65px]" />
+    return <div ref={elRef} className="w-full" />
   }
 )
