@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
-import { exigirCuota } from "@/lib/cuota.server"
+import { exigirCuota, leerEstilo } from "@/lib/cuota.server"
+import { bloquePerfilPrompt } from "@/lib/estilo"
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -18,8 +19,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Wardrobe vacío" }, { status: 400 })
     }
 
-    const bloqueo = await exigirCuota("outfit")
+    const { bloqueo, supabase, userId } = await exigirCuota("outfit")
     if (bloqueo) return bloqueo
+    const perfil = bloquePerfilPrompt(await leerEstilo(supabase, userId))
 
     const wardrobeJson = JSON.stringify(
       wardrobe.map((p: { id: string; name: string; category: string; metadata?: Record<string, string> | null }) => ({
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
     const message = await client.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 1024,
-      system: `Eres un estilista de alta moda. Recibirás un contexto (clima/evento) y un inventario en JSON. Crea 3 opciones de outfits coherentes usando SOLO las prendas del inventario. Devuelve ÚNICAMENTE un objeto JSON con esta estructura: { "outfits": [ { "titulo": "Nombre del look", "descripcion": "Por qué funciona este conjunto", "prenda_ids": ["id1", "id2"] } ] }. No uses markdown.`,
+      system: `Eres un estilista de alta moda. Recibirás un contexto (clima/evento) y un inventario en JSON. Crea 3 opciones de outfits coherentes usando SOLO las prendas del inventario. Devuelve ÚNICAMENTE un objeto JSON con esta estructura: { "outfits": [ { "titulo": "Nombre del look", "descripcion": "Por qué funciona este conjunto", "prenda_ids": ["id1", "id2"] } ] }. No uses markdown.${perfil}`,
       messages: [
         {
           role: "user",

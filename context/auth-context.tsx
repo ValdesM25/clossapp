@@ -4,6 +4,7 @@ import { createContext, useContext, type ReactNode } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import type { UserMode } from "@/types"
 import type { Plan } from "@/constants/planes"
+import type { EstiloPerfil } from "@/constants/onboarding"
 import type { ProveedorSocial } from "@/services/auth.service"
 
 type AuthContextValue = {
@@ -20,6 +21,11 @@ type AuthContextValue = {
   initializing: boolean
   /** Plan de la cuenta con sesion; null si no hay sesion o aun no se sabe. */
   plan: Plan | null
+  /** Perfil de estilo guardado; null si no lo llenó. */
+  estilo: EstiloPerfil | null
+  mostrarOnboarding: boolean
+  abrirOnboarding: () => void
+  terminarOnboarding: (estilo?: EstiloPerfil) => Promise<void>
   login: (email: string, password: string, captchaToken?: string) => Promise<void>
   register: (email: string, password: string, captchaToken?: string) => Promise<{ requiereConfirmacion: boolean }>
   loginWithProvider: (provider: ProveedorSocial) => Promise<void>

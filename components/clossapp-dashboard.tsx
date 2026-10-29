@@ -17,6 +17,7 @@ import { MarketplaceView } from "@/components/views/marketplace/marketplace-view
 import { ArmarioView } from "@/components/views/armario/armario-view"
 import { PlanesView } from "@/components/views/planes/planes-view"
 import { PuntoRecoleccionView } from "@/components/views/punto-recoleccion/punto-recoleccion-view"
+import { OnboardingView } from "@/components/views/onboarding/onboarding-view"
 
 /**
  * Se muestra mientras se comprueba si hay sesion guardada. Sin esto la app
@@ -32,7 +33,7 @@ function SplashScreen() {
 }
 
 function AppShell() {
-  const { userMode, isRecoleccion, initializing } = useAuthContext()
+  const { userMode, isRecoleccion, initializing, mostrarOnboarding, estilo, terminarOnboarding } = useAuthContext()
 
   if (initializing) return <SplashScreen />
   if (!userMode) return <LoginView />
@@ -44,6 +45,11 @@ function AppShell() {
         <PuntoRecoleccionView />
       </div>
     )
+  }
+
+  // Cuentas con sesión que no han visto el recorrido, o que lo abrieron desde "Mi estilo".
+  if (userMode === "VIP" && mostrarOnboarding) {
+    return <OnboardingView inicial={estilo} onTerminar={(e) => void terminarOnboarding(e)} />
   }
 
   return <AuthenticatedShell />

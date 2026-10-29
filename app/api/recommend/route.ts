@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
-import { exigirCuota } from "@/lib/cuota.server"
+import { exigirCuota, leerEstilo } from "@/lib/cuota.server"
+import { bloquePerfilPrompt } from "@/lib/estilo"
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -9,8 +10,9 @@ export async function POST(req: NextRequest) {
     const { clima, ocasion, prendas } = await req.json()
 
     // Sin esto la ruta queda abierta a cualquiera y consume la API key del servidor.
-    const bloqueo = await exigirCuota("outfit")
+    const { bloqueo, supabase, userId } = await exigirCuota("outfit")
     if (bloqueo) return bloqueo
+    const perfil = bloquePerfilPrompt(await leerEstilo(supabase, userId))
 
     const prendasContext =
       prendas?.length > 0
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
 Analiza las prendas del usuario y sugiere 3 outfits basados en el clima y la ocasión indicados.
 Responde SIEMPRE en formato JSON puro, sin texto adicional, sin markdown, sin bloques de código.
 Estructura exacta requerida:
-{"outfits":[{"titulo":"","descripcion":"","prendas_usadas":[""]},{"titulo":"","descripcion":"","prendas_usadas":[""]},{"titulo":"","descripcion":"","prendas_usadas":[""]}]}`,
+{"outfits":[{"titulo":"","descripcion":"","prendas_usadas":[""]},{"titulo":"","descripcion":"","prendas_usadas":[""]},{"titulo":"","descripcion":"","prendas_usadas":[""]}]}${perfil}`,
       messages: [
         {
           role: "user",

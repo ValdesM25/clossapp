@@ -32,7 +32,7 @@ Mauri pidió:
 |---|---|---|---|
 | 0 | `feat/pwa` | App instalable, sesión que no se pierde, pantalla offline | [fase-0-pwa.md](fase-0-pwa.md) |
 | 1 | `feat/registro-planes` | Registro abierto, seguridad, plan gratis/premium | [fase-1-registro-planes.md](fase-1-registro-planes.md) |
-| 2 | `feat/onboarding-estilo` | Recorrido de estilo y estadísticas de compra, prompt personalizado | pendiente |
+| 2 | `feat/onboarding-estilo` | Recorrido de estilo y estadísticas de compra, prompt personalizado | [fase-2-onboarding-estilo.md](fase-2-onboarding-estilo.md) |
 | 3 | `feat/armario-al-dia` | Subida rápida, compra reciente con puntos, recordatorio | pendiente |
 
 La PWA va primero porque toca los mismos archivos de login (`hooks/use-auth.ts`, `services/auth.service.ts`, `middleware.ts`) que la fase 1. Si se hicieran al revés, habría conflictos dos veces.
