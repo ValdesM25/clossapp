@@ -38,8 +38,9 @@ export type LugarCompra = "tienda" | "online" | "segunda_mano"
 
 /**
  * Guarda los datos de compra de una prenda recién subida. La base valida
- * (prenda propia, fecha de los últimos 60 días) y da 10 puntos, con tope de
- * 100 al mes. Devuelve los puntos otorgados (0 si ya llegó al tope).
+ * (prenda propia, fecha de los últimos 60 días) y deja 10 puntos pendientes,
+ * con tope de 100 al mes. Se acreditan a los 14 días si la prenda sigue y se
+ * usó en un outfit (anti-farmeo). Devuelve los puntos pendientes (0 si ya llegó al tope).
  */
 export async function registrarCompraReciente(
   supabase: SupabaseClient,

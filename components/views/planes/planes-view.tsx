@@ -20,6 +20,7 @@ export function PlanesView() {
   // Points & Rewards state
   const { userId, isGuest } = useAuthContext()
   const [puntos, setPuntos] = useState<number>(PUNTOS_BASE)
+  const [pendientes, setPendientes] = useState(0)
   const [canjeando, setCanjeando] = useState(false)
   const [errorCanje, setErrorCanje] = useState<string | null>(null)
   const [canjes, setCanjes] = useState<CanjeRealizado[]>([])
@@ -34,6 +35,8 @@ export function PlanesView() {
     let activo = true
     const supabase = createBrowserSupabaseClient()
     fetchUserPuntos(supabase, userId).then((p) => { if (activo) setPuntos(p) })
+    supabase.from("puntos_pendientes").select("puntos").is("acreditado_at", null).not("prenda_id", "is", null)
+      .then(({ data }) => { if (activo) setPendientes((data ?? []).reduce((s, r) => s + r.puntos, 0)) })
     supabase.from("puntos_historial").select("id, referencia_id, descripcion, puntos, created_at")
       .eq("tipo", "canje_suscripcion").order("created_at", { ascending: false })
       .then(({ data }) => {
@@ -170,6 +173,9 @@ export function PlanesView() {
               <span className="text-[10px] uppercase font-mono tracking-widest text-amber-300">Programa de Donaciones</span>
             </div>
             <p className="font-serif text-2xl text-amber-300 font-medium mt-0.5">{puntos} Puntos ClossApp</p>
+            {pendientes > 0 && (
+              <p className="text-[11px] text-amber-200/80 mt-0.5">+{pendientes} pendientes por compras recientes (se acreditan al usar las prendas)</p>
+            )}
             <p className="text-xs text-zinc-400 mt-1">
               Ganas +100 pts por cada donación de 3+ prendas verificada con Código QR.
             </p>

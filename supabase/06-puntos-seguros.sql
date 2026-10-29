@@ -203,6 +203,26 @@ end;
 $$;
 
 -- 7. Compra reciente: datos para estadística + 10 pts (tope 100/mes) ------
+-- Anti-farmeo (decisión de Mauri, opción A + D): los puntos no se dan al
+-- marcar la casilla. Quedan pendientes y se acreditan a los 14 días solo si
+-- la prenda sigue en el armario y se usó al menos una vez después del día en
+-- que se registró. Borrar la prenda deja el pendiente huérfano (prenda_id
+-- null): ya no se acredita, pero sigue contando para el tope del mes.
+create table if not exists public.puntos_pendientes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  prenda_id bigint unique references public.prendas(id) on delete set null,
+  puntos int not null check (puntos > 0),
+  created_at timestamptz not null default now(),
+  usada_at timestamptz,
+  acreditado_at timestamptz
+);
+alter table public.puntos_pendientes enable row level security;
+drop policy if exists "pendientes_select_propio" on public.puntos_pendientes;
+create policy "pendientes_select_propio" on public.puntos_pendientes
+  for select to authenticated using (user_id = auth.uid());
+
+-- Devuelve los puntos que quedaron pendientes (0 si ya llegó al tope o la prenda ya tenía).
 create or replace function public.registrar_compra_reciente(
   p_prenda_id bigint, p_lugar text, p_tienda text, p_precio numeric, p_fecha date
 )
@@ -214,7 +234,7 @@ as $$
 declare
   v_uid uuid := auth.uid();
   v_mes_inicio timestamptz := date_trunc('month', now() at time zone 'America/Mexico_City') at time zone 'America/Mexico_City';
-  v_ganados int;
+  v_mes int;
   v_puntos int := 10;
 begin
   if v_uid is null then raise exception 'SIN_SESION'; end if;
@@ -231,19 +251,63 @@ begin
     where id = p_prenda_id and user_id = v_uid;
   if not found then raise exception 'PRENDA_NO_ENCONTRADA'; end if;
 
-  -- Una sola vez por prenda.
-  if exists (select 1 from public.puntos_historial where tipo = 'compra_registrada' and referencia_id = p_prenda_id::text) then
-    return 0;
-  end if;
+  if exists (select 1 from public.puntos_pendientes where prenda_id = p_prenda_id) then return 0; end if;
 
-  select coalesce(sum(puntos), 0) into v_ganados from public.puntos_historial
-    where user_id = v_uid::text and tipo = 'compra_registrada' and created_at >= v_mes_inicio;
-  v_puntos := least(v_puntos, 100 - v_ganados);
+  -- El tope cuenta lo pendiente y lo ya acreditado de este mes: borrar y
+  -- volver a subir no libera cupo.
+  select coalesce(sum(puntos), 0) into v_mes from public.puntos_pendientes
+    where user_id = v_uid and created_at >= v_mes_inicio;
+  v_puntos := least(v_puntos, 100 - v_mes);
   if v_puntos <= 0 then return 0; end if;
 
-  insert into public.puntos_historial (user_id, puntos, tipo, referencia_id, descripcion)
-  values (v_uid::text, v_puntos, 'compra_registrada', p_prenda_id::text, 'Compra reciente registrada');
+  insert into public.puntos_pendientes (user_id, prenda_id, puntos) values (v_uid, p_prenda_id, v_puntos);
   return v_puntos;
+end;
+$$;
+
+-- Reemplaza la versión anterior, que no revisaba de quién era la prenda.
+-- Mantiene la firma para que la app no cambie. Además marca el pendiente
+-- como "usado" si el uso es al menos un día después de registrarla.
+create or replace function public.incrementar_uso(prenda_id_input bigint)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.prendas set usos = coalesce(usos, 0) + 1
+    where id = prenda_id_input and user_id = auth.uid();
+  if not found then return; end if;
+  update public.puntos_pendientes set usada_at = now()
+    where prenda_id = prenda_id_input and usada_at is null and created_at < now() - interval '1 day';
+end;
+$$;
+
+-- La corre pg_cron una vez al día (08-cron.sql). Acredita lo que cumplió y
+-- descarta lo que pasó 60 días sin usarse.
+create or replace function public.acreditar_compras_pendientes()
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_n int;
+begin
+  with listos as (
+    update public.puntos_pendientes
+      set acreditado_at = now()
+      where acreditado_at is null and usada_at is not null and prenda_id is not null
+        and created_at < now() - interval '14 days'
+      returning user_id, prenda_id, puntos
+  )
+  insert into public.puntos_historial (user_id, puntos, tipo, referencia_id, descripcion)
+  select user_id::text, puntos, 'compra_registrada', prenda_id::text, 'Compra reciente verificada (prenda en uso)'
+  from listos;
+  get diagnostics v_n = row_count;
+
+  delete from public.puntos_pendientes
+    where acreditado_at is null and usada_at is null and created_at < now() - interval '60 days';
+  return v_n;
 end;
 $$;
 
@@ -283,6 +347,9 @@ revoke all on function public.mis_puntos() from public, anon;
 revoke all on function public.validar_donacion_qr(text, int) from public, anon;
 revoke all on function public.canjear_puntos(text) from public, anon;
 revoke all on function public.registrar_compra_reciente(bigint, text, text, numeric, date) from public, anon;
+revoke all on function public.incrementar_uso(bigint) from public, anon;
+revoke all on function public.acreditar_compras_pendientes() from public, anon, authenticated;
+grant execute on function public.incrementar_uso(bigint) to authenticated;
 grant execute on function public.es_acopio() to authenticated;
 grant execute on function public.mis_puntos() to authenticated;
 grant execute on function public.validar_donacion_qr(text, int) to authenticated;

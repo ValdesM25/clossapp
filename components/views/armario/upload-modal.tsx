@@ -107,7 +107,7 @@ export function UploadModal({ preview, previewForm, analyzing, analyzeError, upl
                   updateForm("comprada_reciente", e.target.checked ? "si" : "")
                   if (e.target.checked && !previewForm.compra_fecha) updateForm("compra_fecha", hoy)
                 }} />
-              La compré recientemente <span className="text-zinc-400">(+10 puntos)</span>
+              La compré recientemente <span className="text-zinc-400">(+10 puntos al usarla)</span>
             </label>
 
             {compraMarcada && (

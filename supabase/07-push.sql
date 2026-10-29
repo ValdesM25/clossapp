@@ -1,6 +1,6 @@
 -- 07: notificaciones push del recordatorio "¿compraste algo nuevo?".
 -- Detalle en docs/tanda-registro-pwa/fase-3-armario-al-dia.md.
--- El disparo diario está aparte en 08-push-cron.sql (necesita tu dominio y secreto).
+-- El disparo diario está en 08-cron.sql (pg_cron).
 
 create table if not exists public.push_suscripciones (
   id uuid primary key default gen_random_uuid(),

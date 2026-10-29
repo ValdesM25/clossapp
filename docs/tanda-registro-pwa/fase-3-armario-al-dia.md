@@ -12,7 +12,8 @@ Esta rama sale de `feat/onboarding-estilo`.
 - **10 puntos por prenda, tope de 100 al mes.**
 - **"Arreglar todo ya"** en la seguridad de los puntos, aunque toque el flujo de donaciones por QR.
 - Recordatorio con **banner y push**.
-- El disparador diario del push (Vercel Cron o Supabase pg_cron) **lo decide Mauri después**; abajo está la comparación.
+- Disparador diario: **Supabase pg_cron**, "para mantenerlo listo para escalar".
+- **Anti-farmeo opción A + D:** Mauri notó que 10 pts solo por marcar una casilla se podía abusar (subir cualquier foto, borrar y volver a subir). Los puntos quedan **pendientes** y se acreditan a los 14 días **solo si la prenda sigue en el armario y se usó en un outfit** al menos un día después de registrarla.
 
 ## Lo que encontré antes de cambiar nada
 
@@ -39,11 +40,22 @@ Datos actuales revisados: 25 tickets, 22 registros de acopio y 8 movimientos de 
   - `mis_puntos()`: 150 de base + movimientos. Es el mismo número que mostraba la app.
   - `validar_donacion_qr(token, cantidad)`: solo cuentas de acopio. Calcula los puntos en la base con la fórmula que ya usaba la app (3 o más prendas: 100 + 20 por cada extra; menos de 3: 50), con tope de 30 prendas por ticket. El punto de acopio puede corregir la cantidad con lo que recibió. Rechaza QR inexistentes, repetidos y de escrow. Marca como donadas solo prendas de quien dona.
   - `canjear_puntos(opcion)`: valida costo y saldo, bloquea canjes simultáneos y genera el código. Los costos están copiados de `OPCIONES_CANJE_SUSCRIPCION`.
-  - `registrar_compra_reciente(...)`: la prenda tiene que ser propia y la fecha de los últimos 60 días. Da 10 pts una sola vez por prenda, con tope de 100 al mes en hora de México.
+  - `registrar_compra_reciente(...)`: la prenda tiene que ser propia y la fecha de los últimos 60 días. **No da puntos al instante:** crea un registro en `puntos_pendientes` (10 pts, una vez por prenda, tope de 100 al mes en hora de México).
+  - `puntos_pendientes` (tabla nueva): solo se puede leer; nadie la escribe desde la app. Si se borra la prenda, el pendiente queda huérfano. Nunca se acredita, pero **sigue contando para el tope**, así que borrar y volver a subir no libera cupo.
+  - `incrementar_uso(...)` (reemplaza la anterior, que no revisaba de quién era la prenda): suma un uso solo en prendas propias y marca el pendiente como "usado" si el uso es al menos un día después de registrarla.
+  - `acreditar_compras_pendientes()`: la corre pg_cron cada día. Pasa a `puntos_historial` lo que tiene más de 14 días, se usó y la prenda sigue existiendo. Borra lo que pasó 60 días sin usarse.
   - `impacto_donaciones()` y `fechas_rentadas()`: lecturas públicas que no exponen datos personales. La segunda es la que necesita el calendario de rentas.
 - **Columnas nuevas en `prendas`:** `comprada_reciente`, `compra_lugar`, `compra_tienda`, `compra_precio` y `compra_fecha` (para estadísticas).
 
-**Cómo se probó:** ejecuté la migración completa dentro de un bloque que siempre termina en error, para que Postgres revirtiera todo. Resultados:
+**Prueba del anti-farmeo (con reversión):**
+- Registrar dos compras → 10 + 10 pendientes y 0 en el historial.
+- Usar la prenda el mismo día → no cuenta.
+- Insertar un pendiente desde el cliente → bloqueado.
+- Usar una prenda ajena → no marca nada.
+- A los 15 días con uso → se acredita 1.
+- La prenda borrada → no se acredita y sigue contando 20 en el tope.
+
+**Cómo se probó el resto:** ejecuté la migración completa dentro de un bloque que siempre termina en error, para que Postgres revirtiera todo. Resultados:
 - QR con 99999 puntos → se acreditaron **140**.
 - Una usuaria normal valida un QR → `SOLO_ACOPIO`.
 - Validar dos veces → `TICKET_YA_VALIDADO`; QR inventado → `TICKET_NO_ENCONTRADO`.
@@ -59,8 +71,10 @@ Después confirmé que la base quedó igual que antes.
 - `pendientes_recordatorio()`: devuelve las cuentas cuya prenda más nueva tiene más de 14 días y a las que no se avisó en los últimos 7. Solo la puede llamar el servidor.
 - Probada igual que la 06.
 
-### `supabase/08-push-cron.sql` (opcional, **no aplicar tal cual**)
-- La opción pg_cron para el disparo diario. Tiene marcadores (`<TU-DOMINIO>`) y pasos previos.
+### `supabase/08-cron.sql` (nuevo)
+- Activa `pg_cron` y `pg_net` y programa dos tareas:
+  - **03:00 CDMX:** `acreditar_compras_pendientes()`, dentro de la base, sin secretos.
+  - **12:00 CDMX:** llamada a `https://clossapp.vercel.app/api/push/enviar` con el secreto de Vault. Mientras no exista `cron_secret` en Vault y `CRON_SECRET` en Vercel, la ruta responde 401 y no envía nada.
 
 ## Cambios en la app
 
@@ -84,10 +98,10 @@ Después confirmé que la base quedó igual que antes.
 - El escáner de demo del marketplace (un usuario normal haciendo de centro) ahora responde "solo un punto de recolección puede validar donaciones".
 
 ### Compra reciente: `upload-modal.tsx`, `use-image-upload.ts`, `armario-view.tsx`, `services/prendas.service.ts`
-- Casilla "La compré recientemente (+10 puntos)". Al marcarla aparecen: dónde (tienda física, en línea, segunda mano), tienda (opcional), precio en MXN y fecha (hoy por defecto, solo últimos 60 días).
+- Casilla "La compré recientemente (+10 puntos al usarla)". Al marcarla aparecen: dónde (tienda física, en línea, segunda mano), tienda (opcional), precio en MXN y fecha (hoy por defecto, solo últimos 60 días).
 - `insertPrenda` ahora devuelve el id de la prenda nueva, y con él se llama a `registrar_compra_reciente`.
 - La prenda se guarda aunque falle la parte de compra; en ese caso solo se avisa.
-- Mensajes: "¡Ganaste 10 puntos…!" o "Ya llegaste al tope de 100 puntos este mes".
+- Mensaje: "Tus 10 puntos quedan pendientes: se acreditan en 14 días si la prenda sigue en tu armario y la usas en un outfit". En Planes se muestran los puntos pendientes junto al saldo.
 
 ### Banner: `components/views/inicio/recordatorio-armario.tsx`, `constants/recordatorio.ts`
 - Banner "¿Compraste algo nuevo?" en Inicio si la prenda más nueva tiene más de **14 días**. Se puede ocultar por **7 días**. "Agregar prenda" lleva al Armario.
@@ -102,20 +116,16 @@ Después confirmé que la base quedó igual que antes.
 - El service worker muestra la notificación y, al tocarla, abre Clossapp.
 - `/api/push/enviar` acepta `GET` (Vercel Cron) y `POST` (pg_cron). Exige `Authorization: Bearer <CRON_SECRET>`, comparado en tiempo constante. Borra las suscripciones que el navegador ya dio de baja.
 
-## Disparador diario del push: pros y contras (decide Mauri)
+## Disparador diario: por qué pg_cron
+
+Mauri eligió **Supabase pg_cron** después de comparar:
 
 | Opción | Pros | Contras |
 |---|---|---|
-| **Vercel Cron** | 3 líneas en `vercel.json`; vive con el código; Vercel manda el secreto solo. | En el plan Hobby, 1 vez al día y con hora aproximada (hasta 1 h de variación). Ata al hosting. |
-| **Supabase pg_cron + pg_net** (`08-push-cron.sql`) | Hora exacta y cualquier frecuencia; no depende del hosting; se ve y se pausa desde SQL. | Hay que activar 2 extensiones y guardar el secreto en Vault; la URL del dominio queda en la base; los fallos solo se ven en los logs de Supabase. |
-| Edge Function programada | Corre dentro de Supabase. | Hay que reescribir el envío en Deno (lógica duplicada). |
-| GitHub Actions | Gratis, versionado. | Puede atrasarse 5-30 min; se apaga si el repo pasa 60 días sin actividad. |
-| Servicio externo | Lo más fácil. | Un tercero más guarda el secreto. |
+| Vercel Cron | 3 líneas en `vercel.json`; vive con el código. | En Hobby, 1 vez al día y con hora aproximada; ata al hosting. |
+| **Supabase pg_cron** (elegida) | Hora exacta, cualquier frecuencia; no depende del hosting; tareas internas (como acreditar puntos) sin pasar por HTTP. | Hay que activar extensiones y guardar el secreto en Vault. |
 
-Si se elige Vercel Cron, el `vercel.json` sería:
-```json
-{ "crons": [{ "path": "/api/push/enviar", "schedule": "0 18 * * *" }] }
-```
+Lo que decidió: el escrow y las rentas van a necesitar tareas más frecuentes, y pg_cron escala mejor para eso.
 
 ## Checklist de despliegue (Mauri)
 
@@ -133,7 +143,7 @@ Si se elige Vercel Cron, el `vercel.json` sería:
    - `VAPID_SUBJECT=mailto:...`
    - `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Settings → API; **solo** en el servidor).
    - `CRON_SECRET`: cualquier texto largo y aleatorio.
-5. Elegir y configurar el disparador (tabla de arriba).
+5. Crear el secreto del cron en Vault con el mismo valor que `CRON_SECRET`: `select vault.create_secret('<valor>', 'cron_secret');`
 
 ## Cosas que no cambié (fuera de alcance, para otra fase)
 

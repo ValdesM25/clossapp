@@ -101,8 +101,8 @@ export function ArmarioView() {
             fecha: previewForm.compra_fecha,
           })
           setAviso(puntos > 0
-            ? `¡Ganaste ${puntos} puntos por registrar tu compra!`
-            : "Guardamos tu compra. Ya llegaste al tope de 100 puntos por compras este mes.")
+            ? `Tus ${puntos} puntos quedan pendientes: se acreditan en 14 días si la prenda sigue en tu armario y la usas en un outfit.`
+            : "Guardamos tu compra. Este mes ya llegaste al tope de 100 puntos por compras.")
         } catch (err) {
           setAviso(err instanceof Error ? err.message : "No se pudieron guardar los datos de compra.")
         }
