@@ -121,3 +121,15 @@ Orden recomendado: primero desplegar el código y después activar el CAPTCHA en
 - Mandar un `user_id` falso en el body no salta los límites.
 - Invitada y punto de recolección siguen funcionando.
 - Recuperar contraseña de punta a punta.
+
+## Ajuste después del deploy: login en teléfono
+
+Mauri probó en su teléfono y el login "se veía horrible". Problemas y arreglos:
+
+- **Se cortaba arriba y abajo** (no se veía el logo ni los enlaces): el contenedor medía exactamente una pantalla, tenía el scroll apagado y centraba el contenido. Con Google, el CAPTCHA y la demo, el contenido ya no cabía. Ahora la columna crece y hace scroll (`min-h-dvh`).
+- **El texto legal salía dos veces** (un párrafo largo arriba y otro al final). Quedó solo el del final.
+- **El CAPTCHA era oscuro y más angosto que el formulario.** Ahora es claro, del ancho del formulario, y **solo aparece si Cloudflare necesita que la persona interactúe** (`appearance: interaction-only`). Casi siempre es invisible.
+- Mientras se verifica, el botón dice **"Verificando…"** en vez de quedar gris sin explicación.
+- El cuadro de demo tiene más separación del botón.
+
+Verificado con capturas en Chromium a 412×785 (tamaño de su teléfono) y con la site key pública de prueba de Cloudflare.

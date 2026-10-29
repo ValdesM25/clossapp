@@ -80,29 +80,19 @@ export function LoginView() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="h-screen bg-white overflow-hidden">
-      <div className="flex h-full w-full">
-        <div className="hidden lg:block h-full w-[50%]">
+      className="min-h-dvh bg-white">
+      {/* La columna del formulario crece y hace scroll: con CAPTCHA y demo no cabe en una pantalla de teléfono. */}
+      <div className="flex min-h-dvh w-full">
+        <div className="hidden lg:block sticky top-0 h-dvh w-[50%]">
           <img src="/img_login_1mitad.jpg" alt="Imagen de bienvenida" className="h-full w-full object-cover" />
         </div>
 
-        <div className="flex h-full w-full lg:w-[49%] flex-col justify-center bg-white px-6 py-8 sm:px-10 sm:py-12 lg:px-16">
-          <div className="w-full max-w-md mx-auto -mt-10">
+        <div className="flex w-full lg:w-[49%] flex-col justify-center bg-white px-6 py-10 sm:px-10 sm:py-12 lg:px-16">
+          <div className="w-full max-w-md mx-auto">
+            {/* El aviso legal va una sola vez, al final (antes estaba repetido arriba). */}
             <div className="mb-8 text-center">
-              <img src="/logo.svg" alt="Clossapp" className="mx-auto h-12 sm:h-14 w-auto mt-12 mb-12 sm:mt-14 hover:scale-105 transition-transform duration-300 relative z-0" />
-              <p className="text-sm text-zinc-500 relative z-10"> <b>Tu armario digital</b></p>
-
-              <p className="mt-8 text-xs text-zinc-500 leading-relaxed text-center">
-                Al continuar navegando, incluso a través de nuestras plataformas asociadas, se aplicarán nuestros{" "}
-                <Link href="/politicas#terminos" className="underline text-zinc-700 hover:text-zinc-900 transition-colors">
-                  Términos y condiciones
-                </Link>
-                . Por favor, lee nuestra{" "}
-                <Link href="/politicas#privacidad" className="underline text-zinc-700 hover:text-zinc-900 transition-colors">
-                  Política de Privacidad
-                </Link>{" "}
-                para más detalles sobre cómo gestionamos tus datos.
-              </p>
+              <img src="/logo.svg" alt="Clossapp" className="mx-auto h-12 sm:h-14 w-auto mb-4" />
+              <p className="text-sm text-zinc-500"><b>Tu armario digital</b></p>
             </div>
 
             <div className="space-y-3">
@@ -151,7 +141,7 @@ export function LoginView() {
 
                 <motion.button type="submit" whileTap={{ scale: 0.98 }} disabled={loading || esperandoCaptcha}
                   className="w-full h-11 bg-zinc-900 text-white text-sm font-medium tracking-wide disabled:opacity-50 flex items-center justify-center">
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : TEXTO_BOTON[modo]}
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : esperandoCaptcha ? "Verificando…" : TEXTO_BOTON[modo]}
                 </motion.button>
               </form>
 
@@ -167,7 +157,7 @@ export function LoginView() {
               </div>
 
               {/* Modo demo: datos de ejemplo y recorrido guiado; no toca cuentas reales. */}
-              <div className="border border-zinc-200 p-3 space-y-2">
+              <div className="!mt-6 border border-zinc-200 p-3 space-y-2">
                 <p className="text-[10px] text-zinc-500 uppercase tracking-widest text-center">¿Solo quieres conocer Clossapp?</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => entrarModoDemo("usuario")}
