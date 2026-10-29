@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function UserAvatarMenu() {
-  const { userName, userEmail, userPhone, userAvatarUrl, userMode, isGuest, logout, updateProfile } = useAuthContext()
+  const { userName, userEmail, userPhone, userAvatarUrl, userMode, isGuest, plan, logout, updateProfile } = useAuthContext()
 
   const [openModal, setOpenModal] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -121,7 +121,7 @@ export function UserAvatarMenu() {
                 <p className="text-xs font-serif text-zinc-900 truncate">{userName || "Usuario"}</p>
                 <p className="text-[11px] text-zinc-400 truncate">{userEmail || "sin@correo.com"}</p>
                 <span className="mt-1 text-[9px] uppercase tracking-widest px-1.5 py-0.5 border border-zinc-200 text-zinc-500 w-fit">
-                  {isGuest ? "Modo Invitado" : "Cuenta Premium VIP"}
+                  {isGuest ? "Modo Invitado" : plan === "gratis" ? "Plan Gratis" : "Cuenta Premium"}
                 </span>
               </div>
             </div>

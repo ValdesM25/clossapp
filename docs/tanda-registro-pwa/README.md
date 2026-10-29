@@ -31,7 +31,7 @@ Mauri pidió:
 | Fase | Rama | Qué hace | Detalle |
 |---|---|---|---|
 | 0 | `feat/pwa` | App instalable, sesión que no se pierde, pantalla offline | [fase-0-pwa.md](fase-0-pwa.md) |
-| 1 | `feat/registro-planes` | Registro abierto, seguridad, plan gratis/premium | pendiente |
+| 1 | `feat/registro-planes` | Registro abierto, seguridad, plan gratis/premium | [fase-1-registro-planes.md](fase-1-registro-planes.md) |
 | 2 | `feat/onboarding-estilo` | Recorrido de estilo y estadísticas de compra, prompt personalizado | pendiente |
 | 3 | `feat/armario-al-dia` | Subida rápida, compra reciente con puntos, recordatorio | pendiente |
 

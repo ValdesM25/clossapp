@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react"
 import { resizeImage } from "@/services/image.service"
 import { analyzePrenda } from "@/services/analyze.service"
+import { MENSAJES_LIMITE } from "@/constants/planes"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 
 export interface ImageUploadForm {
@@ -46,7 +47,10 @@ export function useImageUpload(userId: string, isGuest: boolean) {
       }))
     }).catch((err) => {
       console.error("[analyzePrenda]", err instanceof Error ? err.message : JSON.stringify(err))
-      setAnalyzeError("No se pudo analizar la imagen. Puedes completar los campos manualmente.")
+      const msg = err instanceof Error ? err.message : ""
+      setAnalyzeError(msg === MENSAJES_LIMITE.analisis
+        ? msg
+        : "No se pudo analizar la imagen. Puedes completar los campos manualmente.")
     }).finally(() => setAnalyzing(false))
   }, [isGuest, userId])
 

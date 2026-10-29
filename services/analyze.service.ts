@@ -22,7 +22,7 @@ export async function analyzePrenda(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ imageBase64: base64, mediaType: "image/jpeg", user_id: userId }),
   })
-  if (!res.ok) throw new Error("Error al analizar")
+  if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Error al analizar")
   return res.json()
 }
 
@@ -49,6 +49,6 @@ export async function analyzePrendaVenta(
       modo: "venta",
     }),
   })
-  if (!res.ok) throw new Error("Error al tasar")
+  if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Error al tasar")
   return res.json()
 }
