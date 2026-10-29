@@ -77,7 +77,7 @@ Cuando haya pasarela de pagos, el monto a cobrar saldrá de esta orden en la bas
 
 - **Cancelar una orden:** hoy no existe el flujo. Si se agrega, debe devolver la prenda a "en venta".
 - **Pasarela de pagos real:** el checkout sigue siendo simulado (datos de tarjeta de ejemplo).
-- `apartarCompra` y `apartarRenta` (`marketplace.service.ts`) quedaron sin uso real. Las dejé intactas para no ampliar el cambio; se pueden borrar después.
+- ~~`apartarCompra` y `apartarRenta` sin uso real~~ → **borradas** después del deploy (PR "chore: quitar el apartado directo"). Copiaban prendas ajenas al armario de quien compraba; nada las llamaba, pero eran un riesgo si alguien las volvía a conectar. `aparting` y `apartSuccess` quedan fijos en `false` para no cambiar las props del modal de detalle.
 
 ## Cómo se verificó
 

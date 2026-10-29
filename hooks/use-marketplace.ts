@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import {
   fetchVentaItems, fetchRentaItems, publishForSale,
-  apartarCompra, apartarRenta,
 } from "@/services/marketplace.service"
 import { categoriaPermiteRenta } from "@/constants/categories"
 import { STATIC_MARKET, STATIC_RENTA } from "@/constants/demo-data"
@@ -18,8 +17,6 @@ export function useMarketplace(userId: string, isGuest: boolean) {
   const [items, setItems] = useState<Prenda[]>([])
   const [rentaItems, setRentaItems] = useState<Prenda[]>([])
   const [loading, setLoading] = useState(true)
-  const [aparting, setAparting] = useState(false)
-  const [apartSuccess, setApartSuccess] = useState(false)
   const [sellMode, setSellMode] = useState<"venta" | "renta">("venta")
   const [selling, setSelling] = useState(false)
   const [rentaError, setRentaError] = useState<string | null>(null)
@@ -46,29 +43,6 @@ export function useMarketplace(userId: string, isGuest: boolean) {
   }, [supabase, isGuest])
 
   useEffect(() => { refresh() }, [refresh])
-
-  const apartar = useCallback(async (selectedItem: Prenda, tab: "comprar" | "rentar", fechaRenta?: string) => {
-    if (isGuest) return
-    setAparting(true)
-    try {
-      if (tab === "rentar") {
-        if (!fechaRenta) { setAparting(false); return false }
-        await apartarRenta(supabase, selectedItem, userId, fechaRenta)
-        setRentaItems((prev) => prev.filter((p) => p.id !== selectedItem.id))
-      } else {
-        await apartarCompra(supabase, selectedItem, userId)
-        setItems((prev) => prev.filter((p) => p.id !== selectedItem.id))
-      }
-      setApartSuccess(true)
-      setTimeout(() => setApartSuccess(false), 2000)
-      return true
-    } catch (err) {
-      console.error("Error apartando:", err instanceof Error ? err.message : JSON.stringify(err))
-      return false
-    } finally {
-      setAparting(false)
-    }
-  }, [isGuest, supabase, userId])
 
   const publish = useCallback(async (sellPrenda: Prenda, mode: "venta" | "renta", precio: string, talla: string, estadoUso: string) => {
     if (!sellPrenda || !precio) return
@@ -104,8 +78,11 @@ export function useMarketplace(userId: string, isGuest: boolean) {
 
   return {
     marketTab, setMarketTab, activeFilter, setActiveFilter,
-    items, rentaItems, loading, aparting, apartSuccess,
+    items, rentaItems, loading,
+    // Comprar y rentar pasan por el carrito y crear_orden_escrow; se conservan
+    // en false para no cambiar las props de ItemDetailModal.
+    aparting: false, apartSuccess: false,
     sellMode, setSellMode, selling, rentaError,
-    refresh, apartar, publish,
+    refresh, publish,
   }
 }
