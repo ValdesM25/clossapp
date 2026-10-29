@@ -25,6 +25,8 @@ type AuthContextValue = {
   /** Perfil de estilo guardado; null si no lo llenó. */
   estilo: EstiloPerfil | null
   mostrarOnboarding: boolean
+  /** Muestra el acceso al panel /admin (la base valida el permiso real). */
+  esAdmin: boolean
   abrirOnboarding: () => void
   terminarOnboarding: (estilo?: EstiloPerfil) => Promise<void>
   login: (email: string, password: string, captchaToken?: string) => Promise<void>
