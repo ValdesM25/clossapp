@@ -213,6 +213,23 @@ export async function fetchUserEscrowOrders(
 }
 
 /**
+ * Cancela un pedido mientras el pago sigue en custodia. Con cuenta real lo
+ * decide la base (cancelar_orden_escrow: solo quien compró, el centro o
+ * admin) y la prenda comprada vuelve a estar en venta. En demo, solo local.
+ */
+export async function cancelarOrdenEscrow(supabase: SupabaseClient, order: EscrowOrder): Promise<EscrowOrder> {
+  if (esDemo()) {
+    const lista: EscrowOrder[] = JSON.parse(localStorage.getItem("clossapp_escrow_orders_v1") ?? "[]")
+    const cancelada = { ...order, status: "cancelado" as EscrowStatus }
+    localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(lista.map((o) => (o.id === order.id ? cancelada : o))))
+    return cancelada
+  }
+  const { data, error } = await supabase.rpc("cancelar_orden_escrow", { p_token: order.orderCode })
+  if (error || !data) throw new Error(mensajeBase(error?.message, "No se pudo cancelar el pedido."))
+  return mapOrden(data)
+}
+
+/**
  * Elimina TODAS las órdenes en custodia (área de venta) tanto de Supabase DB como de localStorage.
  */
 export async function clearAllEscrowOrders(supabase: SupabaseClient): Promise<boolean> {

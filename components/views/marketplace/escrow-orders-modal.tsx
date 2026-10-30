@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { QRCodeSVG } from "qrcode.react"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
-import { fetchUserEscrowOrders, clearAllEscrowOrders } from "@/services/escrow.service"
+import { fetchUserEscrowOrders, clearAllEscrowOrders, cancelarOrdenEscrow } from "@/services/escrow.service"
 import { esDemo } from "@/lib/demo"
 import type { EscrowOrder } from "@/types/escrow"
 
@@ -24,6 +24,24 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
   const [loading, setLoading] = useState(true)
   const [selectedQR, setSelectedQR] = useState<EscrowOrder | null>(null)
   const [filter, setFilter] = useState<"todos" | "custodia" | "liberado">("todos")
+  // Cancelar pide confirmar en la misma tarjeta (sin diálogos del navegador).
+  const [confirmarCancelar, setConfirmarCancelar] = useState<string | null>(null)
+  const [cancelando, setCancelando] = useState(false)
+  const [errorCancelar, setErrorCancelar] = useState<string | null>(null)
+
+  async function handleCancelar(order: EscrowOrder) {
+    setCancelando(true)
+    setErrorCancelar(null)
+    try {
+      const actualizada = await cancelarOrdenEscrow(supabase, order)
+      setOrders((prev) => prev.map((o) => (o.id === order.id ? actualizada : o)))
+      setConfirmarCancelar(null)
+    } catch (err) {
+      setErrorCancelar(err instanceof Error ? err.message : "No se pudo cancelar el pedido.")
+    } finally {
+      setCancelando(false)
+    }
+  }
 
   const loadOrders = useCallback(async (showSpinner = false) => {
     if (showSpinner) setLoading(true)
@@ -148,6 +166,7 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
               const isCustodia = order.status === "pago_en_custodia"
               const isEnRenta = order.status === "en_renta_cliente"
               const isLiberado = order.status === "entregado_y_liberado"
+              const isCancelado = order.status === "cancelado"
               const isRentaOrder = order.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)
 
               return (
@@ -170,7 +189,8 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                         "text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full flex items-center gap-1 border",
                         isCustodia && "bg-amber-50 text-amber-800 border-amber-200",
                         isEnRenta && "bg-purple-50 text-purple-800 border-purple-200",
-                        isLiberado && "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        isLiberado && "bg-emerald-50 text-emerald-800 border-emerald-200",
+                        isCancelado && "bg-zinc-50 text-zinc-500 border-zinc-200"
                       )}
                     >
                       {isCustodia ? (
@@ -182,6 +202,8 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                         <>
                           <Clock className="w-3 h-3 text-purple-600 animate-pulse" /> Paso 2: Devolución
                         </>
+                      ) : isCancelado ? (
+                        <>Cancelado</>
                       ) : (
                         <>
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Fondos Liberados
@@ -231,10 +253,36 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                       >
                         <QrCode className="w-3.5 h-3.5 text-purple-300" /> Ver QR #2 Devolución
                       </button>
+                    ) : isCancelado ? (
+                      <span className="text-zinc-500 font-medium shrink-0">Pedido cancelado</span>
                     ) : (
                       <span className="text-emerald-700 font-medium shrink-0">✓ Completado y Liberado</span>
                     )}
                   </div>
+
+                  {isCustodia && (
+                    confirmarCancelar === order.id ? (
+                      <div className="pt-2 border-t border-zinc-100 space-y-2">
+                        <p className="text-[11px] text-zinc-700">¿Cancelar este pedido? El pago en custodia no se entrega a quien vende y la prenda vuelve a estar disponible.</p>
+                        {errorCancelar && <p role="alert" className="text-[11px] text-red-600">{errorCancelar}</p>}
+                        <div className="flex gap-2">
+                          <button type="button" disabled={cancelando} onClick={() => handleCancelar(order)}
+                            className="flex-1 h-8 bg-zinc-900 text-white text-[11px] font-medium rounded disabled:opacity-50">
+                            {cancelando ? "Cancelando…" : "Sí, cancelar pedido"}
+                          </button>
+                          <button type="button" disabled={cancelando} onClick={() => { setConfirmarCancelar(null); setErrorCancelar(null) }}
+                            className="flex-1 h-8 border border-zinc-300 text-zinc-700 text-[11px] rounded">
+                            No, conservarlo
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => { setConfirmarCancelar(order.id); setErrorCancelar(null) }}
+                        className="text-[11px] text-zinc-500 underline underline-offset-2 hover:text-zinc-900">
+                        Cancelar pedido
+                      </button>
+                    )
+                  )}
                 </div>
               )
             })
