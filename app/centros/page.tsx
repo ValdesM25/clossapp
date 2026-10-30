@@ -113,10 +113,11 @@ export default function CentrosPage() {
               <Store className="w-6 h-6 mx-auto text-zinc-900" aria-hidden="true" />
               <p className="text-sm text-zinc-700">Para enviar tu solicitud, primero crea una cuenta o entra.</p>
               <p className="text-xs text-zinc-500">Te recomendamos usar el correo del negocio: al aprobarse, esa cuenta será la del centro.</p>
-              <Link href="/" className="inline-flex h-11 px-6 items-center bg-zinc-900 text-white text-sm font-medium tracking-wide">
+              {/* ?volver: al terminar de entrar, la app regresa aquí sola. */}
+              <Link href="/?volver=/centros" className="inline-flex h-11 px-6 items-center bg-zinc-900 text-white text-sm font-medium tracking-wide">
                 Crear cuenta o entrar
               </Link>
-              <p className="text-[11px] text-zinc-400">Después vuelve a <span className="font-mono">clossapp.vercel.app/centros</span>.</p>
+              <p className="text-[11px] text-zinc-400">Al terminar te traemos de regreso a esta página.</p>
             </div>
           )}
 

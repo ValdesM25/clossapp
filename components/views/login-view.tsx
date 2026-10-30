@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { Turnstile, TURNSTILE_SITE_KEY, type TurnstileHandle } from "@/components/shared/turnstile"
 import { useAuthContext } from "@/context/auth-context"
 import type { ProveedorSocial } from "@/services/auth.service"
+import { guardarVolverA } from "@/lib/volver-a"
 
 type Modo = "entrar" | "crear" | "recuperar"
 
@@ -35,8 +36,10 @@ export function LoginView() {
   const esperandoCaptcha = !!TURNSTILE_SITE_KEY && !captchaToken
 
   // /auth/callback redirige con ?auth_error=1 si el enlace del correo falló o expiró.
+  // ?volver=/ruta: a dónde regresar al terminar de entrar (lo usa /centros).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+    guardarVolverA(params.get("volver"))
     if (params.has("auth_error")) {
       setAviso("El enlace expiró o ya se usó. Intenta entrar de nuevo o pide otro correo.")
       window.history.replaceState(null, "", window.location.pathname)

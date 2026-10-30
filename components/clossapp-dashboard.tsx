@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactElement } from "react"
+import { useEffect, useState, type ReactElement } from "react"
 import { AnimatePresence } from "framer-motion"
 import type { View } from "@/types"
 import { useKeyboard } from "@/hooks/use-keyboard"
@@ -19,6 +19,7 @@ import { PlanesView } from "@/components/views/planes/planes-view"
 import { PuntoRecoleccionView } from "@/components/views/punto-recoleccion/punto-recoleccion-view"
 import { OnboardingView } from "@/components/views/onboarding/onboarding-view"
 import { TourGuiado } from "@/components/shared/tour-guiado"
+import { tomarVolverA } from "@/lib/volver-a"
 import { PASOS_DEMO_ACOPIO, PASOS_DEMO_USUARIO } from "@/constants/tour"
 
 /**
@@ -62,6 +63,14 @@ function GuiaDemo() {
 
 function AppShell() {
   const { userMode, isRecoleccion, initializing, mostrarOnboarding, estilo, terminarOnboarding } = useAuthContext()
+
+  // Si se llegó al login desde otra página (ej. /centros), regresar ahí al entrar.
+  // Después del recorrido de estilo, para no saltárselo en cuentas nuevas.
+  useEffect(() => {
+    if (userMode !== "VIP" || mostrarOnboarding) return
+    const destino = tomarVolverA()
+    if (destino) window.location.assign(destino)
+  }, [userMode, mostrarOnboarding])
 
   if (initializing) return <SplashScreen />
   if (!userMode) return <LoginView />

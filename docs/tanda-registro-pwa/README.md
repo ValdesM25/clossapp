@@ -37,6 +37,7 @@ Mauri pidió:
 | 3b | `feat/modo-demo` | El modo invitado pasa a modo demo (usuario y centro de acopio) con recorrido guiado | [fase-3b-modo-demo.md](fase-3b-modo-demo.md) |
 | 4 | `feat/marketplace-escrow` | Marketplace visible desde la base y escrow con su tabla; el precio lo calcula la base | [fase-4-marketplace-escrow.md](fase-4-marketplace-escrow.md) |
 | 5 | `feat/solicitudes-acopio` | Formulario "Quiero ser centro de acopio" y panel de admin | [fase-5-solicitudes-acopio.md](fase-5-solicitudes-acopio.md) |
+| 6 | `fix/arreglos-chicos` | Cancelar pedidos, volver a /centros al entrar, lint funcionando | [fase-6-arreglos.md](fase-6-arreglos.md) |
 
 La PWA va primero porque toca los mismos archivos de login (`hooks/use-auth.ts`, `services/auth.service.ts`, `middleware.ts`) que la fase 1. Si se hicieran al revés, habría conflictos dos veces.
 
