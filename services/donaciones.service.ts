@@ -308,12 +308,12 @@ async function simularValidacion(token: string, cantidad?: number) {
   const registroId = `demo_reg_${Date.now()}`
   agregarRegistroLocal({
     id: registroId, ticket_id: null, punto_acopio_id: "demo", punto_acopio_nombre: "Centro Demo Clossapp",
-    donor_user_id: null, donor_name: "Mariela Morales (ejemplo)", donor_email: "",
+    donor_user_id: null, donor_name: "Alex Rivera (ejemplo)", donor_email: "",
     cantidad_prendas: n, puntos_otorgados: puntos, fecha_registro: new Date().toISOString(),
     observaciones: `Donación de ejemplo verificada por QR (${token})`,
   })
   return {
-    success: true, puntos, donorName: "Mariela Morales (ejemplo)", donorEmail: "mariela@ejemplo.com",
+    success: true, puntos, donorName: "Alex Rivera (ejemplo)", donorEmail: "alex@ejemplo.com",
     cantidadPrendas: n, prendas: prendas.slice(0, n), prendasResumen: prendas.slice(0, n).map((p) => p.name).join(", "),
     registroId,
   }
@@ -426,9 +426,9 @@ export interface DonanteRegistrado {
 
 export const DONANTES_DEMO: DonanteRegistrado[] = [
   {
-    id: "d_mariela",
-    nombre: "Mariela Morales",
-    email: "mariela@clossapp.com",
+    id: "d_alex",
+    nombre: "Alex Rivera",
+    email: "alex@clossapp.com",
     prendas: [
       { id: "m1", name: "Jeans Skinny Azul Denim Levi's", category: "Pantalones", image_url: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&q=80", usos: 45, talla: "M", estado_uso: "Excelente" },
       { id: "m2", name: "Blazer Negro Elegante", category: "Abrigos e Invierno", image_url: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&q=80", usos: 32, talla: "S", estado_uso: "Como nuevo" },

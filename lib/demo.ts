@@ -89,7 +89,7 @@ function sembrar(tipo: TipoDemo): void {
     {
       id: "demo_orden_2", orderCode: "ESC-DEMO02", qrToken: QR_RENTA_EJEMPLO,
       buyerUserId: "demo", buyerName: "Luis Pérez (ejemplo)", buyerEmail: "luis@ejemplo.com",
-      items: [{ id: "demo_item_2", prenda: p1, tipo: "renta", precio: 250, fechaRenta: hace(-3).slice(0, 10), sellerName: "Mariela M." }],
+      items: [{ id: "demo_item_2", prenda: p1, tipo: "renta", precio: 250, fechaRenta: hace(-3).slice(0, 10), sellerName: "Alex R." }],
       subtotal: 250, garantiaEscrow: 0, totalPagado: 250, metodoPago: "tarjeta", status: "pago_en_custodia",
       puntoAcopioId: "demo", puntoAcopioNombre: "Centro Demo Clossapp", createdAt: hace(2),
     },

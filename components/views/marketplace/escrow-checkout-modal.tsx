@@ -22,7 +22,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
   const supabase = createBrowserSupabaseClient()
 
   const [metodoPago, setMetodoPago] = useState<MetodoPagoEscrow>("tarjeta")
-  const [nombreTarjeta, setNombreTarjeta] = useState("Mariela Morales")
+  const [nombreTarjeta, setNombreTarjeta] = useState("Alex Rivera")
   const [numeroTarjeta, setNumeroTarjeta] = useState("•••• •••• •••• 4242")
   const [expiracion, setExpiracion] = useState("12/28")
   const [cvc, setCvc] = useState("123")

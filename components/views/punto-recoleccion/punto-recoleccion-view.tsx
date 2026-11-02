@@ -100,7 +100,7 @@ export function PuntoRecoleccionView() {
   const [isConfirmMetricasModalOpen, setIsConfirmMetricasModalOpen] = useState(false)
 
   // Desglose y confirmación de métricas state
-  const [confirmDonorName, setConfirmDonorName] = useState("Mariela Morales")
+  const [confirmDonorName, setConfirmDonorName] = useState("Alex Rivera")
   const [confirmAbrigosCount, setConfirmAbrigosCount] = useState<number>(2)
   const [confirmInfantilCount, setConfirmInfantilCount] = useState<number>(1)
   const [confirmCalzadoCount, setConfirmCalzadoCount] = useState<number>(1)
@@ -2132,7 +2132,7 @@ export function PuntoRecoleccionView() {
                   type="text"
                   value={confirmDonorName}
                   onChange={(e) => setConfirmDonorName(e.target.value)}
-                  placeholder="Ej. Mariela Morales"
+                  placeholder="Ej. Alex Rivera"
                   className="mt-1 h-9 text-xs rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900"
                 />
               </div>

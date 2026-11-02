@@ -51,7 +51,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
       {/* Encabezado */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-zinc-400 uppercase tracking-widest">Bienvenida</p>
+          <p className="text-xs text-zinc-400 uppercase tracking-widest">Hola</p>
           <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">{userName}</h1>
           {isGuest && (
             <span className="text-[10px] text-zinc-400 uppercase tracking-widest border border-zinc-200 px-2 py-0.5 mt-1 inline-block">

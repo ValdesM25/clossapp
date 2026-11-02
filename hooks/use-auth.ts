@@ -8,13 +8,13 @@ import type { Plan } from "@/constants/planes"
 import type { EstiloPerfil } from "@/constants/onboarding"
 import { entrarDemo, salirDemo, restaurarSiQuedoDemo, type TipoDemo } from "@/lib/demo"
 
-const GUEST = { id: "guest", name: "Invitada" } as const
+const GUEST = { id: "guest", name: "Visita" } as const
 
 export function useAuth() {
   const [userMode, setUserMode] = useState<UserMode | null>(null)
   const [userId, setUserId] = useState<string>(GUEST.id)
-  const [userName, setUserName] = useState("Mariela")
-  const [userEmail, setUserEmail] = useState("mariela@clossapp.com")
+  const [userName, setUserName] = useState("Alex")
+  const [userEmail, setUserEmail] = useState("alex@clossapp.com")
   const [userPhone, setUserPhone] = useState("+52 844 123 4567")
   const [userAvatarUrl, setUserAvatarUrl] = useState("https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80")
   // null mientras no se sabe (o si la tabla perfiles aun no existe): no se bloquea nada.
@@ -175,8 +175,8 @@ export function useAuth() {
     // La demo de usuario reutiliza el modo "GUEST": datos de ejemplo y sin escribir en la base.
     setUserMode("GUEST")
     setUserId(GUEST.id)
-    setUserName("Mariela (demo)")
-    setUserEmail("mariela@ejemplo.com")
+    setUserName("Alex (demo)")
+    setUserEmail("alex@ejemplo.com")
   }, [])
 
   const iniciarTour = useCallback(() => setTourActivo(true), [])
