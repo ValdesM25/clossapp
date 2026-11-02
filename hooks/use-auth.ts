@@ -249,7 +249,7 @@ export function useAuth() {
     let avatarUrl: string | undefined
     if (data.avatarBlob) {
       // Ruta nueva en cada subida: closet-images no tiene policy de UPDATE, asi que no se puede sobrescribir.
-      // shortcut: las fotos anteriores quedan en Storage, limpiar si el bucket crece.
+      // La foto anterior se borra despues de guardar la nueva.
       const path = `${userId}/avatar-${Date.now()}.jpg`
       const { error: upErr } = await supabase.storage.from("closet-images").upload(path, data.avatarBlob, { contentType: "image/jpeg" })
       if (upErr) throw new Error(upErr.message)
@@ -266,13 +266,21 @@ export function useAuth() {
 
     if (data.name !== undefined && data.name.trim()) setUserName(data.name.trim())
     if (data.phone !== undefined) setUserPhone(data.phone)
-    if (avatarUrl) setUserAvatarUrl(avatarUrl)
+    if (avatarUrl) {
+      // Solo se borra si era una foto subida por el usuario (no la de ejemplo).
+      const previa = userAvatarUrl.split("/closet-images/")[1]
+      if (previa?.startsWith(`${userId}/avatar-`)) {
+        const { error: rmErr } = await supabase.storage.from("closet-images").remove([previa])
+        if (rmErr) console.warn("[perfil] no se pudo borrar la foto anterior", rmErr.message)
+      }
+      setUserAvatarUrl(avatarUrl)
+    }
 
     if (data.password) {
       const { error: pwErr } = await supabase.auth.updateUser({ password: data.password })
       if (pwErr) throw new Error(pwErr.message)
     }
-  }, [userMode, userId, supabase])
+  }, [userMode, userId, userAvatarUrl, supabase])
 
   return {
     userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isRecoleccion, isAuthenticated, initializing, plan,
