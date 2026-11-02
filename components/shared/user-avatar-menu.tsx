@@ -7,6 +7,7 @@ import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { activarPush, pushActivo, pushDisponible } from "@/lib/push"
 import { CenteredModal } from "@/components/shared/centered-modal"
+import { AvatarCropper } from "@/components/shared/avatar-cropper"
 import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
@@ -40,6 +41,9 @@ export function UserAvatarMenu() {
   const [email, setEmail] = useState(userEmail)
   const [phone, setPhone] = useState(userPhone)
   const [avatarPreview, setAvatarPreview] = useState(userAvatarUrl)
+  // Foto recortada pendiente de subir, y la foto cruda mientras se ajusta.
+  const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null)
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
 
@@ -50,6 +54,8 @@ export function UserAvatarMenu() {
     setEmail(userEmail)
     setPhone(userPhone)
     setAvatarPreview(userAvatarUrl)
+    setAvatarBlob(null)
+    setCropSrc(null)
     setPassword("")
     setConfirmPassword("")
     setSuccessMsg(null)
@@ -61,13 +67,16 @@ export function UserAvatarMenu() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setAvatarPreview(event.target.result as string)
-      }
-    }
-    reader.readAsDataURL(file)
+    setCropSrc(URL.createObjectURL(file))
+    // Permite volver a elegir el mismo archivo.
+    e.target.value = ""
+  }
+
+  function handleCropDone(blob: Blob) {
+    setAvatarBlob(blob)
+    setAvatarPreview(URL.createObjectURL(blob))
+    if (cropSrc) URL.revokeObjectURL(cropSrc)
+    setCropSrc(null)
   }
 
   async function handleSave() {
@@ -83,9 +92,8 @@ export function UserAvatarMenu() {
     try {
       await updateProfile({
         name,
-        email,
         phone,
-        avatarUrl: avatarPreview,
+        avatarBlob: avatarBlob ?? undefined,
         password: password ? password : undefined,
       })
       setSuccessMsg("¡Perfil actualizado con éxito!")
@@ -207,6 +215,9 @@ export function UserAvatarMenu() {
 
       {/* Modal de edición de perfil */}
       <CenteredModal open={openModal} onClose={() => setOpenModal(false)}>
+        {cropSrc ? (
+          <AvatarCropper src={cropSrc} onCancel={() => setCropSrc(null)} onDone={handleCropDone} />
+        ) : (
         <div className="p-6 flex flex-col gap-5 max-w-md w-full">
           <div>
             <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Mi Cuenta</p>
@@ -267,8 +278,8 @@ export function UserAvatarMenu() {
                 <Mail className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                 <Input
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@correo.com"
+                  readOnly
+                  disabled
                   type="email"
                   className="pl-9 h-10 rounded-none border-zinc-200 text-xs focus-visible:ring-0 focus-visible:border-zinc-900"
                 />
@@ -349,6 +360,7 @@ export function UserAvatarMenu() {
             </motion.button>
           </div>
         </div>
+        )}
       </CenteredModal>
     </>
   )

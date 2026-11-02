@@ -47,7 +47,7 @@ export function useAuth() {
   const aplicarSesion = useCallback(async (user: { id: string; email?: string | null }) => {
     const { data } = await supabase
       .from("perfiles")
-      .select("plan, estilo, onboarding_completado, rol, punto_acopio_nombre, es_admin")
+      .select("plan, estilo, onboarding_completado, rol, punto_acopio_nombre, es_admin, nombre, telefono, avatar_url")
       .eq("user_id", user.id)
       .maybeSingle()
     setUserId(user.id)
@@ -59,7 +59,10 @@ export function useAuth() {
       return
     }
     setUserMode("VIP")
-    setUserName(displayNameFor(user.email, GUEST.name))
+    setUserName(data?.nombre || displayNameFor(user.email, GUEST.name))
+    // Sin datos guardados no se muestran los de ejemplo del estado inicial.
+    setUserPhone(data?.telefono ?? "")
+    if (data?.avatar_url) setUserAvatarUrl(data.avatar_url)
     if (!data) return
     setEsAdmin(!!data.es_admin)
     setPlan(data.plan as Plan)
@@ -231,24 +234,45 @@ export function useAuth() {
 
   const updateProfile = useCallback(async (data: {
     name?: string
-    email?: string
     phone?: string
-    avatarUrl?: string
+    avatarBlob?: Blob
     password?: string
   }) => {
-    if (data.name !== undefined) setUserName(data.name)
-    if (data.email !== undefined) setUserEmail(data.email)
-    if (data.phone !== undefined) setUserPhone(data.phone)
-    if (data.avatarUrl !== undefined) setUserAvatarUrl(data.avatarUrl)
-
-    if (data.password && userMode === "VIP") {
-      try {
-        await supabase.auth.updateUser({ password: data.password })
-      } catch (err) {
-        console.warn("[updateProfile] Error updating password in Supabase:", err)
-      }
+    // Demo: se ve el cambio, pero no se guarda nada.
+    if (userMode !== "VIP") {
+      if (data.name !== undefined) setUserName(data.name)
+      if (data.phone !== undefined) setUserPhone(data.phone)
+      if (data.avatarBlob) setUserAvatarUrl(URL.createObjectURL(data.avatarBlob))
+      return
     }
-  }, [userMode, supabase])
+
+    let avatarUrl: string | undefined
+    if (data.avatarBlob) {
+      // Ruta nueva en cada subida: closet-images no tiene policy de UPDATE, asi que no se puede sobrescribir.
+      // shortcut: las fotos anteriores quedan en Storage, limpiar si el bucket crece.
+      const path = `${userId}/avatar-${Date.now()}.jpg`
+      const { error: upErr } = await supabase.storage.from("closet-images").upload(path, data.avatarBlob, { contentType: "image/jpeg" })
+      if (upErr) throw new Error(upErr.message)
+      avatarUrl = supabase.storage.from("closet-images").getPublicUrl(path).data.publicUrl
+    }
+
+    const { error } = await supabase.from("perfiles").update({
+      ...(data.name !== undefined ? { nombre: data.name.trim() || null } : {}),
+      ...(data.phone !== undefined ? { telefono: data.phone.trim() || null } : {}),
+      ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId)
+    if (error) throw new Error(error.message)
+
+    if (data.name !== undefined && data.name.trim()) setUserName(data.name.trim())
+    if (data.phone !== undefined) setUserPhone(data.phone)
+    if (avatarUrl) setUserAvatarUrl(avatarUrl)
+
+    if (data.password) {
+      const { error: pwErr } = await supabase.auth.updateUser({ password: data.password })
+      if (pwErr) throw new Error(pwErr.message)
+    }
+  }, [userMode, userId, supabase])
 
   return {
     userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isRecoleccion, isAuthenticated, initializing, plan,
