@@ -15,5 +15,5 @@
 **Pendiente / ojo**
 - Pide el permiso de ubicación del navegador al primer uso.
 - El outfit se fija por día en ese dispositivo (otro dispositivo genera el suyo).
-- "Vestir este outfit hoy" sigue sin registrar el uso en la base; no se tocó (alcance aparte).
+- "Vestir este outfit hoy" ahora registra el uso (`registrarUso` + `incrementarOutfits`, igual que el Simulador), una vez al día por dispositivo. En la demo solo es visual. Si falla el registro, el botón no se marca y se puede reintentar.
 - Reglas por texto de categoría/nombre: prendas con categorías raras pueden no entrar al outfit simple.

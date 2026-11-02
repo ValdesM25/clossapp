@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Sparkles, Sun, Clock, Tag, HeartHandshake, Check, ArrowRight, RefreshCw, Shirt } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -10,6 +10,8 @@ import { usePrendasContext } from "@/context/prendas-context"
 import { UserAvatarMenu } from "@/components/shared/user-avatar-menu"
 import { RecordatorioArmario } from "./recordatorio-armario"
 import { useOutfitDelDia } from "@/hooks/use-outfit-del-dia"
+import { registrarUso, incrementarOutfits } from "@/services/outfits.service"
+import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { GUEST_PRENDAS } from "@/constants/demo-data"
 import type { View, Prenda } from "@/types"
 
@@ -43,9 +45,28 @@ export function InicioView({ onNavigate }: InicioViewProps) {
   // 3. Prendas utilizadas seguido (recomendadas para venta o donación)
   const frecuentesPrendas = userPrendas.slice(0, 4)
 
-  function handleUsarOutfit() {
+  // Una vez por dia: la marca vive en localStorage para que recargar no permita contar el mismo outfit dos veces.
+  const claveUsado = `outfit-dia-usado:${userId}:${new Date().toLocaleDateString("en-CA")}`
+  const [usadoHoy, setUsadoHoy] = useState(false)
+  useEffect(() => { setUsadoHoy(!isGuest && localStorage.getItem(claveUsado) === "1") }, [isGuest, claveUsado])
+
+  async function handleUsarOutfit() {
+    if (usadoHoy || wornToday) return
     setWornToday(true)
-    setTimeout(() => setWornToday(false), 3000)
+    if (isGuest || !outfit) { setTimeout(() => setWornToday(false), 3000); return }
+    try {
+      const supabase = createBrowserSupabaseClient()
+      await Promise.all([
+        registrarUso(supabase, outfit.prendas.map((p) => p.id)),
+        incrementarOutfits(supabase, userName),
+      ])
+      localStorage.setItem(claveUsado, "1")
+      setUsadoHoy(true)
+    } catch (err) {
+      console.error("[outfit-del-dia] no se registró el uso", err instanceof Error ? err.message : err)
+    } finally {
+      setWornToday(false)
+    }
   }
 
   return (
@@ -121,11 +142,11 @@ export function InicioView({ onNavigate }: InicioViewProps) {
               onClick={handleUsarOutfit}
               className={cn(
                 "flex-1 py-2.5 text-xs font-medium tracking-wide flex items-center justify-center gap-2 transition-colors",
-                wornToday ? "bg-emerald-600 text-white" : "bg-white text-zinc-900 hover:bg-zinc-100"
+                wornToday || usadoHoy ? "bg-emerald-600 text-white" : "bg-white text-zinc-900 hover:bg-zinc-100"
               )}
             >
-              {wornToday ? <Check className="w-4 h-4" /> : <Shirt className="w-4 h-4" />}
-              {wornToday ? "¡Registrado como usado hoy!" : "Vestir este outfit hoy"}
+              {wornToday || usadoHoy ? <Check className="w-4 h-4" /> : <Shirt className="w-4 h-4" />}
+              {usadoHoy ? "Registrado como usado hoy" : wornToday ? "Registrando..." : "Vestir este outfit hoy"}
             </motion.button>
           </div>
         </div>
