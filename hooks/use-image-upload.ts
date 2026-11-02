@@ -35,11 +35,14 @@ export function useImageUpload(userId: string, isGuest: boolean) {
   const [analyzeError, setAnalyzeError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Un id por foto elegida: reintentos y dobles clics reutilizan la misma imagen y la misma fila.
+  const clientIdRef = useRef<string>("")
 
   const supabase = createBrowserSupabaseClient()
 
   const selectFile = useCallback((file: File) => {
     if (isGuest) return
+    clientIdRef.current = crypto.randomUUID()
     setPreview({ url: URL.createObjectURL(file), file })
     setPreviewForm(FORM_VACIO)
     setAnalyzeError(null)
@@ -67,19 +70,17 @@ export function useImageUpload(userId: string, isGuest: boolean) {
     setPreviewForm((f) => ({ ...f, [field]: value }))
   }, [])
 
+  // Lanza si algo falla: quien llama decide cómo avisar al usuario.
   const upload = useCallback(async (): Promise<string | null> => {
     if (!preview) return null
     setUploading(true)
     try {
       const blob = await resizeImage(preview.file)
-      const path = `${userId}/${Date.now()}.jpg`
-      const { error: uploadError } = await supabase.storage.from("closet-images").upload(path, blob, { contentType: "image/jpeg" })
-      if (uploadError) throw uploadError
+      const path = `${userId}/${clientIdRef.current}.jpg`
+      const { error: uploadError } = await supabase.storage.from("closet-images").upload(path, blob, { contentType: "image/jpeg", upsert: true })
+      if (uploadError) throw new Error(uploadError.message)
       const { data: urlData } = supabase.storage.from("closet-images").getPublicUrl(path)
       return urlData.publicUrl
-    } catch (err) {
-      console.error("Error subiendo imagen:", err instanceof Error ? err.message : JSON.stringify(err))
-      return null
     } finally {
       setUploading(false)
     }
@@ -91,7 +92,7 @@ export function useImageUpload(userId: string, isGuest: boolean) {
   }, [preview])
 
   return {
-    preview, previewForm, analyzing, analyzeError, uploading,
+    preview, previewForm, analyzing, analyzeError, uploading, clientIdRef,
     fileInputRef, selectFile, updateForm, upload, cancel,
   }
 }

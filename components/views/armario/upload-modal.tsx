@@ -11,6 +11,7 @@ interface UploadModalProps {
   analyzing: boolean
   analyzeError: string | null
   uploading: boolean
+  saveError?: string | null
   updateForm: (field: keyof ImageUploadForm, value: string) => void
   onConfirm: () => void
   onCancel: () => void
@@ -23,7 +24,7 @@ function fechaLocal(diasAtras = 0): string {
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10)
 }
 
-export function UploadModal({ preview, previewForm, analyzing, analyzeError, uploading, updateForm, onConfirm, onCancel }: UploadModalProps) {
+export function UploadModal({ preview, previewForm, analyzing, analyzeError, uploading, saveError, updateForm, onConfirm, onCancel }: UploadModalProps) {
   const compraMarcada = previewForm.comprada_reciente === "si"
   const hoy = fechaLocal()
   const hace60 = fechaLocal(60)
@@ -152,6 +153,8 @@ export function UploadModal({ preview, previewForm, analyzing, analyzeError, upl
           </div>
         </>
       )}
+
+      {saveError && <p role="alert" className="text-xs text-red-600 mb-2">{saveError}</p>}
 
       <button onClick={onConfirm} disabled={uploading || analyzing}
         className="w-full py-3 bg-zinc-900 text-white text-sm font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
