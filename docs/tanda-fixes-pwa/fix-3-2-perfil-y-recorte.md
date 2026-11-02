@@ -10,4 +10,4 @@
 
 **Por qué ruta con timestamp:** el bucket no tiene policy de UPDATE, así que no se puede sobrescribir. Tras guardar la foto nueva se borra la anterior de Storage, así que solo queda la actual.
 
-**Decisión tuya / pendiente:** correr `supabase/11-perfil-datos.sql` a mano. Si quieres cambiar el correo de verdad, hay que usar `auth.updateUser({email})` y manejar la confirmación.
+**Aplicado en Supabase** (migraciones `perfil_datos` y `closet_images_borrar_propia_carpeta`); el SQL queda en `supabase/11-perfil-datos.sql`. Si quieres cambiar el correo de verdad, hay que usar `auth.updateUser({email})` y manejar la confirmación.
