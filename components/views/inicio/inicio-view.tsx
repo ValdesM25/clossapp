@@ -9,6 +9,7 @@ import { useAuthContext } from "@/context/auth-context"
 import { usePrendasContext } from "@/context/prendas-context"
 import { UserAvatarMenu } from "@/components/shared/user-avatar-menu"
 import { RecordatorioArmario } from "./recordatorio-armario"
+import { useOutfitDelDia } from "@/hooks/use-outfit-del-dia"
 import { GUEST_PRENDAS } from "@/constants/demo-data"
 import type { View, Prenda } from "@/types"
 
@@ -17,9 +18,10 @@ interface InicioViewProps {
 }
 
 export function InicioView({ onNavigate }: InicioViewProps) {
-  const { userName, isGuest } = useAuthContext()
+  const { userName, isGuest, userId, plan } = useAuthContext()
   const { prendas, loading } = usePrendasContext()
   const [wornToday, setWornToday] = useState(false)
+  const { clima, outfit, cargando } = useOutfitDelDia(prendas, userId, plan, !isGuest)
 
   // Usar prendas del contexto o las prendas de prueba (filtrando duplicados por nombre)
   const rawPrendas = prendas.length > 0 ? prendas : GUEST_PRENDAS
@@ -33,7 +35,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
   })
 
   // 1. Outfit recomendado del día
-  const dailyOutfitPrendas = userPrendas.slice(0, 3)
+  const dailyOutfitPrendas = outfit?.prendas ?? userPrendas.slice(0, 3)
 
   // 2. Prendas que no se han utilizado en un tiempo (baja frecuencia o 0 usos)
   const olvidadasPrendas = userPrendas.length > 3 ? userPrendas.slice(3, 12) : userPrendas.slice(0, 9)
@@ -72,7 +74,9 @@ export function InicioView({ onNavigate }: InicioViewProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sun className="w-4 h-4 text-amber-500" />
-            <p className="text-xs text-zinc-500 uppercase tracking-widest">Soleado 24°C · Outfit del Día</p>
+            <p className="text-xs text-zinc-500 uppercase tracking-widest">
+              {clima ? `${clima.texto} ${clima.temp}°C · ` : ""}Outfit del Día
+            </p>
           </div>
           <button
             onClick={() => onNavigate?.("simulador")}
@@ -86,11 +90,13 @@ export function InicioView({ onNavigate }: InicioViewProps) {
           <div className="flex justify-between items-start mb-4 relative z-10">
             <div>
               <span className="text-[10px] uppercase tracking-widest px-2 py-0.5 bg-white/10 text-zinc-300 border border-white/10">
-                Sugerencia IA de Hoy
+                {outfit && plan !== "premium" ? "Sugerencia de Hoy" : "Sugerencia IA de Hoy"}
               </span>
-              <h2 className="font-serif text-xl text-white mt-2">Casual Chic Contemporáneo</h2>
+              <h2 className="font-serif text-xl text-white mt-2">
+                {cargando ? "Preparando tu outfit…" : outfit?.titulo ?? "Casual Chic Contemporáneo"}
+              </h2>
               <p className="text-xs text-zinc-400 mt-1 max-w-md leading-relaxed">
-                Combinación ligera y cómoda ideal para el clima templado de hoy.
+                {outfit?.descripcion ?? "Combinación ligera y cómoda para hoy."}
               </p>
             </div>
             <Sparkles className="w-5 h-5 text-amber-300 shrink-0" />
