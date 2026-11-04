@@ -27,9 +27,17 @@ export async function insertPrenda(
     color: string | null
     style: string | null
     metadata: Record<string, string>
+    client_id?: string
   }
 ): Promise<string> {
   const { data, error } = await supabase.from("prendas").insert(payload).select("id").single()
+  // 23505 = ya existe esa prenda (reintento): devolver la existente en vez de duplicar.
+  if (error?.code === "23505" && payload.client_id) {
+    const { data: existente, error: e2 } = await supabase
+      .from("prendas").select("id").eq("user_id", payload.user_id).eq("client_id", payload.client_id).single()
+    if (e2) throw e2
+    return String(existente.id)
+  }
   if (error) throw error
   return String(data.id)
 }

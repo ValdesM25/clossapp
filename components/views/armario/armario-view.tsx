@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { motion } from "framer-motion"
 import { Shirt, Plus, Lock, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -28,7 +28,7 @@ export function ArmarioView() {
   const { prendas, loading, refresh: refreshPrendas } = usePrendas(userId, isGuest)
   const { reparaciones, loading: loadingRep, add: addRep, complete: completeRep } = useReparaciones(userId, isGuest)
   const {
-    preview, previewForm, analyzing, analyzeError, uploading,
+    preview, previewForm, analyzing, analyzeError, uploading, clientIdRef,
     fileInputRef, selectFile, updateForm, upload, cancel: cancelUpload,
   } = useImageUpload(userId, isGuest)
 
@@ -37,6 +37,8 @@ export function ArmarioView() {
   const [savingRep, setSavingRep] = useState(false)
   const [selectedPrenda, setSelectedPrenda] = useState<Prenda | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const guardandoRef = useRef(false)
   const esGratis = plan === "gratis"
   const limiteAlcanzado = esGratis && prendas.length >= LIMITES_GRATIS.prendas
 
@@ -67,10 +69,12 @@ export function ArmarioView() {
   }
 
   async function handleConfirmUpload() {
-    if (!preview) return
-    const publicUrl = await upload()
-    if (!publicUrl) return
+    if (!preview || guardandoRef.current) return
+    guardandoRef.current = true
+    setSaveError(null)
     try {
+      const publicUrl = await upload()
+      if (!publicUrl) return
       const supabaseClient = createBrowserSupabaseClient()
       const prendaId = await insertPrenda(supabaseClient, {
         user_id: userId,
@@ -82,6 +86,7 @@ export function ArmarioView() {
         description: previewForm.descripcion || null,
         color: previewForm.color_principal || null,
         style: previewForm.estilo || null,
+        client_id: clientIdRef.current,
         metadata: {
           nombre: previewForm.nombre,
           categoria: previewForm.categoria,
@@ -111,11 +116,16 @@ export function ArmarioView() {
       cancelUpload()
     } catch (err) {
       console.error("Error subiendo prenda:", err)
+      const msg = err instanceof Object && "message" in err ? String(err.message) : ""
       // El trigger prendas_limite_plan rechaza la 51 aunque la UI no lo haya visto venir.
-      if (err instanceof Object && "message" in err && String(err.message).includes("LIMITE_PRENDAS")) {
+      if (msg.includes("LIMITE_PRENDAS")) {
         setAviso(MENSAJES_LIMITE.prendas)
         cancelUpload()
+      } else {
+        setSaveError("No se pudo guardar la prenda. Revisa tu conexión y vuelve a intentarlo.")
       }
+    } finally {
+      guardandoRef.current = false
     }
   }
 
@@ -161,6 +171,7 @@ export function ArmarioView() {
 
       <CenteredModal open={!!preview} onClose={cancelUpload}>
         <UploadModal
+          saveError={saveError}
           preview={preview} previewForm={previewForm}
           analyzing={analyzing} analyzeError={analyzeError}
           uploading={uploading} updateForm={updateForm}
