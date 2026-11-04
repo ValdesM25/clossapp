@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Sparkles, Sun, Clock, Tag, HeartHandshake, Check, ArrowRight, RefreshCw, Shirt } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -9,6 +9,9 @@ import { useAuthContext } from "@/context/auth-context"
 import { usePrendasContext } from "@/context/prendas-context"
 import { UserAvatarMenu } from "@/components/shared/user-avatar-menu"
 import { RecordatorioArmario } from "./recordatorio-armario"
+import { useOutfitDelDia } from "@/hooks/use-outfit-del-dia"
+import { registrarUso, incrementarOutfits } from "@/services/outfits.service"
+import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { GUEST_PRENDAS } from "@/constants/demo-data"
 import type { View, Prenda } from "@/types"
 
@@ -17,9 +20,10 @@ interface InicioViewProps {
 }
 
 export function InicioView({ onNavigate }: InicioViewProps) {
-  const { userName, isGuest } = useAuthContext()
+  const { userName, isGuest, userId, plan } = useAuthContext()
   const { prendas, loading } = usePrendasContext()
   const [wornToday, setWornToday] = useState(false)
+  const { clima, outfit, cargando } = useOutfitDelDia(prendas, userId, plan, !isGuest)
 
   // Usar prendas del contexto o las prendas de prueba (filtrando duplicados por nombre)
   const rawPrendas = prendas.length > 0 ? prendas : GUEST_PRENDAS
@@ -33,7 +37,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
   })
 
   // 1. Outfit recomendado del día
-  const dailyOutfitPrendas = userPrendas.slice(0, 3)
+  const dailyOutfitPrendas = outfit?.prendas ?? userPrendas.slice(0, 3)
 
   // 2. Prendas que no se han utilizado en un tiempo (baja frecuencia o 0 usos)
   const olvidadasPrendas = userPrendas.length > 3 ? userPrendas.slice(3, 12) : userPrendas.slice(0, 9)
@@ -41,9 +45,28 @@ export function InicioView({ onNavigate }: InicioViewProps) {
   // 3. Prendas utilizadas seguido (recomendadas para venta o donación)
   const frecuentesPrendas = userPrendas.slice(0, 4)
 
-  function handleUsarOutfit() {
+  // Una vez por dia: la marca vive en localStorage para que recargar no permita contar el mismo outfit dos veces.
+  const claveUsado = `outfit-dia-usado:${userId}:${new Date().toLocaleDateString("en-CA")}`
+  const [usadoHoy, setUsadoHoy] = useState(false)
+  useEffect(() => { setUsadoHoy(!isGuest && localStorage.getItem(claveUsado) === "1") }, [isGuest, claveUsado])
+
+  async function handleUsarOutfit() {
+    if (usadoHoy || wornToday) return
     setWornToday(true)
-    setTimeout(() => setWornToday(false), 3000)
+    if (isGuest || !outfit) { setTimeout(() => setWornToday(false), 3000); return }
+    try {
+      const supabase = createBrowserSupabaseClient()
+      await Promise.all([
+        registrarUso(supabase, outfit.prendas.map((p) => p.id)),
+        incrementarOutfits(supabase, userName),
+      ])
+      localStorage.setItem(claveUsado, "1")
+      setUsadoHoy(true)
+    } catch (err) {
+      console.error("[outfit-del-dia] no se registró el uso", err instanceof Error ? err.message : err)
+    } finally {
+      setWornToday(false)
+    }
   }
 
   return (
@@ -72,7 +95,9 @@ export function InicioView({ onNavigate }: InicioViewProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sun className="w-4 h-4 text-amber-500" />
-            <p className="text-xs text-zinc-500 uppercase tracking-widest">Soleado 24°C · Outfit del Día</p>
+            <p className="text-xs text-zinc-500 uppercase tracking-widest">
+              {clima ? `${clima.texto} ${clima.temp}°C · ` : ""}Outfit del Día
+            </p>
           </div>
           <button
             onClick={() => onNavigate?.("simulador")}
@@ -86,11 +111,13 @@ export function InicioView({ onNavigate }: InicioViewProps) {
           <div className="flex justify-between items-start mb-4 relative z-10">
             <div>
               <span className="text-[10px] uppercase tracking-widest px-2 py-0.5 bg-white/10 text-zinc-300 border border-white/10">
-                Sugerencia IA de Hoy
+                {outfit && plan !== "premium" ? "Sugerencia de Hoy" : "Sugerencia IA de Hoy"}
               </span>
-              <h2 className="font-serif text-xl text-white mt-2">Casual Chic Contemporáneo</h2>
+              <h2 className="font-serif text-xl text-white mt-2">
+                {cargando ? "Preparando tu outfit…" : outfit?.titulo ?? "Casual Chic Contemporáneo"}
+              </h2>
               <p className="text-xs text-zinc-400 mt-1 max-w-md leading-relaxed">
-                Combinación ligera y cómoda ideal para el clima templado de hoy.
+                {outfit?.descripcion ?? "Combinación ligera y cómoda para hoy."}
               </p>
             </div>
             <Sparkles className="w-5 h-5 text-amber-300 shrink-0" />
@@ -115,11 +142,11 @@ export function InicioView({ onNavigate }: InicioViewProps) {
               onClick={handleUsarOutfit}
               className={cn(
                 "flex-1 py-2.5 text-xs font-medium tracking-wide flex items-center justify-center gap-2 transition-colors",
-                wornToday ? "bg-emerald-600 text-white" : "bg-white text-zinc-900 hover:bg-zinc-100"
+                wornToday || usadoHoy ? "bg-emerald-600 text-white" : "bg-white text-zinc-900 hover:bg-zinc-100"
               )}
             >
-              {wornToday ? <Check className="w-4 h-4" /> : <Shirt className="w-4 h-4" />}
-              {wornToday ? "¡Registrado como usado hoy!" : "Vestir este outfit hoy"}
+              {wornToday || usadoHoy ? <Check className="w-4 h-4" /> : <Shirt className="w-4 h-4" />}
+              {usadoHoy ? "Registrado como usado hoy" : wornToday ? "Registrando..." : "Vestir este outfit hoy"}
             </motion.button>
           </div>
         </div>
