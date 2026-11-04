@@ -26,6 +26,8 @@ export function CentroScannerModal({
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [cameraActive, setCameraActive] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
+  // Subir este contador vuelve a pedir la cámara (p. ej. tras dar el permiso en ajustes).
+  const [cameraRetry, setCameraRetry] = useState(0)
 
   useEffect(() => {
     if (!isOpen || scanned) {
@@ -69,7 +71,7 @@ export function CentroScannerModal({
         activeStream.getTracks().forEach((track) => track.stop())
       }
     }
-  }, [isOpen, scanned])
+  }, [isOpen, scanned, cameraRetry])
 
   if (!ticket) return null
 
@@ -149,6 +151,17 @@ export function CentroScannerModal({
                   <p className="text-[10px] text-zinc-500 font-mono mt-1">
                     QR Token: {ticket.qrToken}
                   </p>
+                  {cameraError && (
+                    <>
+                      <p className="text-[10px] text-amber-300 font-mono max-w-xs">
+                        Permite la cámara en los ajustes del navegador o de la app y vuelve a intentar.
+                      </p>
+                      <button type="button" onClick={() => setCameraRetry((n) => n + 1)}
+                        className="text-[10px] font-mono uppercase tracking-widest border border-white/40 text-white px-3 py-1.5 hover:bg-white/10">
+                        Reintentar
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>

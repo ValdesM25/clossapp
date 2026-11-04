@@ -130,6 +130,8 @@ export function PuntoRecoleccionView() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [cameraActive, setCameraActive] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
+  // Subir este contador vuelve a pedir la cámara (p. ej. tras dar el permiso en ajustes).
+  const [cameraRetry, setCameraRetry] = useState(0)
 
   // Manual donation form state
   const [donorNameInput, setDonorNameInput] = useState("")
@@ -251,7 +253,7 @@ export function PuntoRecoleccionView() {
         activeStream.getTracks().forEach((track) => track.stop())
       }
     }
-  }, [isScannerOpen, scannerStatus])
+  }, [isScannerOpen, scannerStatus, cameraRetry])
 
   // Real-time jsQR detection loop from video stream
   useEffect(() => {
@@ -1605,6 +1607,17 @@ export function PuntoRecoleccionView() {
                         ? "Enfoque el código QR de la compra o ingrese el folio/token abajo"
                         : "Enfoque el código QR en el recuadro central o ingrese el código manualmente abajo"}
                     </p>
+                  {cameraError && (
+                    <>
+                      <p className="text-[10px] text-amber-300 font-mono max-w-xs">
+                        Permite la cámara en los ajustes del navegador o de la app y vuelve a intentar.
+                      </p>
+                      <button type="button" onClick={() => setCameraRetry((n) => n + 1)}
+                        className="text-[10px] font-mono uppercase tracking-widest border border-white/40 text-white px-3 py-1.5 hover:bg-white/10">
+                        Reintentar
+                      </button>
+                    </>
+                  )}
                   </div>
                 )}
               </div>
