@@ -10,4 +10,4 @@
 
 **Por qué:** cualquier reintento (doble clic, red caída tras insertar) produce una sola imagen y una sola fila.
 
-**Aplicado en Supabase** (migración `prendas_client_id`); el SQL queda en `supabase/10-prendas-client-id.sql`. No se borran imágenes huérfanas si el insert falla (el reintento reutiliza la misma ruta, así que no se acumulan).
+**Aplicado en Supabase** (migración `prendas_client_id`); el SQL queda en `supabase/13-prendas-client-id.sql`. No se borran imágenes huérfanas si el insert falla (el reintento reutiliza la misma ruta, así que no se acumulan).
