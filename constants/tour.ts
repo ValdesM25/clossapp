@@ -82,6 +82,13 @@ export const PASOS_DEMO_USUARIO: PasoTour[] = [
   },
 ]
 
+// Solo se agrega en iPhone/iPad sin instalar: Safari no ofrece instalar solo, hay que enseñar el paso.
+export const PASO_INSTALAR_IOS: PasoTour = {
+  etiqueta: "Instalar",
+  titulo: "Llévala en tu pantalla de inicio",
+  texto: "En Safari toca Compartir y luego \"Añadir a pantalla de inicio\". Se abre como una app y así puedes recibir recordatorios.",
+}
+
 export const PASOS_DEMO_ACOPIO: PasoTour[] = [
   {
     etiqueta: "Bienvenida",

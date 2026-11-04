@@ -20,7 +20,8 @@ import { PuntoRecoleccionView } from "@/components/views/punto-recoleccion/punto
 import { OnboardingView } from "@/components/views/onboarding/onboarding-view"
 import { TourGuiado } from "@/components/shared/tour-guiado"
 import { tomarVolverA } from "@/lib/volver-a"
-import { PASOS_DEMO_ACOPIO, PASOS_DEMO_USUARIO } from "@/constants/tour"
+import { PASOS_DEMO_ACOPIO, PASOS_DEMO_USUARIO, PASO_INSTALAR_IOS } from "@/constants/tour"
+import { useInstalarApp } from "@/hooks/use-instalar-app"
 
 /**
  * Se muestra mientras se comprueba si hay sesion guardada. Sin esto la app
@@ -50,11 +51,16 @@ function BarraDemo({ abajo }: { abajo: string }) {
 
 function GuiaDemo() {
   const { demo, tourActivo, cerrarTour, logout } = useAuthContext()
+  const { ios, instalada } = useInstalarApp()
   if (!demo || !tourActivo) return null
+  // En iOS sin instalar, el paso de instalación va antes del cierre ("Listo").
+  const pasosUsuario = ios && !instalada
+    ? [...PASOS_DEMO_USUARIO.slice(0, -1), PASO_INSTALAR_IOS, PASOS_DEMO_USUARIO[PASOS_DEMO_USUARIO.length - 1]]
+    : PASOS_DEMO_USUARIO
   return (
     <TourGuiado
       key={demo}
-      pasos={demo === "acopio" ? PASOS_DEMO_ACOPIO : PASOS_DEMO_USUARIO}
+      pasos={demo === "acopio" ? PASOS_DEMO_ACOPIO : pasosUsuario}
       onCerrar={cerrarTour}
       accionFinal={demo === "usuario" ? { texto: "Crear mi cuenta", onClick: () => void logout() } : undefined}
     />

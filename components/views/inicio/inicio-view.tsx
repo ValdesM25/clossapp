@@ -12,6 +12,7 @@ import { RecordatorioArmario } from "./recordatorio-armario"
 import { useOutfitDelDia } from "@/hooks/use-outfit-del-dia"
 import { registrarUso, incrementarOutfits } from "@/services/outfits.service"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
+import { InstalarBanner } from "@/components/shared/instalar-banner"
 import { GUEST_PRENDAS } from "@/constants/demo-data"
 import type { View, Prenda } from "@/types"
 
@@ -84,6 +85,8 @@ export function InicioView({ onNavigate }: InicioViewProps) {
         </div>
         <UserAvatarMenu />
       </div>
+
+      {!isGuest && <InstalarBanner />}
 
       {/* Recordatorio: solo con prendas reales, no con las de demo. */}
       {!isGuest && !loading && prendas.length > 0 && (
