@@ -43,9 +43,8 @@ type AuthContextValue = {
   logout: () => Promise<void>
   updateProfile: (data: {
     name?: string
-    email?: string
     phone?: string
-    avatarUrl?: string
+    avatarBlob?: Blob
     password?: string
   }) => Promise<void>
   loading: boolean
