@@ -10,6 +10,11 @@ import { entrarDemo, salirDemo, restaurarSiQuedoDemo, type TipoDemo } from "@/li
 
 const GUEST = { id: "guest", name: "Invitada" } as const
 
+// Si supabase-js se queda esperando su lock (PWA con pestañas viejas), la UI no debe quedar congelada.
+function conTimeout<T>(p: Promise<T>, ms = 8000): Promise<T> {
+  return Promise.race([p, new Promise<never>((_, rej) => setTimeout(() => rej(new Error("timeout de auth")), ms))])
+}
+
 export function useAuth() {
   const [userMode, setUserMode] = useState<UserMode | null>(null)
   const [userId, setUserId] = useState<string>(GUEST.id)
@@ -78,9 +83,7 @@ export function useAuth() {
     }
 
     // Supabase guarda la sesion en el navegador; esto la recupera al abrir.
-    supabase.auth
-      .getSession()
-      .then(({ data }) => adopt(data.session?.user))
+    conTimeout(supabase.auth.getSession().then(({ data }) => adopt(data.session?.user)))
       .catch((err) => {
         console.error("[auth] no se pudo restaurar la sesion", err instanceof Error ? err.message : err)
       })
@@ -197,13 +200,7 @@ export function useAuth() {
       setUserEmail("")
       return
     }
-    // Ahora que la sesion sobrevive al cierre, limpiar solo el estado de React
-    // no alcanza: sin signOut volveria sola en la proxima apertura.
-    try {
-      await supabase.auth.signOut()
-    } catch (err) {
-      console.error("[auth] fallo el cierre de sesion", err instanceof Error ? err.message : err)
-    }
+    // Primero se limpia la UI: si signOut se cuelga, el usuario igual ve el login.
     setUserMode(null)
     setUserId(GUEST.id)
     setUserName(GUEST.name)
@@ -212,6 +209,12 @@ export function useAuth() {
     setEstilo(null)
     setEsAdmin(false)
     setMostrarOnboarding(false)
+    // La sesion sobrevive al cierre: sin signOut volveria sola en la proxima apertura.
+    try {
+      await conTimeout(supabase.auth.signOut())
+    } catch (err) {
+      console.error("[auth] fallo el cierre de sesion", err instanceof Error ? err.message : err)
+    }
   }, [supabase, demo])
 
   /**
