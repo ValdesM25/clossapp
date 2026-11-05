@@ -22,19 +22,7 @@ import { TourGuiado } from "@/components/shared/tour-guiado"
 import { tomarVolverA } from "@/lib/volver-a"
 import { PASOS_DEMO_ACOPIO, PASOS_DEMO_USUARIO, PASO_INSTALAR_IOS } from "@/constants/tour"
 import { useInstalarApp } from "@/hooks/use-instalar-app"
-
-/**
- * Se muestra mientras se comprueba si hay sesion guardada. Sin esto la app
- * instalada mostraria el login por un instante en cada apertura, incluso
- * teniendo la sesion iniciada.
- */
-function SplashScreen() {
-  return (
-    <div className="flex h-screen items-center justify-center bg-white">
-      <img src="/logo.svg" alt="Clossapp" className="h-12 w-auto animate-pulse" />
-    </div>
-  )
-}
+import { PantallaEntrada } from "@/components/shared/pantalla-entrada"
 
 /** Pastilla fija del modo demo: recuerda que todo es de ejemplo y deja repetir la guía o salir. */
 function BarraDemo({ abajo }: { abajo: string }) {
@@ -68,6 +56,26 @@ function GuiaDemo() {
 }
 
 function AppShell() {
+  const { userMode, initializing } = useAuthContext()
+  // Cada inicio de sesión vuelve a montar la entrada. Se calcula en el render (no en un
+  // efecto) para que la cuenta no se vea ni un cuadro antes de que la tape.
+  const [modoPrevio, setModoPrevio] = useState(userMode)
+  const [entradas, setEntradas] = useState(0)
+  if (modoPrevio !== userMode) {
+    setModoPrevio(userMode)
+    if (!initializing && userMode === "VIP") setEntradas((n) => n + 1)
+  }
+
+  return (
+    <>
+      <Contenido />
+      {/* La sesión se comprueba debajo de la entrada: sin esto la app instalada mostraría el login un instante. */}
+      <PantallaEntrada key={entradas} />
+    </>
+  )
+}
+
+function Contenido() {
   const { userMode, isRecoleccion, initializing, mostrarOnboarding, estilo, terminarOnboarding } = useAuthContext()
 
   // Si se llegó al login desde otra página (ej. /centros), regresar ahí al entrar.
@@ -78,7 +86,7 @@ function AppShell() {
     if (destino) window.location.assign(destino)
   }, [userMode, mostrarOnboarding])
 
-  if (initializing) return <SplashScreen />
+  if (initializing) return null
   if (!userMode) return <LoginView />
 
   // Collection Point / Punto de Recolección isolated portal mode

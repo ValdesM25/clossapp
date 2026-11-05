@@ -11,7 +11,7 @@ import { pageProps } from "@/constants/animation"
 import { fashionImages } from "@/constants/images"
 import { FIXED_CATS } from "@/constants/categories"
 import { useAuthContext } from "@/context/auth-context"
-import { usePrendas } from "@/hooks/use-prendas"
+import { usePrendasContext } from "@/context/prendas-context"
 import { useReparaciones } from "@/hooks/use-reparaciones"
 import { useImageUpload } from "@/hooks/use-image-upload"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
@@ -25,7 +25,8 @@ import { RepairList } from "./repair-list"
 
 export function ArmarioView() {
   const { userId, isGuest, plan } = useAuthContext()
-  const { prendas, loading, refresh: refreshPrendas } = usePrendas(userId, isGuest)
+  // Del contexto: entrar a Armario no vuelve a pedir ni a mostrar el esqueleto.
+  const { prendas, loading, refresh: refreshPrendas } = usePrendasContext()
   const { reparaciones, loading: loadingRep, add: addRep, complete: completeRep } = useReparaciones(userId, isGuest)
   const {
     preview, previewForm, analyzing, analyzeError, uploading, clientIdRef,
@@ -203,12 +204,12 @@ export function ArmarioView() {
           <div className="flex flex-col items-center justify-center py-16 gap-4 border border-zinc-100">
             <Shirt className="w-8 h-8 text-zinc-300" />
             <div className="text-center">
-              <p className="text-sm text-zinc-700">Tu clóset está vacío</p>
-              <p className="text-xs text-zinc-400 mt-1">Sube tu primer look</p>
+              <p className="text-sm text-zinc-900">Tu armario está vacío</p>
+              <p className="text-xs text-zinc-500 mt-1 max-w-60 leading-relaxed">Tómale foto a una prenda y la IA llena nombre, categoría y color.</p>
             </div>
-            <motion.button whileTap={{ scale: 0.98 }} onClick={abrirSubida}
-              className="border border-zinc-900 text-zinc-900 text-xs px-5 py-2 tracking-wide">
-              + Agregar prenda
+            <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={abrirSubida}
+              className="h-11 px-5 bg-zinc-900 text-white text-sm font-medium flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Agregar prenda
             </motion.button>
           </div>
         ) : (
@@ -221,7 +222,7 @@ export function ArmarioView() {
                     "relative overflow-hidden cursor-pointer active:opacity-80 transition-opacity",
                     item.en_renta ? "bg-zinc-200 opacity-60" : "bg-zinc-50"
                   )}>
-                  <img src={item.image_url || fashionImages[i % fashionImages.length]} alt={item.name}
+                  <img src={item.image_url || fashionImages[i % fashionImages.length]} alt={item.name} loading={i < 6 ? "eager" : "lazy"} decoding="async"
                     className={cn("w-full object-cover", item.en_renta && "grayscale")}
                     style={{ height: i % 3 === 0 ? "180px" : i % 3 === 1 ? "140px" : "160px" }} />
                   {tieneRep && (

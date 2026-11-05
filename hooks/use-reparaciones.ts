@@ -22,7 +22,6 @@ export function useReparaciones(userId: string, isGuest: boolean) {
       setReparaciones(data)
     } catch (err) {
       console.error("Error fetching reparaciones:", err instanceof Error ? err.message : JSON.stringify(err))
-      setReparaciones(GUEST_REPARACIONES)
     } finally {
       setLoading(false)
     }

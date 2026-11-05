@@ -62,10 +62,10 @@ export function useMarketplace(userId: string, isGuest: boolean) {
         const data = await res.json()
         if (!res.ok) { setRentaError(data.error); return }
         const { data: updated } = await supabase.from("prendas").select("*").eq("en_renta", true).order("created_at", { ascending: false })
-        setRentaItems(updated?.length ? updated : STATIC_RENTA)
+        setRentaItems(updated ?? [])
       } else {
         const updated = await publishForSale(supabase, sellPrenda.id, parseFloat(precio), talla, estadoUso)
-        setItems(updated.length ? updated : STATIC_MARKET)
+        setItems(updated)
       }
       return true
     } catch (err) {

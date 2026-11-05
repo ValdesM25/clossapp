@@ -42,14 +42,14 @@ export function OnboardingView({ inicial, onTerminar }: OnboardingViewProps) {
         <div className="flex items-center justify-between">
           <button type="button" onClick={() => setPaso((p) => p - 1)} disabled={paso === 0}
             aria-label="Paso anterior"
-            className="w-9 h-9 -ml-2 flex items-center justify-center text-zinc-500 hover:text-zinc-900 disabled:invisible">
+            className="w-11 h-11 -ml-3 flex items-center justify-center text-zinc-500 hover:text-zinc-900 disabled:invisible">
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <p className="text-[10px] text-zinc-400 uppercase tracking-widest tabular-nums">
+          <p className="text-[11px] text-zinc-500 uppercase tracking-widest tabular-nums">
             Paso {paso + 1} de {PASOS_ONBOARDING.length}
           </p>
           <button type="button" onClick={() => onTerminar(Object.keys(respuestas).length ? respuestas : undefined)}
-            className="text-xs text-zinc-500 hover:text-zinc-900 underline underline-offset-2">
+            className="min-h-11 -mr-1 px-1 text-sm text-zinc-500 hover:text-zinc-900">
             Saltar
           </button>
         </div>
@@ -79,13 +79,13 @@ export function OnboardingView({ inicial, onTerminar }: OnboardingViewProps) {
                     className="h-11 rounded-none border border-zinc-900 text-sm text-zinc-900 focus-visible:ring-0 focus-visible:border-zinc-900" />
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {campo.opciones?.map((opcion) => {
+                    {campo.opciones?.filter((o) => respuestas.ropa !== "Masculina" || !campo.noMasculina?.includes(o)).map((opcion) => {
                       const v = respuestas[campo.key]
                       const activo = Array.isArray(v) ? v.includes(opcion) : v === opcion
                       return (
                         <button key={opcion} type="button" aria-pressed={activo} onClick={() => elegir(campo, opcion)}
                           className={cn(
-                            "min-h-10 px-4 text-xs tracking-wide border transition-colors flex items-center gap-1.5",
+                            "min-h-11 px-4 text-sm border transition-colors flex items-center gap-1.5",
                             activo ? "bg-zinc-900 border-zinc-900 text-white" : "border-zinc-300 text-zinc-700 hover:border-zinc-500",
                           )}>
                           {activo && <Check className="w-3 h-3" aria-hidden="true" />}
@@ -104,7 +104,7 @@ export function OnboardingView({ inicial, onTerminar }: OnboardingViewProps) {
       <footer className="fixed bottom-0 inset-x-0 bg-white border-t border-zinc-100 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="max-w-xl mx-auto">
           <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={siguiente}
-            className="w-full h-11 bg-zinc-900 text-white text-sm font-medium tracking-wide">
+            className="w-full h-12 bg-zinc-900 text-white text-sm font-medium">
             {esUltimo ? "Listo, ver mi armario" : "Siguiente"}
           </motion.button>
         </div>

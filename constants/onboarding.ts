@@ -29,6 +29,8 @@ export type CampoOnboarding = {
   label: string
   tipo: "uno" | "varios" | "texto"
   opciones?: string[]
+  /** Opciones que no se muestran a quien elige ropa masculina. */
+  noMasculina?: string[]
   placeholder?: string
 }
 
@@ -50,8 +52,9 @@ export const PASOS_ONBOARDING: PasoOnboarding[] = [
     campos: [
       { key: "ropa", label: "¿Qué ropa usas principalmente?", tipo: "uno", opciones: ["Femenina", "Masculina", "Mixta / sin género"] },
       {
-        key: "estilos", label: "¿Con qué estilos te identificas? Elige los que quieras.", tipo: "varios",
-        opciones: ["Casual", "Formal / oficina", "Urbano / streetwear", "Minimalista", "Bohemio", "Deportivo", "Clásico", "Romántico", "Vanguardista"],
+        key: "estilos", label: "¿Qué estilos van contigo? Elige los que quieras.", tipo: "varios",
+        opciones: ["Casual", "Formal / oficina", "Urbano / streetwear", "Minimalista", "Deportivo", "Clásico", "Bohemio", "Femenino / delicado", "Vanguardista"],
+        noMasculina: ["Bohemio", "Femenino / delicado"],
       },
     ],
   },
@@ -71,7 +74,7 @@ export const PASOS_ONBOARDING: PasoOnboarding[] = [
         key: "ocasiones", label: "¿Para qué ocasiones te vistes seguido?", tipo: "varios",
         opciones: ["Trabajo / oficina", "Escuela", "Fiestas / noche", "Citas", "Eventos formales", "Gym / deporte", "Viajes", "Casa / día relajado"],
       },
-      { key: "nunca_usaria", label: "¿Hay algo que nunca usarías?", tipo: "texto", placeholder: "Ej. faldas cortas, tacones, cuadros" },
+      { key: "nunca_usaria", label: "¿Hay algo que nunca usarías?", tipo: "texto", placeholder: "Ej. cuadros, colores neón, cuello de tortuga" },
     ],
   },
   {
@@ -81,9 +84,10 @@ export const PASOS_ONBOARDING: PasoOnboarding[] = [
       {
         key: "cuerpo", label: "¿Cómo describirías tu tipo de cuerpo?", tipo: "uno",
         opciones: ["Reloj de arena", "Triángulo (pera)", "Triángulo invertido", "Rectángulo", "Óvalo (manzana)", "Prefiero no decir"],
+        noMasculina: ["Reloj de arena", "Triángulo (pera)"],
       },
-      { key: "talla_superior", label: "Talla de blusas / camisas", tipo: "texto", placeholder: "Ej. M" },
-      { key: "talla_inferior", label: "Talla de pantalón / falda", tipo: "texto", placeholder: "Ej. 28 o 7" },
+      { key: "talla_superior", label: "Talla de parte de arriba", tipo: "texto", placeholder: "Ej. M" },
+      { key: "talla_inferior", label: "Talla de parte de abajo", tipo: "texto", placeholder: "Ej. 30 o 7" },
       { key: "talla_calzado", label: "Talla de calzado", tipo: "texto", placeholder: "Ej. 24.5" },
     ],
   },
@@ -103,7 +107,7 @@ export const PASOS_ONBOARDING: PasoOnboarding[] = [
         key: "presupuesto", label: "¿Cuánto sueles gastar por prenda?", tipo: "uno",
         opciones: ["Menos de $500", "$500 a $1,500", "$1,500 a $3,000", "Más de $3,000"],
       },
-      { key: "iconos", label: "Íconos de estilo que te inspiran", tipo: "texto", placeholder: "Ej. Hailey Bieber, Zendaya" },
+      { key: "iconos", label: "Alguien cuyo estilo te inspire", tipo: "texto", placeholder: "Ej. Zendaya, Bad Bunny, tu hermana" },
     ],
   },
   {

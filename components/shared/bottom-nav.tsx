@@ -19,19 +19,24 @@ export function BottomNav({ activeView, onNavigate, open, flash }: BottomNavProp
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
           exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}
           className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-safe pointer-events-none">
-          <nav data-tour="nav" className="w-[92%] max-w-5xl bg-white/80 backdrop-blur-xl border border-zinc-200 px-4 sm:px-6 py-3 flex justify-between items-center shadow-lg pointer-events-auto lg:w-[calc(100%-2rem)]">
+          <nav data-tour="nav" className="w-[92%] max-w-5xl bg-white/85 backdrop-blur-xl border border-zinc-200 px-1 sm:px-4 py-1.5 flex items-stretch shadow-lg pointer-events-auto lg:w-[calc(100%-2rem)]">
             {navItems.map((item) => {
               const isActive = activeView === item.id
               const isFlashing = flash != null && flash === item.id
               return (
-                <motion.button key={item.id} data-tour={`nav-${item.id}`} whileTap={{ scale: 0.82 }} onClick={() => onNavigate(item.id)}
-                  className="flex flex-col items-center gap-0.5 relative">
+                <motion.button key={item.id} type="button" data-tour={`nav-${item.id}`} whileTap={{ scale: 0.9 }} onClick={() => onNavigate(item.id)}
+                  aria-current={isActive ? "page" : undefined}
+                  className="flex-1 min-h-12 flex flex-col items-center justify-center gap-1 relative">
+                  {isActive && (
+                    <motion.span layoutId="nav-activo" aria-hidden="true" className="absolute top-0 h-0.5 w-6 bg-zinc-900"
+                      transition={{ type: "spring", stiffness: 500, damping: 40 }} />
+                  )}
                   {isFlashing && (
                     <motion.span initial={{ scale: 0.5, opacity: 1 }} animate={{ scale: 2.5, opacity: 0 }}
                       transition={{ duration: 0.6 }} className="absolute inset-0 rounded-full bg-zinc-300" />
                   )}
-                  <item.icon className={cn("w-5 h-5 transition-colors", isActive ? "text-zinc-900" : "text-zinc-400")} />
-                  <span className={cn("text-[10px] font-medium transition-colors", isActive ? "text-zinc-900" : "text-zinc-400")}>
+                  <item.icon aria-hidden="true" className={cn("w-5 h-5 transition-colors", isActive ? "text-zinc-900" : "text-zinc-500")} />
+                  <span className={cn("text-[11px] font-medium transition-colors", isActive ? "text-zinc-900" : "text-zinc-500")}>
                     {item.label}
                   </span>
                 </motion.button>
