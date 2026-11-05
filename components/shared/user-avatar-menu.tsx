@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect, ChangeEvent } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { User, LogOut, Camera, Lock, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck } from "lucide-react"
+import { User, LogOut, Camera, Lock, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck, Crown } from "lucide-react"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { activarPush, pushActivo, pushDisponible } from "@/lib/push"
+import { navegarA } from "@/lib/navegar"
 import { CenteredModal } from "@/components/shared/centered-modal"
 import { AvatarCropper } from "@/components/shared/avatar-cropper"
 import { Input } from "@/components/ui/input"
@@ -163,6 +164,18 @@ export function UserAvatarMenu() {
             <span>Editar información personal</span>
           </DropdownMenuItem>
 
+          {/* Planes solo mientras no pague: con premium ya no tiene nada que ofrecer. */}
+          {plan !== "premium" && (
+            <DropdownMenuItem
+              data-tour="menu-planes"
+              onClick={() => navegarA("planes")}
+              className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 cursor-pointer hover:bg-zinc-50 focus:bg-zinc-50 rounded-none transition-colors"
+            >
+              <Crown className="w-3.5 h-3.5 text-zinc-500" />
+              <span>Planes y puntos</span>
+            </DropdownMenuItem>
+          )}
+
           {userMode === "VIP" && (
             <DropdownMenuItem
               onClick={() => abrirOnboarding()}
@@ -220,8 +233,7 @@ export function UserAvatarMenu() {
         ) : (
         <div className="p-6 flex flex-col gap-5 max-w-md w-full">
           <div>
-            <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Mi Cuenta</p>
-            <h2 className="font-serif text-xl text-zinc-900 mt-0.5">Editar información personal</h2>
+            <h2 className="font-serif text-xl text-zinc-900">Editar información personal</h2>
           </div>
 
           {/* Cambio de Foto */}

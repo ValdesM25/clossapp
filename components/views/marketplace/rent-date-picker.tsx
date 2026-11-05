@@ -125,7 +125,7 @@ export function RentDatePicker({ prendaId, onConfirm, onCancel, aparting }: Rent
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CalendarIcon className="w-4 h-4 text-emerald-600" />
-          <h4 className="font-serif text-sm font-semibold text-zinc-900">
+          <h4 className="font-serif text-sm text-zinc-900">
             {monthNames[month]} {year}
           </h4>
         </div>

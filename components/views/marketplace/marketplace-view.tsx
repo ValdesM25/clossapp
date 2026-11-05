@@ -104,8 +104,7 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
     <motion.div {...pageProps} className="flex flex-col gap-6 pb-32 pt-8">
       <div className="px-4 flex items-center justify-between gap-2">
         <div>
-          <p className="text-xs text-zinc-400 uppercase tracking-widest">Descubre</p>
-          <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">Marketplace</h1>
+          <h1 className="font-serif text-2xl text-zinc-900">Marketplace</h1>
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">

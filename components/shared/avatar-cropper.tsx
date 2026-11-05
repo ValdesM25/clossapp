@@ -39,8 +39,7 @@ export function AvatarCropper({ src, onCancel, onDone }: AvatarCropperProps) {
   return (
     <div className="p-6 flex flex-col gap-4 max-w-md w-full">
       <div>
-        <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Foto de perfil</p>
-        <h2 className="font-serif text-xl text-zinc-900 mt-0.5">Ajusta tu foto</h2>
+        <h2 className="font-serif text-xl text-zinc-900">Ajusta tu foto</h2>
         <p className="text-xs text-zinc-500 mt-1">Arrastra para mover y usa el control para acercar.</p>
       </div>
 

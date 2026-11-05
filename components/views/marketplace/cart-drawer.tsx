@@ -228,7 +228,7 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
                     </span>
                     <span>$0.00 (Gratis)</span>
                   </div>
-                  <div className="flex justify-between text-sm font-serif font-bold text-zinc-900 pt-2 border-t border-zinc-200">
+                  <div className="flex justify-between text-sm font-serif text-zinc-900 pt-2 border-t border-zinc-200">
                     <span>Total a Pagar</span>
                     <span className="font-mono text-base">${totalPrice} MXN</span>
                   </div>

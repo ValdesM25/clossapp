@@ -710,7 +710,7 @@ export function PuntoRecoleccionView() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-serif text-base sm:text-lg font-medium text-white">
+                <h1 className="font-serif text-base sm:text-lg text-white">
                   {userName || "Centro de Acopio Norte"}
                 </h1>
                 <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-700/50 px-2 py-0.5 rounded-full font-mono">
@@ -860,7 +860,7 @@ export function PuntoRecoleccionView() {
                     <Target className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-serif text-lg font-semibold text-zinc-900">
+                    <h3 className="font-serif text-lg text-zinc-900">
                       Meta de Ropa Donada del Mes
                     </h3>
                     <p className="text-xs text-zinc-500">
@@ -883,7 +883,7 @@ export function PuntoRecoleccionView() {
                   <div>
                     <p className="text-xs uppercase tracking-widest text-zinc-500 font-medium">Progreso Global del Mes</p>
                     <div className="flex items-baseline gap-2 mt-1">
-                      <span className="font-serif text-3xl sm:text-4xl text-zinc-900 font-semibold">
+                      <span className="font-serif text-3xl sm:text-4xl text-zinc-900">
                         {garmentsCollectedMonth}
                       </span>
                       <span className="text-sm font-medium text-zinc-500">
@@ -961,7 +961,7 @@ export function PuntoRecoleccionView() {
 
             {/* SECTION 2: MÉTRICAS DE RECOLECCIÓN DE ESTE MES */}
             <section className="space-y-3">
-              <h3 className="font-serif text-lg font-semibold text-zinc-900 flex items-center gap-2">
+              <h3 className="font-serif text-lg text-zinc-900 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-emerald-600" />
                 Métricas de Recolección de este Mes
               </h3>
@@ -974,7 +974,7 @@ export function PuntoRecoleccionView() {
                       Registradas
                     </span>
                   </div>
-                  <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">{garmentsCollectedMonth}</p>
+                  <p className="font-serif text-2xl sm:text-3xl text-zinc-900">{garmentsCollectedMonth}</p>
                   <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Prendas donadas en mes</p>
                 </div>
 
@@ -983,7 +983,7 @@ export function PuntoRecoleccionView() {
                     <PackageCheck className="w-4 h-4 text-zinc-700" />
                     <span className="text-[10px] font-mono text-zinc-500">Verificados</span>
                   </div>
-                  <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">{ticketsValidatedCount}</p>
+                  <p className="font-serif text-2xl sm:text-3xl text-zinc-900">{ticketsValidatedCount}</p>
                   <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Tickets / Paquetes</p>
                 </div>
 
@@ -992,7 +992,7 @@ export function PuntoRecoleccionView() {
                     <Sparkles className="w-4 h-4 text-amber-500" />
                     <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-1.5 py-0.5">Entregados</span>
                   </div>
-                  <p className="font-serif text-2xl sm:text-3xl text-amber-600 font-bold">{pointsDistributed.toLocaleString()}</p>
+                  <p className="font-serif text-2xl sm:text-3xl text-amber-600">{pointsDistributed.toLocaleString()}</p>
                   <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Puntos ClossApp creados</p>
                 </div>
 
@@ -1001,7 +1001,7 @@ export function PuntoRecoleccionView() {
                     <Users className="w-4 h-4 text-indigo-600" />
                     <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5">Comunidad</span>
                   </div>
-                  <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">{familiasBeneficiadas}</p>
+                  <p className="font-serif text-2xl sm:text-3xl text-zinc-900">{familiasBeneficiadas}</p>
                   <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Familias beneficiadas</p>
                 </div>
               </div>
@@ -1011,7 +1011,7 @@ export function PuntoRecoleccionView() {
             <section data-tour="acopio-bitacora" className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-4">
                 <div>
-                  <h3 className="font-serif text-lg font-semibold text-zinc-900">
+                  <h3 className="font-serif text-lg text-zinc-900">
                     Historial de Donaciones Recibidas en este Punto
                   </h3>
                   <p className="text-xs text-zinc-500">
@@ -1141,7 +1141,7 @@ export function PuntoRecoleccionView() {
                     Por Entregar
                   </span>
                 </div>
-                <p className="font-serif text-2xl sm:text-3xl text-amber-950 font-bold">{escrowPendientes.length}</p>
+                <p className="font-serif text-2xl sm:text-3xl text-amber-950">{escrowPendientes.length}</p>
                 <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Órdenes en Custodia</p>
               </div>
 
@@ -1152,7 +1152,7 @@ export function PuntoRecoleccionView() {
                     Completadas
                   </span>
                 </div>
-                <p className="font-serif text-2xl sm:text-3xl text-emerald-900 font-bold">{escrowEntregadas.length}</p>
+                <p className="font-serif text-2xl sm:text-3xl text-emerald-900">{escrowEntregadas.length}</p>
                 <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Entregadas & Liberadas</p>
               </div>
 
@@ -1161,7 +1161,7 @@ export function PuntoRecoleccionView() {
                   <DollarSign className="w-4 h-4 text-emerald-600" />
                   <span className="text-[10px] font-mono text-zinc-500">Retenido</span>
                 </div>
-                <p className="font-serif text-2xl sm:text-3xl text-zinc-900 font-bold">${totalFondosCustodia}</p>
+                <p className="font-serif text-2xl sm:text-3xl text-zinc-900">${totalFondosCustodia}</p>
                 <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Fondos en Custodia Segura</p>
               </div>
 
@@ -1170,7 +1170,7 @@ export function PuntoRecoleccionView() {
                   <Sparkles className="w-4 h-4 text-emerald-600" />
                   <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5">Liberado</span>
                 </div>
-                <p className="font-serif text-2xl sm:text-3xl text-emerald-800 font-bold">${totalFondosLiberados}</p>
+                <p className="font-serif text-2xl sm:text-3xl text-emerald-800">${totalFondosLiberados}</p>
                 <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Pagos Entregados a Vendedores</p>
               </div>
             </div>
@@ -1180,7 +1180,7 @@ export function PuntoRecoleccionView() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 pb-3">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-amber-600" />
-                  <h3 className="font-serif text-lg font-semibold text-zinc-900">
+                  <h3 className="font-serif text-lg text-zinc-900">
                     Compras y Rentas Listas para Entrega en este Punto
                   </h3>
                 </div>
@@ -1292,7 +1292,7 @@ export function PuntoRecoleccionView() {
             {/* SECCIÓN 2: HISTORIAL DE ENTREGAS Y LIBERACIÓN DE FONDOS */}
             <section className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-4">
               <div className="border-b border-zinc-100 pb-3">
-                <h3 className="font-serif text-lg font-semibold text-zinc-900 flex items-center gap-2">
+                <h3 className="font-serif text-lg text-zinc-900 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   Historial de Entregas Realizadas y Fondos Liberados al Vendedor
                 </h3>
@@ -1380,7 +1380,7 @@ export function PuntoRecoleccionView() {
                   <span className="text-[10px] font-mono font-semibold uppercase text-amber-800 tracking-wider block">
                     Paso 1: Por Entregar al Cliente
                   </span>
-                  <p className="font-serif text-2xl font-bold text-amber-950 mt-1">
+                  <p className="font-serif text-2xl text-amber-950 mt-1">
                     {escrowOrders.filter((o) => o.status === "pago_en_custodia" && o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length}
                   </p>
                   <p className="text-[11px] text-amber-700 mt-0.5">Pendientes de escanear QR #1</p>
@@ -1395,7 +1395,7 @@ export function PuntoRecoleccionView() {
                   <span className="text-[10px] font-mono font-semibold uppercase text-purple-800 tracking-wider block">
                     Paso 2: En Manos del Cliente
                   </span>
-                  <p className="font-serif text-2xl font-bold text-purple-950 mt-1">
+                  <p className="font-serif text-2xl text-purple-950 mt-1">
                     {escrowOrders.filter((o) => o.status === "en_renta_cliente" && o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length}
                   </p>
                   <p className="text-[11px] text-purple-700 mt-0.5">Pendientes de escanear QR #2 (Retorno)</p>
@@ -1410,7 +1410,7 @@ export function PuntoRecoleccionView() {
                   <span className="text-[10px] font-mono font-semibold uppercase text-emerald-800 tracking-wider block">
                     Completadas y Lavadas
                   </span>
-                  <p className="font-serif text-2xl font-bold text-emerald-950 mt-1">
+                  <p className="font-serif text-2xl text-emerald-950 mt-1">
                     {escrowOrders.filter((o) => o.status === "entregado_y_liberado" && o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length}
                   </p>
                   <p className="text-[11px] text-emerald-700 mt-0.5">Fondos liberados al propietario</p>
@@ -1425,7 +1425,7 @@ export function PuntoRecoleccionView() {
             <section className="bg-white border border-zinc-200 p-5 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-3">
                 <div>
-                  <h3 className="font-serif text-base font-semibold text-zinc-900">
+                  <h3 className="font-serif text-base text-zinc-900">
                     Control de Órdenes de Renta
                   </h3>
                   <p className="text-xs text-zinc-500">
@@ -1697,7 +1697,7 @@ export function PuntoRecoleccionView() {
                 <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-900 bg-amber-200 px-2.5 py-0.5 rounded-full border border-amber-300">
                   Folio Escrow #{verifiedPackage.orderCode}
                 </span>
-                <h4 className="font-serif text-xl font-semibold text-zinc-900 mt-1">
+                <h4 className="font-serif text-xl text-zinc-900 mt-1">
                   ¡Entrega de Compra Verificada y Pago Liberado!
                 </h4>
                 <p className="text-xs text-zinc-600 mt-0.5">
@@ -1788,7 +1788,7 @@ export function PuntoRecoleccionView() {
               </div>
 
               <div>
-                <h4 className="font-serif text-xl font-semibold text-zinc-900">
+                <h4 className="font-serif text-xl text-zinc-900">
                   ¡Donación Verificada y Puntos Cargados!
                 </h4>
                 <p className="text-xs text-zinc-600 mt-0.5">
@@ -2110,7 +2110,7 @@ export function PuntoRecoleccionView() {
           ) : (
             <div className="py-6 text-center space-y-2 bg-emerald-50 border border-emerald-200 p-6">
               <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-              <p className="font-serif text-lg font-semibold text-zinc-900">¡Donación Presencial Registrada!</p>
+              <p className="font-serif text-lg text-zinc-900">¡Donación Presencial Registrada!</p>
               <p className="text-xs text-zinc-600">Sumada exitosamente al historial de recolección.</p>
             </div>
           )}
@@ -2273,7 +2273,7 @@ export function PuntoRecoleccionView() {
               <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto">
                 <Check className="w-7 h-7" />
               </div>
-              <p className="font-serif text-xl font-bold text-zinc-900">¡Recepción Confirmada y Dividida en Métricas!</p>
+              <p className="font-serif text-xl text-zinc-900">¡Recepción Confirmada y Dividida en Métricas!</p>
               <p className="text-xs text-zinc-600">
                 Se actualizaron las metas del mes, los kilogramos textiles procesados y los Puntos ClossApp del donante.
               </p>
@@ -2389,7 +2389,7 @@ export function PuntoRecoleccionView() {
               <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
                 <Check className="w-7 h-7" />
               </div>
-              <p className="font-serif text-xl font-bold text-zinc-900">¡Entrega Confirmada y Fondos Liberados!</p>
+              <p className="font-serif text-xl text-zinc-900">¡Entrega Confirmada y Fondos Liberados!</p>
               <p className="text-xs text-zinc-600 max-w-sm mx-auto">
                 {escrowReleaseMsg || `Se transfirieron $${selectedEscrowOrder?.totalPagado} MXN al vendedor y la transacción ha quedado cerrada exitosamente.`}
               </p>

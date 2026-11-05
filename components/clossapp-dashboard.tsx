@@ -23,6 +23,7 @@ import { tomarVolverA } from "@/lib/volver-a"
 import { PASOS_DEMO_ACOPIO, PASOS_DEMO_USUARIO, PASO_INSTALAR_IOS } from "@/constants/tour"
 import { useInstalarApp } from "@/hooks/use-instalar-app"
 import { PantallaEntrada } from "@/components/shared/pantalla-entrada"
+import { EVENTO_NAVEGAR } from "@/lib/navegar"
 
 /** Pastilla fija del modo demo: recuerda que todo es de ejemplo y deja repetir la guía o salir. */
 function BarraDemo({ abajo }: { abajo: string }) {
@@ -119,6 +120,12 @@ function AuthenticatedShell() {
   const { refresh } = usePrendasContext()
   const [activeView, setActiveView] = useState<View>("inicio")
   const keyboardOpen = useKeyboard()
+
+  useEffect(() => {
+    const ir = (e: Event) => setActiveView((e as CustomEvent<View>).detail)
+    window.addEventListener(EVENTO_NAVEGAR, ir)
+    return () => window.removeEventListener(EVENTO_NAVEGAR, ir)
+  }, [])
 
   const views: Record<View, ReactElement> = {
     inicio: <InicioView onNavigate={(view) => setActiveView(view)} />,

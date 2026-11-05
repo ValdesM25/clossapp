@@ -4,6 +4,8 @@
  * - clickAntes: data-tour de elementos a tocar antes del paso (abrir una sección, cerrar un modal).
  * - interactivo: deja tocar lo resaltado.
  */
+import type { View } from "@/types"
+
 export type PasoTour = {
   titulo: string
   texto: string
@@ -11,6 +13,8 @@ export type PasoTour = {
   ancla?: string
   clickAntes?: string[]
   interactivo?: boolean
+  /** Sección a abrir antes del paso cuando no tiene botón en la barra (ej. Planes). */
+  vista?: View
 }
 
 export const PASOS_DEMO_USUARIO: PasoTour[] = [
@@ -22,7 +26,7 @@ export const PASOS_DEMO_USUARIO: PasoTour[] = [
   {
     etiqueta: "Navegación",
     titulo: "Todo está a un toque",
-    texto: "Desde esta barra llegas a cada sección: Inicio, Armario, Outfit, Shop, Stats y Planes.",
+    texto: "Desde esta barra llegas a cada sección: Inicio, Armario, Outfit (al centro), Shop y Stats.",
     ancla: "nav",
     clickAntes: ["nav-inicio"],
   },
@@ -70,9 +74,9 @@ export const PASOS_DEMO_USUARIO: PasoTour[] = [
   {
     etiqueta: "Planes",
     titulo: "Tus puntos valen",
-    texto: "Donar ropa te da puntos que canjeas por descuentos en Clossapp Pro.",
+    texto: "Donar ropa te da puntos que canjeas por descuentos en Clossapp Pro. Entras aquí desde tu foto de perfil, arriba en Inicio.",
     ancla: "planes-puntos",
-    clickAntes: ["nav-planes"],
+    vista: "planes",
   },
   {
     etiqueta: "Listo",

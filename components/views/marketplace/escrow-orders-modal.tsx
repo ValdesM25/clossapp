@@ -179,7 +179,7 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                       <span className="text-[9px] sm:text-[10px] text-zinc-400 font-mono block">
                         Folio #{order.orderCode} {isRentaOrder ? "• Renta" : "• Compra"}
                       </span>
-                      <h4 className="font-serif text-xs sm:text-sm font-semibold text-zinc-900 mt-0.5">
+                      <h4 className="font-serif text-xs sm:text-sm text-zinc-900 mt-0.5">
                         ${order.totalPagado} MXN
                       </h4>
                     </div>

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import { ArrowLeft, ArrowRight, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { PasoTour } from "@/constants/tour"
+import { navegarA } from "@/lib/navegar"
 
 interface TourGuiadoProps {
   pasos: PasoTour[]
@@ -41,6 +42,7 @@ export function TourGuiado({ pasos, onCerrar, accionFinal }: TourGuiadoProps) {
     setRect(null)
     setAnclaPerdida(false)
     let encontrada = false
+    if (paso.vista) navegarA(paso.vista)
     paso.clickAntes?.forEach((a) => document.querySelector<HTMLElement>(sel(a))?.click())
     if (!paso.ancla) return
     let intentos = 0

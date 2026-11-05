@@ -35,8 +35,7 @@ export function EstadisticasView({ onSellPrenda }: EstadisticasViewProps) {
   return (
     <motion.div {...pageProps} className="flex flex-col gap-8 pb-32 pt-8">
       <div className="px-4">
-        <p className="text-xs text-zinc-500 uppercase tracking-widest">Insights</p>
-        <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">Estadísticas</h1>
+        <h1 className="font-serif text-2xl text-zinc-900">Estadísticas</h1>
       </div>
       {loading ? (
         <div className="flex flex-col gap-8 px-4 animate-pulse" aria-label="Cargando estadísticas">

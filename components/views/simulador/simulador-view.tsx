@@ -38,8 +38,7 @@ export function SimuladorView({ onElegir }: { onElegir: () => void }) {
   return (
     <motion.div {...pageProps} className="flex flex-col gap-8 pb-32 pt-8">
       <div className="px-4">
-        <p className="text-xs text-zinc-400 uppercase tracking-widest">IA Stylist</p>
-        <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">Simulador de Outfit</h1>
+        <h1 className="font-serif text-2xl text-zinc-900">Simulador de Outfit</h1>
       </div>
 
       <OutfitForm

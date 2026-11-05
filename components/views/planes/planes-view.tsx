@@ -172,7 +172,7 @@ export function PlanesView() {
             <div className="flex items-center gap-2">
               <span className="text-[10px] uppercase font-mono tracking-widest text-amber-300">Programa de Donaciones</span>
             </div>
-            <p className="font-serif text-2xl text-amber-300 font-medium mt-0.5">{puntos} Puntos ClossApp</p>
+            <p className="font-serif text-2xl text-amber-300 mt-0.5">{puntos} Puntos ClossApp</p>
             {pendientes > 0 && (
               <p className="text-[11px] text-amber-200/80 mt-0.5">+{pendientes} pendientes por compras recientes (se acreditan al usar las prendas)</p>
             )}
@@ -344,8 +344,7 @@ export function PlanesView() {
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Suscripción Clossapp</p>
-            <h3 className="font-serif text-xl text-zinc-900 mt-0.5">Plan {selectedPlan}</h3>
+            <h3 className="font-serif text-xl text-zinc-900">Plan {selectedPlan}</h3>
           </div>
           <p className="text-xs text-zinc-500 leading-relaxed">
             ¿Deseas activar el plan <strong>{selectedPlan}</strong> para tu cuenta? Podrás cambiar o cancelar en cualquier momento.
@@ -375,7 +374,7 @@ export function PlanesView() {
             <>
               <div className="bg-amber-50 border border-amber-200 p-3 flex items-center justify-between">
                 <span className="text-xs text-amber-900 font-medium">Saldo disponible:</span>
-                <span className="font-serif font-semibold text-amber-900 text-base">{puntos} Puntos</span>
+                <span className="font-serif text-amber-900 text-base">{puntos} Puntos</span>
               </div>
 
               <p className="text-xs text-zinc-600">
@@ -398,7 +397,7 @@ export function PlanesView() {
                       )}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-serif text-sm font-semibold text-zinc-900">{opcion.titulo}</span>
+                        <span className="font-serif text-sm text-zinc-900">{opcion.titulo}</span>
                         <span className="text-xs font-mono font-semibold px-2 py-0.5 bg-amber-100 text-amber-900">
                           {opcion.puntosCoste} pts
                         </span>

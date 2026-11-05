@@ -111,7 +111,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
           </div>
           <div>
             <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-medium">Tus Puntos ClossApp</p>
-            <p className="font-serif text-xl text-amber-300 font-medium">{puntos} pts</p>
+            <p className="font-serif text-xl text-amber-300">{puntos} pts</p>
           </div>
         </div>
 

@@ -81,8 +81,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
       {/* Encabezado */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-zinc-500 uppercase tracking-widest">Hola</p>
-          <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">{userName}</h1>
+          <h1 className="font-serif text-3xl text-zinc-900">Hola, {userName}</h1>
           {isGuest && (
             <span className="text-[11px] text-zinc-500 uppercase tracking-widest border border-zinc-200 px-2 py-0.5 mt-1 inline-block">
               Modo demo
@@ -207,7 +206,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
           </button>
         </div>
         <p className="text-xs text-zinc-500 -mt-2 leading-relaxed">
-          Llevan tiempo sin salir del clóset. Buen momento para darles otra oportunidad.
+          Llevan tiempo sin salir del clóset. Combínalas hoy o búscales nuevo dueño.
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-1">
@@ -229,50 +228,32 @@ export function InicioView({ onNavigate }: InicioViewProps) {
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Combinar
               </motion.button>
+              <div className="grid grid-cols-2">
+                <button type="button" onClick={() => onNavigate?.("marketplace")}
+                  className="h-10 text-xs text-zinc-600 hover:text-zinc-900 flex items-center justify-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5" aria-hidden="true" /> Vender
+                </button>
+                <button type="button" onClick={() => onNavigate?.("marketplace")}
+                  className="h-10 text-xs text-zinc-600 hover:text-zinc-900 flex items-center justify-center gap-1.5">
+                  <HeartHandshake className="w-3.5 h-3.5" aria-hidden="true" /> Donar
+                </button>
+              </div>
             </div>
           ))}
         </div>
       </section>
       )}
 
-      {/* SECCIÓN 3: PRENDAS USADAS SEGUIDO (RECOMENDADAS PARA DONACIÓN O VENTA) */}
+      {/* SECCIÓN 3: LAS MÁS USADAS (solo informativa: lo que se vende o dona son las olvidadas) */}
       {frecuentesPrendas.length > 0 && (
       <section className="flex flex-col gap-3 border-t border-zinc-100 pt-8">
-        <div className="flex items-center gap-2">
-          <HeartHandshake className="w-4 h-4 text-zinc-500" aria-hidden="true" />
-          <h2 className="font-serif text-lg text-zinc-900">Las que más usas</h2>
-        </div>
-        <p className="text-xs text-zinc-500 -mt-2 leading-relaxed">
-          Si ya les diste mucho uso, puedes venderlas o donarlas para renovar tu armario.
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+        <h2 className="font-serif text-lg text-zinc-900">Las que más usas</h2>
+        <div className="grid grid-cols-4 gap-3">
           {frecuentesPrendas.map((p) => (
-            <div key={p.id} className="border border-zinc-200 p-3 flex gap-4 items-center">
-              <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" className="w-20 h-24 object-cover bg-zinc-100 shrink-0" />
-              <div className="flex flex-col min-w-0 flex-1">
-                <p className="text-[11px] text-zinc-500 uppercase tracking-widest tabular-nums">{p.usos} usos</p>
-                <h3 className="text-sm text-zinc-900 truncate mt-0.5">{p.name}</h3>
-                <p className="text-xs text-zinc-500 truncate">{p.category}</p>
-                <div className="flex gap-2 mt-3">
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => onNavigate?.("marketplace")}
-                    className="flex-1 h-10 bg-zinc-900 text-white text-xs font-medium flex items-center justify-center gap-1.5"
-                  >
-                    <Tag className="w-3.5 h-3.5" /> Vender
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => onNavigate?.("marketplace")}
-                    className="flex-1 h-10 border border-zinc-300 text-zinc-900 text-xs font-medium flex items-center justify-center gap-1.5 hover:border-zinc-900 transition-colors"
-                  >
-                    <HeartHandshake className="w-3.5 h-3.5" /> Donar
-                  </motion.button>
-                </div>
-              </div>
+            <div key={p.id} className="min-w-0">
+              <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" className="w-full aspect-[3/4] object-cover bg-zinc-100" />
+              <p className="text-xs text-zinc-900 truncate mt-1.5">{p.name}</p>
+              <p className="text-[11px] text-zinc-500 tabular-nums">{p.usos} usos</p>
             </div>
           ))}
         </div>

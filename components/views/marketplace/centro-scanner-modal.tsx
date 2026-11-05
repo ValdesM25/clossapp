@@ -262,7 +262,7 @@ export function CentroScannerModal({
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
-            <p className="font-serif text-xl font-bold text-zinc-900">
+            <p className="font-serif text-xl text-zinc-900">
               ¡Ropa Recibida y {ticket.puntosOtorgados} Puntos Acreditados!
             </p>
 

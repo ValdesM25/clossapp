@@ -155,8 +155,7 @@ export function ArmarioView() {
     <motion.div {...pageProps} className="flex flex-col gap-8 pb-40 pt-8">
       <div className="px-4 flex items-center justify-between">
         <div>
-          <p className="text-xs text-zinc-500 uppercase tracking-widest">Mi Colección</p>
-          <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">Armario Digital</h1>
+          <h1 className="font-serif text-2xl text-zinc-900">Armario Digital</h1>
         </div>
         <Select value={activeCategory} onValueChange={setActiveCategory}>
           <SelectTrigger className="w-auto h-8 rounded-none border-zinc-300 text-xs text-zinc-600 focus:ring-0 gap-1 pr-2">

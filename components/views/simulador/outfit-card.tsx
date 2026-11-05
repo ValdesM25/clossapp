@@ -49,7 +49,6 @@ export function OutfitCard({
 
       <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
         <div>
-          <p className="font-mono text-[10px] text-zinc-400 uppercase tracking-widest mb-1">Look 0{index + 1}</p>
           <h3 className="font-serif text-zinc-900 text-lg leading-tight">{outfit.titulo}</h3>
         </div>
         <button
