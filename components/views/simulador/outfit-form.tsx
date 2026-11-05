@@ -1,6 +1,8 @@
 import { motion } from "framer-motion"
 import { Briefcase, Check, CloudRain, CloudSun, Dumbbell, Gem, Search, Shirt, Snowflake, Sparkles, Sun, Wine, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { MENSAJES_LIMITE } from "@/constants/planes"
+import { esAvisoLimite } from "@/hooks/use-cuota-ia"
 import type { Prenda } from "@/types"
 
 interface OutfitFormProps {
@@ -17,6 +19,12 @@ interface OutfitFormProps {
   setDestacada: (v: string) => void
   errorMsg: string | null
   onGenerate: () => void
+  /** Contador de outfits con IA del plan gratis, p. ej. "Outfits con IA hoy: 0/1". */
+  usoIA?: string | null
+  /** Ya no quedan outfits con IA hoy: se avisa antes de pulsar. */
+  agotado?: boolean
+  /** Solo en plan gratis: lleva a Planes desde un aviso de límite. */
+  onVerPlanes?: () => void
 }
 
 const OCASIONES: [string, LucideIcon][] = [
@@ -30,10 +38,12 @@ const MAX_TIRA = 24
 export function OutfitForm({
   prendas, isGuest, generating, ocasion, setOcasion, clima, setClima,
   destacada, destacadaQuery, setDestacadaQuery, setDestacada, errorMsg, onGenerate,
+  usoIA, agotado, onVerPlanes,
 }: OutfitFormProps) {
   const busqueda = destacadaQuery.trim().toLowerCase()
   const tira = (busqueda ? prendas.filter((p) => `${p.name} ${p.category}`.toLowerCase().includes(busqueda)) : prendas).slice(0, MAX_TIRA)
   const sinPrendas = !isGuest && prendas.length === 0
+  const aviso = errorMsg ?? (agotado ? MENSAJES_LIMITE.outfit_dia : null)
 
   function elegirDestacada(p: Prenda) {
     const quitar = destacada === p.name
@@ -121,9 +131,18 @@ export function OutfitForm({
       )}
 
       <div className="px-4 flex flex-col gap-3">
-        {errorMsg && <p role="alert" className="text-sm text-zinc-700 border border-zinc-200 bg-zinc-50 px-4 py-3">{errorMsg}</p>}
+        {aviso && (
+          <div role="alert" className="text-sm text-zinc-700 border border-zinc-200 bg-zinc-50 px-4 py-3 flex flex-col gap-2">
+            <p>{aviso}</p>
+            {onVerPlanes && esAvisoLimite(aviso) && (
+              <button type="button" onClick={onVerPlanes} className="self-start min-h-10 -my-2 text-sm font-medium text-zinc-900 underline underline-offset-4">
+                Ver planes
+              </button>
+            )}
+          </div>
+        )}
         <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={onGenerate}
-          disabled={generating || sinPrendas}
+          disabled={generating || sinPrendas || agotado}
           className="w-full h-14 bg-zinc-900 text-white text-base font-medium flex items-center justify-center gap-2.5 transition-colors hover:bg-zinc-800 disabled:opacity-60">
           {generating ? (
             <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" /> Armando tus looks…</>
@@ -132,6 +151,7 @@ export function OutfitForm({
           )}
         </motion.button>
         {sinPrendas && <p className="text-xs text-zinc-500 text-center">Sube prendas a tu armario primero.</p>}
+        {usoIA && !sinPrendas && <p className="text-xs text-zinc-500 text-center tabular-nums">{usoIA}</p>}
         {/* La demo muestra looks de ejemplo al instante, sin gastar IA (use-outfits). */}
         {isGuest && <p className="text-xs text-zinc-500 text-center">En la demo verás looks de ejemplo.</p>}
       </div>
