@@ -22,7 +22,6 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'es_MX',
     siteName: 'Clossapp',
-    url: '/',
     title: TITULO,
     description: DESCRIPCION,
   },
