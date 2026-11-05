@@ -16,7 +16,7 @@ import { useReparaciones } from "@/hooks/use-reparaciones"
 import { useImageUpload } from "@/hooks/use-image-upload"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { insertPrenda, registrarCompraReciente, type LugarCompra } from "@/services/prendas.service"
-import { LIMITES_GRATIS, MENSAJES_LIMITE } from "@/constants/planes"
+import { NOMBRE_PLAN, TOPE_PRENDAS, mensajeTopePrendas } from "@/constants/planes"
 import type { Prenda, ReparacionDB } from "@/types"
 import { UploadModal } from "./upload-modal"
 import { PrendaDetailModal } from "./prenda-detail-modal"
@@ -40,8 +40,7 @@ export function ArmarioView() {
   const [aviso, setAviso] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const guardandoRef = useRef(false)
-  const esGratis = plan === "gratis"
-  const limiteAlcanzado = esGratis && prendas.length >= LIMITES_GRATIS.prendas
+  const limiteAlcanzado = !!plan && prendas.length >= TOPE_PRENDAS[plan]
 
   const [activeCategory, setActiveCategory] = useState("Todas")
   const prendasConRep = new Set(reparaciones.map((r) => r.prenda_id).filter(Boolean))
@@ -59,7 +58,7 @@ export function ArmarioView() {
   // Se revisa antes de abrir la cámara para no subir una foto que la base va a rechazar.
   function abrirSubida() {
     if (isGuest) return
-    if (limiteAlcanzado) { setAviso(MENSAJES_LIMITE.prendas); return }
+    if (limiteAlcanzado) { setAviso(mensajeTopePrendas(plan)); return }
     fileInputRef.current?.click()
   }
 
@@ -120,7 +119,7 @@ export function ArmarioView() {
       const msg = err instanceof Object && "message" in err ? String(err.message) : ""
       // El trigger prendas_limite_plan rechaza la 51 aunque la UI no lo haya visto venir.
       if (msg.includes("LIMITE_PRENDAS")) {
-        setAviso(MENSAJES_LIMITE.prendas)
+        setAviso(mensajeTopePrendas(plan ?? "gratis"))
         cancelUpload()
       } else {
         setSaveError("No se pudo guardar la prenda. Revisa tu conexión y vuelve a intentarlo.")
@@ -192,8 +191,8 @@ export function ArmarioView() {
       <section data-tour="armario-prendas" className="px-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs text-zinc-500 uppercase tracking-widest">Mis Prendas</p>
-          {esGratis && (
-            <p className="text-[11px] text-zinc-500 tabular-nums">{prendas.length}/{LIMITES_GRATIS.prendas} · Plan gratis</p>
+          {plan && (
+            <p className="text-[11px] text-zinc-500 tabular-nums">{prendas.length}/{TOPE_PRENDAS[plan]} · Plan {NOMBRE_PLAN[plan]}</p>
           )}
         </div>
         {aviso && (

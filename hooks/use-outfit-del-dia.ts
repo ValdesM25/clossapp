@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { obtenerClima, type Clima } from "@/services/clima.service"
 import { generateOutfits, mapWardrobe } from "@/services/outfits.service"
-import type { Plan } from "@/constants/planes"
+import { esDePago, type Plan } from "@/constants/planes"
 import type { Prenda } from "@/types"
 
 export interface OutfitDelDia {
@@ -87,7 +87,7 @@ export function useOutfitDelDia(prendas: Prenda[], userId: string, plan: Plan | 
       setCargando(true)
       const c = await obtenerClima()
       let g: Guardado | null = null
-      if (plan === "premium") {
+      if (esDePago(plan)) {
         try {
           const texto = c ? `${c.texto}, ${c.temp}°C` : ""
           const [primero] = await generateOutfits({ ocasion: "Día a día", clima: texto, destacada: "" }, mapWardrobe(prendas))

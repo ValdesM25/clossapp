@@ -11,14 +11,11 @@ import type { OpcionCanjeSuscripcion, CanjeRealizado } from "@/types/donaciones"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { fetchUserPuntos, PUNTOS_BASE } from "@/services/donaciones.service"
+import { NOMBRE_PLAN, PLANES, esDePago } from "@/constants/planes"
 
 export function PlanesView() {
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
-  const [activePlan, setActivePlan] = useState<string>("Plus")
-  const [modalOpen, setModalOpen] = useState(false)
-
   // Points & Rewards state
-  const { userId, isGuest } = useAuthContext()
+  const { userId, isGuest, plan: planActual } = useAuthContext()
   const [puntos, setPuntos] = useState<number>(PUNTOS_BASE)
   const [pendientes, setPendientes] = useState(0)
   const [canjeando, setCanjeando] = useState(false)
@@ -53,66 +50,20 @@ export function PlanesView() {
     return () => { activo = false }
   }, [userId, isGuest])
 
-  const planes = [
-    {
-      id: "esencial",
-      name: "Esencial",
-      price: "$0",
-      period: "para siempre",
-      desc: "Perfecto para probar la experiencia básica de tu armario digital.",
-      features: [
-        "Digitalización básica de armario",
-        "Hasta 50 prendas registradas",
-        "Recomendaciones básicas de outfit",
-        "Soporte por comunidad",
-      ],
-      highlight: false,
-      badge: "Gratuito",
-    },
-    {
-      id: "plus",
-      name: "Plus",
-      price: "$59",
-      period: "MXN / mes",
-      desc: "El plan ideal para potenciar tu estilo diario con Inteligencia Artificial.",
-      features: [
-        "Prendas e inventario ilimitado",
-        "Estilista IA ilimitada (Claude Haiku & Sonnet)",
-        "Estadísticas avanzadas y uso de prendas",
-        "Acceso completo a comprar, rentar y donar en Marketplace",
-        "Atención preferencial",
-      ],
-      highlight: true,
-      badge: "Más Popular",
-    },
-    {
-      id: "elite",
-      name: "Elite",
-      price: "$99",
-      period: "MXN / mes",
-      desc: "Máxima personalización para amantes de la moda y creadoras de tendencia.",
-      features: [
-        "Todo lo incluido en el Plan Plus",
-        "IA Sonnet 5 de alta precisión en análisis",
-        "Informe mensual de tendencias personalizadas",
-        "Publicaciones destacadas en Marketplace",
-        "Soporte prioritario 24/7",
-      ],
-      highlight: false,
-      badge: "Completo",
-    },
-  ]
+  const planes = PLANES.map((p) => ({
+    id: p.id,
+    name: NOMBRE_PLAN[p.id],
+    price: `$${p.precio}`,
+    period: p.precio ? "MXN / mes" : "para siempre",
+    desc: p.resumen,
+    features: p.incluye,
+    highlight: p.id === "plus",
+    badge: p.id === "plus" ? "Más Popular" : p.id === "gratis" ? "Gratuito" : "Completo",
+  }))
 
-  function handleSelect(name: string) {
-    setSelectedPlan(name)
-    setModalOpen(true)
-  }
-
-  function confirmSubscription() {
-    if (selectedPlan) {
-      setActivePlan(selectedPlan)
-      setModalOpen(false)
-    }
+  // El pago y los cambios de plan viven en /planes, fuera de la app.
+  function handleSelect(id: string) {
+    window.location.assign(`/planes?plan=${id}`)
   }
 
   // La base valida el costo y el saldo y genera el código: el cliente no decide nada.
@@ -194,7 +145,7 @@ export function PlanesView() {
       {/* Grid de Planes */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {planes.map((plan) => {
-          const isCurrent = activePlan === plan.name
+          const isCurrent = !isGuest && (planActual ?? "gratis") === plan.id
           return (
             <motion.div
               key={plan.id}
@@ -285,7 +236,7 @@ export function PlanesView() {
 
               <motion.button
                 whileTap={{ scale: 0.98 }}
-                onClick={() => handleSelect(plan.name)}
+                onClick={() => handleSelect(plan.id)}
                 disabled={isCurrent}
                 className={cn(
                   "w-full py-3 text-xs font-medium tracking-wider uppercase transition-colors flex items-center justify-center gap-2",
@@ -302,7 +253,7 @@ export function PlanesView() {
                   </>
                 ) : (
                   <>
-                    <Zap className="w-3.5 h-3.5" /> Seleccionar {plan.name}
+                    <Zap className="w-3.5 h-3.5" /> {esDePago(planActual) ? "Cambiar plan" : `Seleccionar ${plan.name}`}
                   </>
                 )}
               </motion.button>
@@ -336,36 +287,6 @@ export function PlanesView() {
           </div>
         </div>
       )}
-
-      {/* Modal de confirmación de plan */}
-      <CenteredModal open={modalOpen} onClose={() => setModalOpen(false)}>
-        <div className="p-2 flex flex-col gap-4 text-center max-w-sm w-full">
-          <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto text-zinc-900">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="font-serif text-xl text-zinc-900">Plan {selectedPlan}</h3>
-          </div>
-          <p className="text-xs text-zinc-500 leading-relaxed">
-            ¿Deseas activar el plan <strong>{selectedPlan}</strong> para tu cuenta? Podrás cambiar o cancelar en cualquier momento.
-          </p>
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={() => setModalOpen(false)}
-              className="flex-1 py-2.5 border border-zinc-200 text-zinc-600 text-xs tracking-wide hover:border-zinc-400 transition-colors"
-            >
-              Cancelar
-            </button>
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={confirmSubscription}
-              className="flex-1 py-2.5 bg-zinc-900 text-white text-xs font-medium tracking-wide"
-            >
-              Confirmar
-            </motion.button>
-          </div>
-        </div>
-      </CenteredModal>
 
       {/* Modal de Canje de Puntos */}
       <CenteredModal open={canjeModalOpen} onClose={() => setCanjeModalOpen(false)}>
