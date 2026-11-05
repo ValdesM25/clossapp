@@ -1,91 +1,77 @@
 "use client"
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
+import { Check, Shirt } from "lucide-react"
+import { cn } from "@/lib/utils"
 import type { Prenda } from "@/types"
 
 interface OutfitCardProps {
   index: number
+  total: number
   outfit: { titulo: string; descripcion: string; prenda_ids: string[] }
   outfitPrendas: Prenda[]
   isElegido: boolean
   isEligiendo: boolean
-  isGuest: boolean
   onElegir: () => void
 }
 
-export function OutfitCard({
-  index, outfit, outfitPrendas, isElegido, isEligiendo, isGuest, onElegir,
-}: OutfitCardProps) {
-  const [showDesc, setShowDesc] = useState(false)
-
-  const tops = outfitPrendas.filter((p) => ["top", "outerwear"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string, string> | null)?.categoria?.toLowerCase().includes(k)))
-  const bottoms = outfitPrendas.filter((p) => ["bottom", "calzado"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string, string> | null)?.categoria?.toLowerCase().includes(k)))
-  const accesorios = outfitPrendas.filter((p) => ["accesorio"].some((k) => p.category?.toLowerCase().includes(k) || (p.metadata as Record<string, string> | null)?.categoria?.toLowerCase().includes(k)))
-  const hasLayers = tops.length + bottoms.length + accesorios.length > 0
-  const allPhotos = hasLayers ? [...tops, ...bottoms, ...accesorios] : outfitPrendas
+/** Un look como página de lookbook: collage de las prendas, por qué funciona y botón para usarlo. */
+export function OutfitCard({ index, total, outfit, outfitPrendas, isElegido, isEligiendo, onElegir }: OutfitCardProps) {
+  const reducir = useReducedMotion()
+  const [principal, ...resto] = outfitPrendas
+  const visibles = resto.slice(0, 2)
+  const extra = resto.length - visibles.length
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0, transition: { delay: index * 0.08 } }}
-      className="border border-zinc-200 flex flex-col">
+    <motion.article
+      initial={reducir ? false : { opacity: 0, transform: "translateY(16px)" }}
+      animate={{ opacity: 1, transform: "translateY(0px)" }}
+      transition={{ duration: 0.35, delay: index * 0.07, ease: [0.23, 1, 0.32, 1] }}
+      aria-label={`Look ${index + 1} de ${total}: ${outfit.titulo}`}
+      className="shrink-0 w-[86%] sm:w-[23rem] snap-center flex flex-col bg-white border border-zinc-200">
 
-      {allPhotos.length > 0 ? (
-        <div className="grid grid-cols-3 gap-px bg-zinc-100">
-          {allPhotos.map((p) => (
-            <div key={p.id} className="relative bg-white aspect-square overflow-hidden">
-              <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-              <span className="absolute bottom-0 left-0 right-0 text-[8px] text-white bg-black/40 text-center py-0.5 uppercase tracking-wide truncate px-1">
-                {p.category}
-              </span>
+      {principal ? (
+        <div className={cn("grid gap-0.5 bg-zinc-100 aspect-[4/5]", visibles.length ? "grid-cols-3 grid-rows-2" : "grid-cols-1")}>
+          <img src={principal.image_url} alt={principal.name} loading={index ? "lazy" : "eager"} decoding="async"
+            className={cn("w-full h-full object-cover", visibles.length && "col-span-2 row-span-2")} />
+          {visibles.map((p, i) => (
+            <div key={p.id} className={cn("relative", visibles.length === 1 && "row-span-2")}>
+              <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+              {extra > 0 && i === visibles.length - 1 && (
+                <span className="absolute inset-0 bg-zinc-900/60 text-white text-sm flex items-center justify-center tabular-nums">+{extra}</span>
+              )}
             </div>
           ))}
         </div>
       ) : (
-        <div className="bg-zinc-50 flex items-center justify-center py-8">
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Sin imágenes disponibles</p>
+        <div className="aspect-[4/5] bg-zinc-50 flex items-center justify-center">
+          <Shirt className="w-8 h-8 text-zinc-300" aria-hidden="true" />
         </div>
       )}
 
-      <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-serif text-zinc-900 text-lg leading-tight">{outfit.titulo}</h3>
+      <div className="p-5 flex flex-col gap-3 flex-1">
+        <p className="text-xs text-zinc-500 tabular-nums">{index + 1} de {total}</p>
+        <h3 className="font-serif text-2xl text-zinc-900 leading-tight -mt-1">{outfit.titulo}</h3>
+        <p className="text-sm text-zinc-600 leading-relaxed">{outfit.descripcion}</p>
+        {outfitPrendas.length > 0 && (
+          <p className="text-xs text-zinc-500 leading-relaxed">{outfitPrendas.map((p) => p.name).join(" · ")}</p>
+        )}
+
+        <div className="mt-auto pt-2">
+          {isElegido ? (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} role="status"
+              className="w-full h-12 bg-emerald-600 text-white text-sm font-medium flex items-center justify-center gap-2">
+              <Check className="w-4 h-4" aria-hidden="true" /> Listo, registrado
+            </motion.p>
+          ) : (
+            <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={onElegir} disabled={isEligiendo}
+              className="w-full h-12 bg-zinc-900 text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-60">
+              {isEligiendo && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />}
+              {isEligiendo ? "Registrando…" : "Me lo pongo hoy"}
+            </motion.button>
+          )}
         </div>
-        <button
-          onClick={() => setShowDesc((v) => !v)}
-          className="shrink-0 mt-1 w-6 h-6 border border-zinc-300 flex items-center justify-center text-zinc-500 hover:border-zinc-900 hover:text-zinc-900 transition-colors"
-          title="Ver justificación">
-          <span className="text-[10px] font-medium">?</span>
-        </button>
       </div>
-
-      <AnimatePresence>
-        {showDesc && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
-            className="overflow-hidden">
-            <p className="px-4 pb-3 text-xs text-zinc-500 leading-relaxed border-t border-zinc-100 pt-3">
-              {outfit.descripcion}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="px-4 pb-4">
-        {isElegido ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="w-full py-2.5 border border-zinc-200 text-zinc-500 text-xs text-center tracking-widest uppercase">
-            Outfit registrado
-          </motion.div>
-        ) : (
-          <motion.button whileTap={{ scale: 0.98 }} onClick={onElegir}
-            disabled={isEligiendo}
-            className="w-full py-2.5 border border-zinc-900 text-zinc-900 text-xs font-medium tracking-widest uppercase flex items-center justify-center gap-2 disabled:opacity-40">
-            {isEligiendo ? <span className="inline-block w-3.5 h-3.5 border-2 border-zinc-400/30 border-t-zinc-400 rounded-full animate-spin" /> : null}
-            {isEligiendo ? "Registrando..." : "Elegir este outfit"}
-          </motion.button>
-        )}
-      </div>
-    </motion.div>
+    </motion.article>
   )
 }

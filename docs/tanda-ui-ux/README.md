@@ -105,3 +105,20 @@ Se probó la opción B (Inicio dentro de Outfit) en un worktree y se descartó: 
 - Pastilla del modo demo: ya no tapa el botón de Outfit ni los menús (subida y en capa z-40).
 
 Verificado con capturas en iPhone SE, iPhone 15, iPhone 15 Pro Max, Pixel 8 y Galaxy S9 (Chromium emulando cada uno).
+
+## 11. Rediseño visual de Outfit (pedido de Mauri: "súper increíble", solo visual)
+
+El flujo no cambia: ocasión + clima + prenda destacada → la IA propone 3 looks → "Me lo pongo hoy" registra el uso. Cambia la presentación:
+
+- Encabezado editorial "¿A dónde vas hoy?" en Fraunces grande.
+- Ocasión en 5 mosaicos con ícono; clima como control segmentado con íconos.
+- "Lleva sí o sí": tira con las fotos de tu armario para elegir con un toque (antes campo de texto con autocompletar). El buscador filtra la tira y lo escrito se sigue mandando como texto libre, igual que antes.
+- Botón principal "Armar mis 3 looks"; al generar, la pantalla baja a los resultados y muestra tarjetas esqueleto.
+- Resultados como lookbook deslizable: collage (una foto grande + dos), "1 de 3", título en Fraunces, explicación visible (antes escondida tras "?"), nombres de las prendas y botón "Me lo pongo hoy" (verde al registrar).
+- Antes de generar: vista previa con 4 prendas tuyas en lugar del recuadro vacío.
+- **Demo:** el botón ya no está bloqueado; muestra looks de ejemplo al instante sin gastar IA (lo que la guía ya prometía). Decisión mía; se revierte quitando `isGuest` del `disabled` en `outfit-form.tsx`.
+- Archivos: `simulador-view.tsx`, `outfit-form.tsx`, `outfit-card.tsx`.
+
+## Pendientes
+
+- **Limitar por plan la subida de fotos y la creación de outfits** (pedido de Mauri, 2026-11-04). Hoy ya existe un límite para el plan gratis en `constants/planes.ts` (y su copia en la base, `supabase/05-perfiles.sql`): 50 prendas a la vez, 50 análisis de fotos con IA de por vida y 1 outfit con IA al día; premium no tiene límite. Falta definir con Mauri los números finales por plan (¿también premium?) y revisar que cada límite se aplique en servidor y se explique en la UI.
