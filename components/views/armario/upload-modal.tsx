@@ -1,6 +1,8 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { Loader2 } from "lucide-react"
+import { useCuotaIA } from "@/hooks/use-cuota-ia"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { ImageUploadForm } from "@/hooks/use-image-upload"
@@ -28,6 +30,13 @@ export function UploadModal({ preview, previewForm, analyzing, analyzeError, upl
   const compraMarcada = previewForm.comprada_reciente === "si"
   const hoy = fechaLocal()
   const hace60 = fechaLocal(60)
+  const { cuota, refrescar, esGratis } = useCuotaIA()
+  // Al terminar un análisis el contador cambió: se vuelve a leer.
+  const analizandoAntes = useRef(analyzing)
+  useEffect(() => {
+    if (analizandoAntes.current && !analyzing) refrescar()
+    analizandoAntes.current = analyzing
+  }, [analyzing, refrescar])
   return (
     <div className="p-6 flex flex-col gap-4">
       <p className="font-serif text-zinc-900 text-lg pr-8">Nueva prenda</p>
@@ -43,6 +52,14 @@ export function UploadModal({ preview, previewForm, analyzing, analyzeError, upl
 
       {analyzeError && (
         <p className="text-xs text-zinc-500 border border-zinc-100 px-4 py-3">{analyzeError}</p>
+      )}
+
+      {/* Premium tiene un tope oculto de uso justo: solo el plan gratis ve contador. */}
+      {esGratis && cuota && !analyzing && (
+        <p className="text-[11px] text-zinc-500 tabular-nums">
+          Análisis con IA hoy: {cuota.analisisHoy}/{cuota.analisisDia}
+          {cuota.analisisTotalMax !== null && ` · ${Math.max(0, cuota.analisisTotalMax - cuota.analisisTotal)} de ${cuota.analisisTotalMax} restantes en tu plan`}
+        </p>
       )}
 
       {!analyzing && (
