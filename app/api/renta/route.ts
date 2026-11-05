@@ -12,12 +12,9 @@ function categoriaPermiteRenta(category: string): boolean {
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
-    const { prenda_id, precio_renta } = await req.json()
-    // El dueño sale de la sesión, no del body (que se puede falsificar).
-    const { data: { user } } = await supabase.auth.getUser()
-    const user_id = user?.id
+    const { prenda_id, precio_renta, user_id } = await req.json()
 
-    if (!user_id) {
+    if (!user_id || user_id === "guest") {
       return NextResponse.json({ error: "Acceso no autorizado" }, { status: 403 })
     }
     if (!prenda_id || !precio_renta) {

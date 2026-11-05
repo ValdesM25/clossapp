@@ -60,7 +60,7 @@ export function useImageUpload(userId: string, isGuest: boolean) {
     }).catch((err) => {
       console.error("[analyzePrenda]", err instanceof Error ? err.message : JSON.stringify(err))
       const msg = err instanceof Error ? err.message : ""
-      setAnalyzeError(Object.values(MENSAJES_LIMITE).includes(msg)
+      setAnalyzeError(msg === MENSAJES_LIMITE.analisis
         ? msg
         : "No se pudo analizar la imagen. Puedes completar los campos manualmente.")
     }).finally(() => setAnalyzing(false))

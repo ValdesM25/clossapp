@@ -36,7 +36,7 @@ export function useOutfits(prendas: Prenda[], userId: string, userName: string, 
         return
       }
       const wardrobe = mapWardrobe(prendas)
-      const resultados = await generateOutfits(contexto, wardrobe)
+      const resultados = await generateOutfits(contexto, wardrobe, userId)
       setOutfits(resultados)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al generar. Intenta de nuevo.")
