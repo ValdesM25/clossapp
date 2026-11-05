@@ -26,7 +26,7 @@ Rama: `feat/planes-limites`. Estado: **fases 1 y 2 hechas (código + SQL probado
 - `hooks/use-cuota-ia.ts`: lee los contadores del día de `perfiles` y los límites del plan de `limites_plan`. Solo informa; quien decide sigue siendo `usar_ia` en el servidor. "Hoy" es el día de México, igual que en la base.
 - **Simulador (Outfit):** las cuentas gratis ven "Outfits con IA hoy: 0/1 · Plan gratis". Si ya lo usaron, el aviso aparece antes de pulsar y el botón se desactiva. Los avisos de límite traen "Ver planes", solo en plan gratis.
 - **Subir prenda:** las cuentas gratis ven "Análisis con IA hoy: 3/10 · 57 de 60 restantes en tu plan", y se actualiza al terminar cada análisis. Aquí no hay "Ver planes": cambiar de pantalla cerraría el modal y se perdería la foto elegida. El aviso ya dice que se puede llenar a mano.
-- **Premium:** no ve contadores (su tope es oculto) ni ofertas de plan. Perfil ya ocultaba "Planes y puntos" para premium.
+- **Premium:** no ve contadores (su tope es oculto) ni ofertas de plan. En Perfil, en lugar de "Planes y puntos" ve "Mis puntos", que abre la misma pantalla pero solo con su saldo, el canje y sus cupones, sin la tabla de planes (decisión de Mauri: que premium no pierda sus puntos).
 
 ## Hallazgo: las cuentas nuevas no podían guardar prendas
 

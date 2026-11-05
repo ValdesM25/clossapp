@@ -18,7 +18,9 @@ export function PlanesView() {
   const [modalOpen, setModalOpen] = useState(false)
 
   // Points & Rewards state
-  const { userId, isGuest } = useAuthContext()
+  const { userId, isGuest, plan } = useAuthContext()
+  // Premium ya pagó: aquí solo ve sus puntos y el canje, sin la tabla de planes.
+  const esPremium = plan === "premium"
   const [puntos, setPuntos] = useState<number>(PUNTOS_BASE)
   const [pendientes, setPendientes] = useState(0)
   const [canjeando, setCanjeando] = useState(false)
@@ -156,9 +158,11 @@ export function PlanesView() {
           <Crown className="w-5 h-5 text-zinc-900" />
           <p className="text-xs text-zinc-500 uppercase tracking-widest">Membresías & Recompensas</p>
         </div>
-        <h1 className="font-serif text-3xl text-zinc-900">Planes de Suscripción</h1>
+        <h1 className="font-serif text-3xl text-zinc-900">{esPremium ? "Tus puntos" : "Planes de Suscripción"}</h1>
         <p className="text-xs text-zinc-500 max-w-lg leading-relaxed mt-1">
-          Elige la experiencia que mejor se adapte a tu guardarropa. Dona prendas en desuso para ganar <strong>Puntos ClossApp</strong> y canjearlos por descuentos en tu mensualidad.
+          {esPremium
+            ? <>Dona prendas en desuso para ganar <strong>Puntos ClossApp</strong> y canjearlos por descuentos en tu mensualidad.</>
+            : <>Elige la experiencia que mejor se adapte a tu guardarropa. Dona prendas en desuso para ganar <strong>Puntos ClossApp</strong> y canjearlos por descuentos en tu mensualidad.</>}
         </p>
       </div>
 
@@ -192,7 +196,7 @@ export function PlanesView() {
       </div>
 
       {/* Grid de Planes */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {!esPremium && <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {planes.map((plan) => {
           const isCurrent = activePlan === plan.name
           return (
@@ -309,7 +313,7 @@ export function PlanesView() {
             </motion.div>
           )
         })}
-      </div>
+      </div>}
 
       {/* Historial de cupones canjeados */}
       {canjes.length > 0 && (
