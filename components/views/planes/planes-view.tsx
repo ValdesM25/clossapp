@@ -16,6 +16,8 @@ import { NOMBRE_PLAN, PLANES, esDePago } from "@/constants/planes"
 export function PlanesView() {
   // Points & Rewards state
   const { userId, isGuest, plan: planActual } = useAuthContext()
+  // Quien paga ya no compara planes: aquí ve sus puntos y el canje; su suscripción se administra en /planes.
+  const esPremium = esDePago(planActual)
   const [puntos, setPuntos] = useState<number>(PUNTOS_BASE)
   const [pendientes, setPendientes] = useState(0)
   const [canjeando, setCanjeando] = useState(false)
@@ -107,10 +109,17 @@ export function PlanesView() {
           <Crown className="w-5 h-5 text-zinc-900" />
           <p className="text-xs text-zinc-500 uppercase tracking-widest">Membresías & Recompensas</p>
         </div>
-        <h1 className="font-serif text-3xl text-zinc-900">Planes de Suscripción</h1>
+        <h1 className="font-serif text-3xl text-zinc-900">{esPremium ? "Tus puntos" : "Planes de Suscripción"}</h1>
         <p className="text-xs text-zinc-500 max-w-lg leading-relaxed mt-1">
-          Elige la experiencia que mejor se adapte a tu guardarropa. Dona prendas en desuso para ganar <strong>Puntos ClossApp</strong> y canjearlos por descuentos en tu mensualidad.
+          {esPremium
+            ? <>Dona prendas en desuso para ganar <strong>Puntos ClossApp</strong> y canjearlos por descuentos en tu mensualidad.</>
+            : <>Elige la experiencia que mejor se adapte a tu guardarropa. Dona prendas en desuso para ganar <strong>Puntos ClossApp</strong> y canjearlos por descuentos en tu mensualidad.</>}
         </p>
+        {esPremium && (
+          <a href="/planes" className="self-start mt-2 min-h-10 inline-flex items-center text-sm font-medium text-zinc-900 underline underline-offset-4">
+            Administrar suscripción
+          </a>
+        )}
       </div>
 
       {/* Banner de Puntos por Donaciones */}
@@ -143,7 +152,7 @@ export function PlanesView() {
       </div>
 
       {/* Grid de Planes */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {!esPremium && <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {planes.map((plan) => {
           const isCurrent = !isGuest && (planActual ?? "gratis") === plan.id
           return (
@@ -253,14 +262,14 @@ export function PlanesView() {
                   </>
                 ) : (
                   <>
-                    <Zap className="w-3.5 h-3.5" /> {esDePago(planActual) ? "Cambiar plan" : `Seleccionar ${plan.name}`}
+                    <Zap className="w-3.5 h-3.5" /> Seleccionar {plan.name}
                   </>
                 )}
               </motion.button>
             </motion.div>
           )
         })}
-      </div>
+      </div>}
 
       {/* Historial de cupones canjeados */}
       {canjes.length > 0 && (

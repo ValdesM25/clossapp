@@ -6,6 +6,8 @@ import { pageProps } from "@/constants/animation"
 import { useAuthContext } from "@/context/auth-context"
 import { usePrendasContext } from "@/context/prendas-context"
 import { useOutfits } from "@/hooks/use-outfits"
+import { useCuotaIA } from "@/hooks/use-cuota-ia"
+import { navegarA } from "@/lib/navegar"
 import { OutfitForm } from "./outfit-form"
 import { OutfitCard } from "./outfit-card"
 
@@ -18,6 +20,7 @@ export function SimuladorView({ onElegir }: { onElegir: () => void }) {
   const [destacada, setDestacada] = useState("")
   const [destacadaQuery, setDestacadaQuery] = useState("")
   const { outfits, generating, error: errorMsg, eligiendoIdx, elegidoIdx, generate, elegir, setElegidoIdx } = useOutfits(prendas, userName, isGuest)
+  const { cuota, refrescar, esGratis } = useCuotaIA()
   const resultadosRef = useRef<HTMLElement>(null)
 
   // Al empezar a generar, la pantalla baja a donde van a aparecer los looks.
@@ -27,6 +30,7 @@ export function SimuladorView({ onElegir }: { onElegir: () => void }) {
 
   async function handleGenerate() {
     await generate({ ocasion, clima, destacada })
+    refrescar()
   }
 
   async function handleElegir(outfit: { titulo: string; prenda_ids: string[] }, idx: number) {
@@ -57,6 +61,10 @@ export function SimuladorView({ onElegir }: { onElegir: () => void }) {
         setDestacada={setDestacada}
         errorMsg={errorMsg}
         onGenerate={handleGenerate}
+        // Premium tiene un tope oculto de uso justo: solo el plan gratis ve contador.
+        usoIA={esGratis && cuota ? `Outfits con IA hoy: ${cuota.outfitsHoy}/${cuota.outfitsDia} · Plan gratis` : null}
+        agotado={esGratis && !!cuota && cuota.outfitsHoy >= cuota.outfitsDia}
+        onVerPlanes={esGratis ? () => navegarA("planes") : undefined}
       />
 
       <section ref={resultadosRef} aria-labelledby="looks-titulo" aria-busy={generating} className="flex flex-col gap-4 scroll-mt-6">

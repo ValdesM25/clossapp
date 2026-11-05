@@ -21,6 +21,13 @@ Rama: `feat/planes-limites`. Estado: **fases 1 y 2 hechas (código + SQL probado
 
 **Probado en la base real con rollback:** free 2.º outfit, 11.º análisis del día, análisis 61 y prenda 51 → rechazados; fusible lleno → `global`; premium análisis 31 y outfit 16 → rechazados; sin sesión → rechazado; desde el cliente no se puede cambiar `plan`, contadores ni límites, ni leer el fusible.
 
+## Fase 3: UX de límites (rama `feat/limites-ux`)
+
+- `hooks/use-cuota-ia.ts`: lee los contadores del día de `perfiles` y los límites del plan de `limites_plan`. Solo informa; quien decide sigue siendo `usar_ia` en el servidor. "Hoy" es el día de México, igual que en la base.
+- **Simulador (Outfit):** las cuentas gratis ven "Outfits con IA hoy: 0/1 · Plan gratis". Si ya lo usaron, el aviso aparece antes de pulsar y el botón se desactiva. Los avisos de límite traen "Ver planes", solo en plan gratis.
+- **Subir prenda:** las cuentas gratis ven "Análisis con IA hoy: 3/10 · 57 de 60 restantes en tu plan", y se actualiza al terminar cada análisis. Aquí no hay "Ver planes": cambiar de pantalla cerraría el modal y se perdería la foto elegida. El aviso ya dice que se puede llenar a mano.
+- **Premium:** no ve contadores (su tope es oculto) ni ofertas de plan. En Perfil, en lugar de "Planes y puntos" ve "Mis puntos", que abre la misma pantalla pero solo con su saldo, el canje y sus cupones, sin la tabla de planes (decisión de Mauri: que premium no pierda sus puntos).
+
 ## Hallazgo: las cuentas nuevas no podían guardar prendas
 
 `prendas.user_id` tiene FK a `usuarios_permitidos(id)`, y el trigger `handle_new_user` insertaba `new.id::text` en una columna `uuid`: fallaba siempre y el `exception when others` lo escondía. Solo 2 de 9 cuentas estaban en esa tabla; **ninguna registrada desde la app (las 3 gratis) podía subir prendas**. Lo mismo le pasaría a cada amigo invitado.

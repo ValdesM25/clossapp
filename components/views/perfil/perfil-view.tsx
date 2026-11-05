@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, ChangeEvent } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { User, LogOut, Camera, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck, Crown, BarChart3, ChevronRight, type LucideIcon } from "lucide-react"
+import { User, LogOut, Camera, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck, Crown, Gift, BarChart3, ChevronRight, type LucideIcon } from "lucide-react"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { activarPush, pushActivo, pushDisponible } from "@/lib/push"
@@ -127,11 +127,16 @@ export function PerfilView() {
         <Fila icono={BarChart3} titulo="Mis estadísticas" dataTour="perfil-estadisticas"
           texto="Qué usas más, qué llevas meses sin ponerte y cuántos outfits has armado."
           onClick={() => navegarA("estadisticas")} />
-        <Fila icono={Crown} titulo="Planes y puntos" dataTour="perfil-planes"
-          texto={esDePago(plan)
-            ? "Administra tu suscripción y canjea los puntos que ganas al donar ropa."
-            : "Tu plan, los puntos que ganas al donar ropa y cómo canjearlos por descuentos."}
-          onClick={() => navegarA("planes")} />
+        {/* Quien paga ya no tiene planes que comparar: ve sus puntos y desde ahí administra su suscripción. */}
+        {esDePago(plan) ? (
+          <Fila icono={Gift} titulo="Mis puntos y suscripción" dataTour="perfil-planes"
+            texto="Los puntos que ganas al donar ropa, el canje por descuentos y tu suscripción."
+            onClick={() => navegarA("planes")} />
+        ) : (
+          <Fila icono={Crown} titulo="Planes y puntos" dataTour="perfil-planes"
+            texto="Tu plan, los puntos que ganas al donar ropa y cómo canjearlos por descuentos."
+            onClick={() => navegarA("planes")} />
+        )}
       </Grupo>
 
       <Grupo titulo="Tu cuenta">
