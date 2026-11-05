@@ -35,8 +35,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Sin bloquear el zoom (accesibilidad): el zoom al enfocar campos se evita con inputs de 16px.
   themeColor: '#ffffff',
   // Que el contenido llegue hasta los bordes en pantallas con notch; el
   // espacio del indicador de inicio lo maneja pb-safe en la barra inferior.

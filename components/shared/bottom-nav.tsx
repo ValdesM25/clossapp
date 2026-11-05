@@ -24,7 +24,7 @@ export function BottomNav({ activeView, onNavigate, open, flash }: BottomNavProp
               const isActive = activeView === item.id
               const isFlashing = flash != null && flash === item.id
               return (
-                <motion.button key={item.id} type="button" data-tour={`nav-${item.id}`} whileTap={{ scale: 0.9 }} onClick={() => onNavigate(item.id)}
+                <motion.button key={item.id} type="button" data-tour={`nav-${item.id}`} whileTap={{ scale: 0.95 }} onClick={() => onNavigate(item.id)}
                   aria-current={isActive ? "page" : undefined}
                   className="flex-1 min-h-12 flex flex-col items-center justify-center gap-1 relative">
                   {isActive && (

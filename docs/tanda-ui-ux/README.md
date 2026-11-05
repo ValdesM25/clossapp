@@ -56,3 +56,16 @@ Rama: `feat/ui-ux-primera-impresion`. Pedido de Mauri: priorizar que la app no s
 - **Opciones que ya no aparecen**: lo que elegiste siempre se muestra en el onboarding, aunque la opción se haya renombrado ("Romántico") o no aplique a la ropa elegida, para poder quitarlo.
   - Decisión de Mauri.
 - Umbrales de 30 días y 8 usos: aprobados por Mauri.
+
+## 8. Pase con skills de diseño (impeccable, mobile-native, guías de Vercel, Emil Kowalski, ui-ux-pro-max)
+
+Pedido de Mauri: aplicar todas las skills de diseño disponibles. Lo que se corrigió:
+
+- **Móvil nativo** (`app/globals.css`, `app/layout.tsx`): sin destello gris al tocar, `touch-action: manipulation` (toque inmediato), texto de botones no seleccionable con pulsación larga, campos de 16px en pantallas táctiles (iOS ya no hace zoom al enfocarlos) y **zoom permitido** (antes `userScalable: false`, falla de accesibilidad). Contenedor principal con `h-dvh` en lugar de `h-screen` (100vh se mete debajo de la barra del navegador).
+- **Foco de teclado visible** en todo lo interactivo (contorno de 2px del color del texto).
+- **Armario**: cada prenda es un `<button>` (antes `<div>` con clic, sin teclado).
+- **Animaciones** (`constants/animation.ts`, `pantalla-entrada.tsx`): transform en texto en lugar de `y`/`scale` de Framer Motion, que corren en el hilo principal y se traban justo mientras la app carga. Curva ease-out más firme.
+- **Contraste**: `zinc-400` (2.6:1) → `zinc-500` (4.8:1, pasa WCAG AA) en las pantallas de esta tanda, salvo sobre fondo oscuro y estados deshabilitados. Textos de 9-10px → 11px; ayudas del login → 12px.
+- Escaneo renderizado del login en 390×844: de 7 problemas a 0.
+
+Pendiente de decisión de Mauri: tipografía serif real, etiquetas en mayúsculas sobre títulos, 6 secciones en la barra inferior, acentos y contraste en el resto de la app.

@@ -50,7 +50,7 @@ export function OnboardingView({ modo, inicial, onTerminar }: OnboardingViewProp
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-dvh bg-white flex flex-col">
       <header className="px-6 pt-6 pb-4 max-w-xl w-full mx-auto">
         <div className="flex items-center justify-between">
           <button type="button" onClick={() => setPaso((p) => p - 1)} disabled={paso === 0}

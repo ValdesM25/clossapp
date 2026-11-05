@@ -92,7 +92,7 @@ function Contenido() {
   // Collection Point / Punto de Recolección isolated portal mode
   if (isRecoleccion || userMode === "RECOLECCION") {
     return (
-      <div className="overflow-y-auto h-screen bg-zinc-50">
+      <div className="overflow-y-auto h-dvh overscroll-contain bg-zinc-50">
         <PuntoRecoleccionView />
         <BarraDemo abajo="bottom-4" />
         <GuiaDemo />
@@ -132,7 +132,7 @@ function AuthenticatedShell() {
 
   return (
     <>
-      <div className="overflow-y-auto h-screen pb-40 lg:pb-48">
+      <div className="overflow-y-auto h-dvh overscroll-contain pb-40 lg:pb-48">
         <AnimatePresence mode="wait">
           <div key={activeView} className="mx-auto w-full max-w-6xl">
             {views[activeView]}

@@ -155,7 +155,7 @@ export function ArmarioView() {
     <motion.div {...pageProps} className="flex flex-col gap-8 pb-40 pt-8">
       <div className="px-4 flex items-center justify-between">
         <div>
-          <p className="text-xs text-zinc-400 uppercase tracking-widest">Mi Colección</p>
+          <p className="text-xs text-zinc-500 uppercase tracking-widest">Mi Colección</p>
           <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">Armario Digital</h1>
         </div>
         <Select value={activeCategory} onValueChange={setActiveCategory}>
@@ -192,9 +192,9 @@ export function ArmarioView() {
 
       <section data-tour="armario-prendas" className="px-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs text-zinc-400 uppercase tracking-widest">Mis Prendas</p>
+          <p className="text-xs text-zinc-500 uppercase tracking-widest">Mis Prendas</p>
           {esGratis && (
-            <p className="text-[10px] text-zinc-400 tabular-nums">{prendas.length}/{LIMITES_GRATIS.prendas} · Plan gratis</p>
+            <p className="text-[11px] text-zinc-500 tabular-nums">{prendas.length}/{LIMITES_GRATIS.prendas} · Plan gratis</p>
           )}
         </div>
         {aviso && (
@@ -217,33 +217,33 @@ export function ArmarioView() {
             {prendasFiltradas.map((item, i) => {
               const tieneRep = prendasConRep.has(item.id)
               return (
-                <div key={item.id} onClick={() => setSelectedPrenda(item)}
+                <button type="button" key={item.id} onClick={() => setSelectedPrenda(item)}
                   className={cn(
-                    "relative overflow-hidden cursor-pointer active:opacity-80 transition-opacity",
+                    "relative overflow-hidden text-left active:opacity-80 transition-opacity",
                     item.en_renta ? "bg-zinc-200 opacity-60" : "bg-zinc-50"
                   )}>
                   <img src={item.image_url || fashionImages[i % fashionImages.length]} alt={item.name} loading={i < 6 ? "eager" : "lazy"} decoding="async"
                     className={cn("w-full object-cover", item.en_renta && "grayscale")}
                     style={{ height: i % 3 === 0 ? "180px" : i % 3 === 1 ? "140px" : "160px" }} />
                   {tieneRep && (
-                    <div className="absolute top-2 right-2 bg-white border border-zinc-200 text-zinc-600 text-[10px] font-medium px-2 py-0.5 flex items-center gap-1">Rep.</div>
+                    <div className="absolute top-2 right-2 bg-white border border-zinc-200 text-zinc-600 text-[11px] font-medium px-2 py-0.5 flex items-center gap-1">Rep.</div>
                   )}
                   {item.en_renta && (
-                    <div className="absolute top-2 left-2 bg-zinc-500 text-white text-[10px] font-medium px-2 py-0.5">En renta</div>
+                    <div className="absolute top-2 left-2 bg-zinc-500 text-white text-[11px] font-medium px-2 py-0.5">En renta</div>
                   )}
                   {item.en_venta && !item.en_renta && (
-                    <div className="absolute top-2 left-2 bg-zinc-900 text-white text-[10px] font-medium px-2 py-0.5">En venta</div>
+                    <div className="absolute top-2 left-2 bg-zinc-900 text-white text-[11px] font-medium px-2 py-0.5">En venta</div>
                   )}
                   <div className="p-2.5">
-                    <p className={cn("text-xs font-medium truncate", item.en_renta ? "text-zinc-400" : "text-zinc-900")}>{item.name}</p>
-                    <p className="text-[10px] text-zinc-400">{item.category}{item.talla ? ` · ${item.talla}` : ""}</p>
+                    <p className={cn("text-xs font-medium truncate", item.en_renta ? "text-zinc-500" : "text-zinc-900")}>{item.name}</p>
+                    <p className="text-[11px] text-zinc-500">{item.category}{item.talla ? ` · ${item.talla}` : ""}</p>
                     {item.en_renta && item.fecha_renta && (
-                      <p className="text-[10px] text-zinc-400 mt-0.5">
+                      <p className="text-[11px] text-zinc-500 mt-0.5">
                         Renta: {new Date(item.fecha_renta).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}
                       </p>
                     )}
                   </div>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -256,7 +256,7 @@ export function ArmarioView() {
 
       <section className="px-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs text-zinc-400 uppercase tracking-widest">Reparaciones</p>
+          <p className="text-xs text-zinc-500 uppercase tracking-widest">Reparaciones</p>
           <motion.button whileTap={{ scale: 0.96 }} onClick={() => !isGuest && setShowRepForm(true)}
             className={cn("text-xs px-3 py-1.5 flex items-center gap-1 tracking-wide",
               isGuest ? "border border-zinc-200 text-zinc-300 cursor-default" : "border border-zinc-900 text-zinc-900")}>

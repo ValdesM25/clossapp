@@ -48,7 +48,7 @@ export function PrimerosPasos({ userId, pasos }: PrimerosPasosProps) {
           <p className="text-sm text-zinc-500 mt-1 leading-relaxed">Mientras más de tu ropa conozca Clossapp, mejores outfits te arma.</p>
         </div>
         <button type="button" onClick={ocultar} aria-label="Ocultar primeros pasos"
-          className="w-10 h-10 -mr-3 -mt-2 shrink-0 flex items-center justify-center text-zinc-400 hover:text-zinc-900">
+          className="w-10 h-10 -mr-3 -mt-2 shrink-0 flex items-center justify-center text-zinc-500 hover:text-zinc-900">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -69,10 +69,10 @@ export function PrimerosPasos({ userId, pasos }: PrimerosPasosProps) {
                 {p.hecho ? <Check className="w-3.5 h-3.5" /> : i + 1}
               </span>
               <span className="flex-1 min-w-0">
-                <span className={cn("block text-sm", p.hecho ? "text-zinc-400 line-through" : "text-zinc-900")}>{p.titulo}</span>
+                <span className={cn("block text-sm", p.hecho ? "text-zinc-500 line-through" : "text-zinc-900")}>{p.titulo}</span>
                 {!p.hecho && <span className="block text-xs text-zinc-500 mt-0.5 leading-relaxed">{p.texto}</span>}
               </span>
-              {!p.hecho && <ChevronRight className="w-4 h-4 text-zinc-400 shrink-0" aria-hidden="true" />}
+              {!p.hecho && <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0" aria-hidden="true" />}
               <span className="sr-only">{p.hecho ? "Hecho" : "Pendiente"}</span>
             </button>
           </li>
@@ -82,7 +82,7 @@ export function PrimerosPasos({ userId, pasos }: PrimerosPasosProps) {
       <details className="group border-t border-zinc-100">
         <summary className="min-h-12 px-5 flex items-center justify-between text-xs text-zinc-600 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
           Cómo funciona Clossapp
-          <ChevronRight className="w-4 h-4 text-zinc-400 transition-transform group-open:rotate-90" aria-hidden="true" />
+          <ChevronRight className="w-4 h-4 text-zinc-500 transition-transform group-open:rotate-90" aria-hidden="true" />
         </summary>
         <dl className="px-5 pb-5 flex flex-col gap-3">
           {COMO_FUNCIONA.map(([seccion, texto]) => (

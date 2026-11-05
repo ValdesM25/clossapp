@@ -61,12 +61,13 @@ export function PantallaEntrada() {
           exit={{ opacity: 0 }} transition={{ duration: reducir ? 0 : 0.35, ease: "easeOut" }}
           className="fixed inset-0 z-[250] flex flex-col items-center justify-center gap-6 bg-white">
           <motion.img src="/logo.svg" alt="Clossapp" className="h-12 w-auto"
-            initial={reducir ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            exit={reducir ? undefined : { scale: 1.04 }}
+            // transform en texto (no x/y/scale) para que corra en la GPU mientras la app carga.
+            initial={reducir ? false : { opacity: 0, transform: "translateY(8px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }}
+            exit={reducir ? undefined : { transform: "scale(1.04)" }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} />
           <div className="w-16 h-0.5 bg-zinc-100 overflow-hidden" aria-hidden="true">
             <motion.div className="h-full bg-zinc-900 origin-left"
-              initial={{ scaleX: 0 }} animate={{ scaleX: 0.9 }}
+              initial={{ transform: "scaleX(0)" }} animate={{ transform: "scaleX(0.9)" }}
               transition={{ duration: reducir ? 0 : MINIMO_MS / 1000 + 0.6, ease: "easeOut" }} />
           </div>
         </motion.div>

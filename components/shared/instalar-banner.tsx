@@ -42,7 +42,7 @@ export function InstalarBanner() {
   return (
     <section aria-labelledby="instalar-titulo" className="relative border border-zinc-200 bg-zinc-50 p-5">
       <button type="button" onClick={cerrar} aria-label="Cerrar"
-        className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-zinc-900">
+        className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-zinc-900">
         <X className="w-4 h-4" />
       </button>
       <div className="flex items-center gap-3 pr-8">

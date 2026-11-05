@@ -27,7 +27,7 @@ export function CompletarPerfil({ userId, onAbrir }: CompletarPerfilProps) {
   return (
     <section aria-labelledby="completar-perfil" className="relative border border-zinc-200 p-5 pr-12">
       <button type="button" onClick={posponer} aria-label="Recordármelo en dos semanas"
-        className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-zinc-900">
+        className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-zinc-900">
         <X className="w-4 h-4" />
       </button>
       <h2 id="completar-perfil" className="text-sm font-medium text-zinc-900">Afina tus sugerencias</h2>

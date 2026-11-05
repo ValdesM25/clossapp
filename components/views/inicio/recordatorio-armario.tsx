@@ -38,7 +38,7 @@ export function RecordatorioArmario({ prendas, onAgregar }: RecordatorioArmarioP
         </button>
       </div>
       <button type="button" onClick={descartar} aria-label="Ocultar recordatorio por una semana"
-        className="w-8 h-8 -mr-2 -mt-1 flex items-center justify-center text-zinc-400 hover:text-zinc-900">
+        className="w-8 h-8 -mr-2 -mt-1 flex items-center justify-center text-zinc-500 hover:text-zinc-900">
         <X className="w-4 h-4" />
       </button>
     </section>
