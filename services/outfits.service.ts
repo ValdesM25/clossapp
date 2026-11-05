@@ -37,8 +37,7 @@ export async function incrementarOutfits(
 
 export async function generateOutfits(
   contexto: { ocasion: string; clima: string; destacada: string },
-  wardrobe: { id: string; name: string; category: string; metadata: Record<string, string> | null }[],
-  userId: string
+  wardrobe: { id: string; name: string; category: string; metadata: Record<string, string> | null }[]
 ): Promise<Array<{ titulo: string; descripcion: string; prenda_ids: string[] }>> {
   const contextoStr = [
     contexto.ocasion && `Ocasión: ${contexto.ocasion}`,
@@ -46,10 +45,14 @@ export async function generateOutfits(
     contexto.destacada && `Prenda destacada: ${contexto.destacada}`,
   ].filter(Boolean).join(". ") || "Outfit casual del día"
 
+  // El servidor lee el armario de la base; aquí solo se evita gastar el
+  // outfit del día con el armario vacío.
+  if (!wardrobe.length) throw new Error("Agrega prendas a tu armario primero")
+
   const res = await fetch("/api/generate-outfits", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contexto: contextoStr, wardrobe, user_id: userId }),
+    body: JSON.stringify({ contexto: contextoStr }),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error ?? "Error en la API")
