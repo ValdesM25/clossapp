@@ -30,7 +30,7 @@ function BarraDemo({ abajo }: { abajo: string }) {
   const { demo, tourActivo, iniciarTour, logout } = useAuthContext()
   if (!demo || tourActivo) return null
   return (
-    <div role="status" className={`fixed ${abajo} left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 whitespace-nowrap bg-zinc-900 text-white text-[11px] px-4 py-2 shadow-lg`}>
+    <div role="status" className={`fixed ${abajo} left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 whitespace-nowrap bg-zinc-900 text-white text-[11px] px-4 py-2 shadow-lg`}>
       <span className="uppercase tracking-widest text-zinc-200">Modo demo</span>
       <button type="button" onClick={iniciarTour} className="underline underline-offset-2">Ver guía</button>
       <button type="button" onClick={() => void logout()} className="text-zinc-300 hover:text-white">Salir</button>
@@ -109,8 +109,8 @@ function Contenido() {
   return (
     <>
       <AuthenticatedShell />
-      {/* Encima de la barra de navegación inferior. */}
-      <BarraDemo abajo="bottom-24" />
+      {/* Por encima del botón elevado de Outfit, y debajo de la barra y sus menús (z-50). */}
+      <BarraDemo abajo="bottom-[calc(8rem+env(safe-area-inset-bottom,0px))]" />
       <GuiaDemo />
     </>
   )
