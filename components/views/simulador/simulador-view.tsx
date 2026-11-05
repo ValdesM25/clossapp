@@ -10,14 +10,14 @@ import { OutfitForm } from "./outfit-form"
 import { OutfitCard } from "./outfit-card"
 
 export function SimuladorView({ onElegir }: { onElegir: () => void }) {
-  const { userId, userName, isGuest } = useAuthContext()
+  const { userName, isGuest } = useAuthContext()
   const { prendas } = usePrendasContext()
 
   const [ocasion, setOcasion] = useState("")
   const [clima, setClima] = useState("")
   const [destacada, setDestacada] = useState("")
   const [destacadaQuery, setDestacadaQuery] = useState("")
-  const { outfits, generating, error: errorMsg, eligiendoIdx, elegidoIdx, generate, elegir, setElegidoIdx } = useOutfits(prendas, userId, userName, isGuest)
+  const { outfits, generating, error: errorMsg, eligiendoIdx, elegidoIdx, generate, elegir, setElegidoIdx } = useOutfits(prendas, userName, isGuest)
   const resultadosRef = useRef<HTMLElement>(null)
 
   // Al empezar a generar, la pantalla baja a donde van a aparecer los looks.

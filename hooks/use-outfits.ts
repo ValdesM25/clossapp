@@ -12,7 +12,7 @@ interface Outfit {
   prenda_ids: string[]
 }
 
-export function useOutfits(prendas: Prenda[], userId: string, userName: string, isGuest: boolean) {
+export function useOutfits(prendas: Prenda[], userName: string, isGuest: boolean) {
   const [outfits, setOutfits] = useState<Outfit[]>([])
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -36,14 +36,14 @@ export function useOutfits(prendas: Prenda[], userId: string, userName: string, 
         return
       }
       const wardrobe = mapWardrobe(prendas)
-      const resultados = await generateOutfits(contexto, wardrobe, userId)
+      const resultados = await generateOutfits(contexto, wardrobe)
       setOutfits(resultados)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al generar. Intenta de nuevo.")
     } finally {
       setGenerating(false)
     }
-  }, [prendas, userId, isGuest])
+  }, [prendas, isGuest])
 
   const elegir = useCallback(async (outfit: { titulo: string; prenda_ids: string[] }, idx: number) => {
     // Demo: se ve igual que en real, pero sin registrar usos en la base.

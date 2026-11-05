@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/utils/supabase/server"
-import { MENSAJES_LIMITE } from "@/constants/planes"
+import { MENSAJES_LIMITE, type MotivoLimite } from "@/constants/planes"
 import type { EstiloPerfil } from "@/constants/onboarding"
 
 // Solo para route handlers: usa cookies del request.
@@ -21,16 +21,17 @@ export async function exigirCuota(tipo: "outfit" | "analisis"): Promise<Resultad
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return { bloqueo: NextResponse.json({ error: MENSAJES_LIMITE.sinSesion }, { status: 401 }) }
+    return { bloqueo: NextResponse.json({ error: MENSAJES_LIMITE.sin_sesion }, { status: 401 }) }
   }
 
-  const { data: permitido, error } = await supabase.rpc("consumir_cuota", { p_tipo: tipo })
+  const { data: motivo, error } = await supabase.rpc("usar_ia", { p_tipo: tipo })
   if (error) {
     console.error("[cuota]", error.message)
     return { bloqueo: NextResponse.json({ error: "No se pudo verificar tu plan" }, { status: 500 }) }
   }
-  if (!permitido) {
-    return { bloqueo: NextResponse.json({ error: MENSAJES_LIMITE[tipo], limite: tipo }, { status: 429 }) }
+  if (motivo !== "ok") {
+    const m = (motivo in MENSAJES_LIMITE ? motivo : "global") as MotivoLimite
+    return { bloqueo: NextResponse.json({ error: MENSAJES_LIMITE[m], limite: m }, { status: 429 }) }
   }
   return { bloqueo: null, supabase, userId: user.id }
 }
