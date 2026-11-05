@@ -53,7 +53,9 @@ export default function RootLayout({
   return (
     <html lang="es" className={fraunces.variable}>
       <body className="font-sans antialiased">
-        <SerwistProvider swUrl="/serwist/sw.js">
+        {/* En desarrollo el service worker guarda páginas y chunks de compilaciones viejas:
+            al reiniciar el servidor el navegador pide archivos que ya no existen y recarga en bucle. */}
+        <SerwistProvider swUrl="/serwist/sw.js" disable={process.env.NODE_ENV === 'development'}>
           {children}
         </SerwistProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
