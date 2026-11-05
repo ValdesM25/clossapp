@@ -112,7 +112,7 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
         {/* Header */}
         <div className="p-3.5 sm:p-4 bg-zinc-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-400" />
+            <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-zinc-300" />
             <h3 className="font-serif text-sm sm:text-base text-white">Mis Pedidos</h3>
           </div>
           <div className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
             {esDemo() && orders.length > 0 && (
               <button
                 onClick={handleClearAll}
-                className="flex items-center gap-1 text-xs text-rose-400 hover:text-rose-300 bg-rose-950/60 hover:bg-rose-900/80 px-2 py-1 rounded border border-rose-800/50 transition-colors"
+                className="flex items-center gap-1 text-xs text-zinc-300 hover:text-zinc-200 bg-zinc-800/60 hover:bg-zinc-800/80 px-2 py-1 rounded border border-zinc-700 transition-colors"
                 title="Vaciar todas las órdenes"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -188,7 +188,7 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                       className={cn(
                         "text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full flex items-center gap-1 border",
                         isCustodia && "bg-amber-50 text-amber-800 border-amber-200",
-                        isEnRenta && "bg-purple-50 text-purple-800 border-purple-200",
+                        isEnRenta && "bg-zinc-50 text-zinc-800 border-zinc-200",
                         isLiberado && "bg-emerald-50 text-emerald-800 border-emerald-200",
                         isCancelado && "bg-zinc-50 text-zinc-500 border-zinc-200"
                       )}
@@ -200,7 +200,7 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                         </>
                       ) : isEnRenta ? (
                         <>
-                          <Clock className="w-3 h-3 text-purple-600 animate-pulse" /> Paso 2: Devolución
+                          <Clock className="w-3 h-3 text-zinc-600 animate-pulse" /> Paso 2: Devolución
                         </>
                       ) : isCancelado ? (
                         <>Cancelado</>
@@ -224,7 +224,7 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                           <span className="font-mono text-zinc-600 shrink-0">${it.precio} MXN</span>
                         </div>
                         {it.fechaRenta && (
-                          <span className="text-[10px] text-purple-700 font-medium pl-3">
+                          <span className="text-[10px] text-zinc-700 font-medium pl-3">
                             📅 Fecha evento: {it.fechaRenta}
                           </span>
                         )}
@@ -243,15 +243,15 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                         onClick={() => setSelectedQR(order)}
                         className="bg-zinc-900 text-white font-medium px-2.5 py-1.5 rounded text-[11px] sm:text-xs flex items-center gap-1 hover:bg-zinc-800 transition-colors shrink-0"
                       >
-                        <QrCode className="w-3.5 h-3.5 text-amber-400" />{" "}
+                        <QrCode className="w-3.5 h-3.5 text-zinc-300" />{" "}
                         {isRentaOrder ? "Ver QR #1 Recolección" : "Ver QR Custodia"}
                       </button>
                     ) : isEnRenta ? (
                       <button
                         onClick={() => setSelectedQR(order)}
-                        className="bg-purple-950 text-white font-medium px-2.5 py-1.5 rounded text-[11px] sm:text-xs flex items-center gap-1 hover:bg-purple-900 transition-colors shrink-0"
+                        className="bg-zinc-900 text-white font-medium px-2.5 py-1.5 rounded text-[11px] sm:text-xs flex items-center gap-1 hover:bg-zinc-900 transition-colors shrink-0"
                       >
-                        <QrCode className="w-3.5 h-3.5 text-purple-300" /> Ver QR #2 Devolución
+                        <QrCode className="w-3.5 h-3.5 text-zinc-200" /> Ver QR #2 Devolución
                       </button>
                     ) : isCancelado ? (
                       <span className="text-zinc-500 font-medium shrink-0">Pedido cancelado</span>

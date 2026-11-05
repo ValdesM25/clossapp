@@ -69,3 +69,22 @@ Pedido de Mauri: aplicar todas las skills de diseño disponibles. Lo que se corr
 - Escaneo renderizado del login en 390×844: de 7 problemas a 0.
 
 Pendiente de decisión de Mauri: tipografía serif real, etiquetas en mayúsculas sobre títulos, 6 secciones en la barra inferior, acentos y contraste en el resto de la app.
+
+## 9. Decisiones de Mauri sobre el pase de diseño
+
+| # | Decisión | Qué se hizo |
+|---|---|---|
+| 1A | Vender/donar van con las olvidadas | Olvidadas: Combinar, Vender, Donar. "Las que más usas" queda informativa (foto, nombre, usos). |
+| 2A | Apagar `ignoreBuildErrors` | Quitado de `next.config.mjs`; el build ya corre TypeScript y falla con errores. |
+| 3A | Arreglar ESLint | `eslint` y `eslint-config-next` ya estaban declarados, solo faltaba instalarlos (`npm install`, lockfile sin cambios). `npm run lint`: 0 errores, 120 avisos heredados. |
+| 4B | `middleware.ts` → `proxy.ts` | Se espera. |
+| 5C | Bucket privado | Otra tanda. |
+| 6A | Instrument Serif | Cargada con `next/font` como `--font-serif`; se quitaron 32 pesos (semibold/bold) que salían con negrita falsa. |
+| 7B | Etiquetas sobre títulos solo si informan | Quitadas 10 decorativas (Insights, Mi Colección, Descubre, IA Stylist, Suscripción, Mi Cuenta, Foto de perfil, Look 0N, Legal, Centros de acopio). Se quedan "1 de 3 listos" y la categoría sobre el nombre de una prenda. Inicio: "Hola, {nombre}" en un solo título. |
+| 8A | 5 secciones, Outfit al centro | Inicio · Armario · **Outfit** (botón negro elevado) · Shop · Stats. Planes pasa al menú del avatar como "Planes y puntos" y desaparece con plan premium. `lib/navegar.ts` permite cambiar de sección desde el menú y la guía de la demo. |
+| 9A | Un acento | Negro = acciones y selección; verde = éxito; ámbar = pendiente/aviso; rojo = error. Fuera morado, rosa e índigo de toda la app (renta/devolución se distingue por texto e ícono). Degradados de color en encabezados → zinc. Calendario de renta: disponible / elegido / no disponible. |
+| 10A | Contraste en toda la app | 130 textos `zinc-300/400` → `zinc-500` sobre fondo claro (se respetaron 71 sobre fondo oscuro y 12 deshabilitados o íconos decorativos). Políticas: texto sobre gris a `zinc-600`. Párrafos con `text-wrap: pretty`, títulos con `balance`. |
+
+Verificación: escaneo renderizado de login, /centros, /politicas y /offline a 390×844 sin fallas (queda solo la nota "una sola tipografía", intencional en UI de producto). El detector estático marca las esquinas del visor QR del portal como "borde lateral": falso positivo.
+
+Pendiente de Mauri: si se mantiene Inicio (ver pros y contras en el reporte).

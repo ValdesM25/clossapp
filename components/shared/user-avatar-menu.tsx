@@ -146,7 +146,7 @@ export function UserAvatarMenu() {
               />
               <div className="flex flex-col min-w-0">
                 <p className="text-xs font-serif text-zinc-900 truncate">{userName || "Usuario"}</p>
-                <p className="text-[11px] text-zinc-400 truncate">{userEmail || "sin@correo.com"}</p>
+                <p className="text-[11px] text-zinc-500 truncate">{userEmail || "sin@correo.com"}</p>
                 <span className="mt-1 text-[9px] uppercase tracking-widest px-1.5 py-0.5 border border-zinc-200 text-zinc-500 w-fit">
                   {isGuest ? "Modo demo" : plan === "gratis" ? "Plan Gratis" : "Cuenta Premium"}
                 </span>
@@ -272,7 +272,7 @@ export function UserAvatarMenu() {
                 Nombre de usuario
               </label>
               <div className="relative">
-                <User className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                <User className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -287,7 +287,7 @@ export function UserAvatarMenu() {
                 Correo electrónico
               </label>
               <div className="relative">
-                <Mail className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                <Mail className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                 <Input
                   value={email}
                   readOnly
@@ -303,7 +303,7 @@ export function UserAvatarMenu() {
                 Número de teléfono
               </label>
               <div className="relative">
-                <Phone className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                <Phone className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                 <Input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -316,7 +316,7 @@ export function UserAvatarMenu() {
 
             <div className="border-t border-zinc-100 pt-3">
               <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 block flex items-center gap-1">
-                <KeyRound className="w-3 h-3 text-zinc-400" /> Cambiar Contraseña (Opcional)
+                <KeyRound className="w-3 h-3 text-zinc-500" /> Cambiar Contraseña (Opcional)
               </label>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 <div>

@@ -156,6 +156,10 @@
     user-select: none;
   }
 
+  /* Sin palabras sueltas al final de párrafos ni títulos desbalanceados. */
+  p, li, dd { text-wrap: pretty; }
+  h1, h2, h3 { text-wrap: balance; }
+
   /* Foco de teclado visible en todo lo interactivo; el gris tenue por defecto casi no se veía. */
   :focus-visible {
     outline: 2px solid var(--foreground);

@@ -705,7 +705,7 @@ export function PuntoRecoleccionView() {
       <header className="sticky top-0 z-30 bg-zinc-900 text-white border-b border-zinc-800 shadow-md">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold">
+            <div className="w-10 h-10 rounded-lg bg-white/20 border border-zinc-700 flex items-center justify-center text-zinc-300 font-bold">
               <Building2 className="w-5 h-5" />
             </div>
             <div>
@@ -719,7 +719,7 @@ export function PuntoRecoleccionView() {
                 </span>
               </div>
               <p className="text-xs text-zinc-400 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-emerald-400 shrink-0" />
+                <MapPin className="w-3 h-3 text-zinc-300 shrink-0" />
                 <span>Saltillo - Zona San Patricio · ID: #CP-8840</span>
               </p>
             </div>
@@ -734,7 +734,7 @@ export function PuntoRecoleccionView() {
               className="p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded transition-colors"
               title="Actualizar datos"
             >
-              <RefreshCw className={`w-4 h-4 ${loadingDB || loadingEscrow ? "animate-spin text-emerald-400" : ""}`} />
+              <RefreshCw className={`w-4 h-4 ${loadingDB || loadingEscrow ? "animate-spin text-zinc-300" : ""}`} />
             </button>
 
             <div className="hidden sm:flex flex-col items-end text-xs text-zinc-300">
@@ -761,13 +761,13 @@ export function PuntoRecoleccionView() {
               onClick={() => setOperatorTab("donaciones")}
               className={`py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
                 operatorTab === "donaciones"
-                  ? "border-emerald-400 text-emerald-400 bg-emerald-950/40"
+                  ? "border-zinc-700 text-zinc-300 bg-zinc-800/40"
                   : "border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/60"
               }`}
             >
-              <Heart className="w-4 h-4 text-emerald-400" />
+              <Heart className="w-4 h-4 text-zinc-300" />
               <span>1. Recepción de Donaciones</span>
-              <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono text-[10px] px-2 py-0.5 rounded-full">
+              <span className="bg-white/20 text-zinc-200 border border-zinc-700 font-mono text-[10px] px-2 py-0.5 rounded-full">
                 {garmentsCollectedMonth} prendas
               </span>
             </button>
@@ -777,13 +777,13 @@ export function PuntoRecoleccionView() {
               onClick={() => setOperatorTab("custodia_compras")}
               className={`py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
                 operatorTab === "custodia_compras"
-                  ? "border-amber-400 text-amber-300 bg-amber-950/40"
+                  ? "border-zinc-700 text-zinc-200 bg-zinc-800/40"
                   : "border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/60"
               }`}
             >
-              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <ShieldCheck className="w-4 h-4 text-zinc-300" />
               <span>2. Custodia Compras</span>
-              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono text-[10px] px-2 py-0.5 rounded-full">
+              <span className="bg-white/20 text-zinc-200 border border-zinc-700 font-mono text-[10px] px-2 py-0.5 rounded-full">
                 {escrowPendientes.length} por entregar
               </span>
             </button>
@@ -793,13 +793,13 @@ export function PuntoRecoleccionView() {
               onClick={() => setOperatorTab("custodia_rentas")}
               className={`py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
                 operatorTab === "custodia_rentas"
-                  ? "border-purple-400 text-purple-300 bg-purple-950/40"
+                  ? "border-zinc-700 text-zinc-200 bg-zinc-800/40"
                   : "border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/60"
               }`}
             >
-              <Sparkles className="w-4 h-4 text-purple-400" />
+              <Sparkles className="w-4 h-4 text-zinc-300" />
               <span>3. Custodia Rentas</span>
-              <span className="bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono text-[10px] px-2 py-0.5 rounded-full">
+              <span className="bg-white/20 text-zinc-200 border border-zinc-700 font-mono text-[10px] px-2 py-0.5 rounded-full">
                 {escrowOrders.filter((o) => o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length} ordenes
               </span>
             </button>
@@ -814,7 +814,7 @@ export function PuntoRecoleccionView() {
             {/* Banner: Operación de Donaciones e Identificación */}
             <div className="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-white p-5 border border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-mono tracking-widest text-emerald-400 bg-emerald-950/80 px-2.5 py-1 border border-emerald-800/50 inline-block mb-1">
+                <span className="text-[10px] uppercase font-mono tracking-widest text-zinc-300 bg-zinc-800/80 px-2.5 py-1 border border-zinc-700 inline-block mb-1">
                   Módulo de Gestión de Donaciones
                 </span>
                 <h2 className="font-serif text-xl sm:text-2xl text-white">
@@ -835,7 +835,7 @@ export function PuntoRecoleccionView() {
                     setIsScannerOpen(true)
                   }}
                   data-tour="acopio-escanear"
-                  className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                  className="px-4 py-3 bg-white hover:bg-zinc-800 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
                 >
                   <Scan className="w-4 h-4 text-zinc-950" />
                   <span>Escanear QR Donación</span>
@@ -846,7 +846,7 @@ export function PuntoRecoleccionView() {
                   onClick={() => setIsManualModalOpen(true)}
                   className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors"
                 >
-                  <Plus className="w-4 h-4 text-amber-400" />
+                  <Plus className="w-4 h-4 text-zinc-300" />
                   <span>Donación Presencial</span>
                 </motion.button>
               </div>
@@ -856,7 +856,7 @@ export function PuntoRecoleccionView() {
             <section data-tour="acopio-metas" className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 pb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+                  <div className="w-8 h-8 rounded bg-zinc-50 border border-zinc-200 flex items-center justify-center text-zinc-700">
                     <Target className="w-5 h-5" />
                   </div>
                   <div>
@@ -893,7 +893,7 @@ export function PuntoRecoleccionView() {
                   </div>
 
                   <div className="text-left sm:text-right">
-                    <span className="text-2xl font-mono font-bold text-emerald-700">
+                    <span className="text-2xl font-mono font-bold text-zinc-700">
                       {percentGoal}%
                     </span>
                     <p className="text-xs text-zinc-500 font-medium mt-0.5">
@@ -908,7 +908,7 @@ export function PuntoRecoleccionView() {
                     initial={{ width: 0 }}
                     animate={{ width: `${percentGoal}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full relative"
+                    className="bg-gradient-to-r from-zinc-900 to-zinc-300 h-full rounded-full relative"
                   />
                 </div>
 
@@ -962,15 +962,15 @@ export function PuntoRecoleccionView() {
             {/* SECTION 2: MÉTRICAS DE RECOLECCIÓN DE ESTE MES */}
             <section className="space-y-3">
               <h3 className="font-serif text-lg text-zinc-900 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-emerald-600" />
+                <TrendingUp className="w-5 h-5 text-zinc-600" />
                 Métricas de Recolección de este Mes
               </h3>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
-                  <div className="flex items-center justify-between text-zinc-400">
-                    <Shirt className="w-4 h-4 text-emerald-600" />
-                    <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5">
+                  <div className="flex items-center justify-between text-zinc-500">
+                    <Shirt className="w-4 h-4 text-zinc-600" />
+                    <span className="text-[10px] font-mono text-zinc-700 bg-zinc-50 px-1.5 py-0.5">
                       Registradas
                     </span>
                   </div>
@@ -979,7 +979,7 @@ export function PuntoRecoleccionView() {
                 </div>
 
                 <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
-                  <div className="flex items-center justify-between text-zinc-400">
+                  <div className="flex items-center justify-between text-zinc-500">
                     <PackageCheck className="w-4 h-4 text-zinc-700" />
                     <span className="text-[10px] font-mono text-zinc-500">Verificados</span>
                   </div>
@@ -988,18 +988,18 @@ export function PuntoRecoleccionView() {
                 </div>
 
                 <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
-                  <div className="flex items-center justify-between text-zinc-400">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
-                    <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-1.5 py-0.5">Entregados</span>
+                  <div className="flex items-center justify-between text-zinc-500">
+                    <Sparkles className="w-4 h-4 text-zinc-600" />
+                    <span className="text-[10px] font-mono text-zinc-700 bg-zinc-50 px-1.5 py-0.5">Entregados</span>
                   </div>
-                  <p className="font-serif text-2xl sm:text-3xl text-amber-600">{pointsDistributed.toLocaleString()}</p>
+                  <p className="font-serif text-2xl sm:text-3xl text-zinc-600">{pointsDistributed.toLocaleString()}</p>
                   <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Puntos ClossApp creados</p>
                 </div>
 
                 <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
-                  <div className="flex items-center justify-between text-zinc-400">
-                    <Users className="w-4 h-4 text-indigo-600" />
-                    <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 px-1.5 py-0.5">Comunidad</span>
+                  <div className="flex items-center justify-between text-zinc-500">
+                    <Users className="w-4 h-4 text-zinc-600" />
+                    <span className="text-[10px] font-mono text-zinc-700 bg-zinc-50 px-1.5 py-0.5">Comunidad</span>
                   </div>
                   <p className="font-serif text-2xl sm:text-3xl text-zinc-900">{familiasBeneficiadas}</p>
                   <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Familias beneficiadas</p>
@@ -1021,7 +1021,7 @@ export function PuntoRecoleccionView() {
 
                 {/* Quick manual lookup bar */}
                 <div className="relative w-full sm:w-72">
-                  <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
+                  <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" />
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -1032,7 +1032,7 @@ export function PuntoRecoleccionView() {
               </div>
 
               {filteredRegistros.length === 0 ? (
-                <div className="p-8 text-center border border-dashed border-zinc-200 text-zinc-400">
+                <div className="p-8 text-center border border-dashed border-zinc-200 text-zinc-500">
                   <QrCode className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p className="text-xs">No hay registros de donación aún.</p>
                   <p className="text-[11px] text-zinc-500 mt-1">
@@ -1047,20 +1047,20 @@ export function PuntoRecoleccionView() {
                       className="p-4 hover:bg-zinc-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-9 h-9 rounded bg-zinc-50 text-zinc-800 border border-zinc-200 flex items-center justify-center shrink-0 mt-0.5">
                           <ShieldCheck className="w-5 h-5" />
                         </div>
 
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-semibold text-zinc-900">{item.donor_name}</span>
-                            <span className="text-[10px] font-mono text-zinc-400 bg-zinc-100 px-2 py-0.5 border border-zinc-200">
+                            <span className="text-[10px] font-mono text-zinc-500 bg-zinc-100 px-2 py-0.5 border border-zinc-200">
                               {item.punto_acopio_nombre}
                             </span>
                           </div>
 
                           <p className="text-xs text-zinc-600 mt-0.5">{item.observaciones || "Verificado"}</p>
-                          <p className="text-[10px] text-zinc-400 font-mono mt-1 flex items-center gap-1">
+                          <p className="text-[10px] text-zinc-500 font-mono mt-1 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {new Date(item.fecha_registro).toLocaleString("es-MX", {
                               day: "numeric",
@@ -1074,8 +1074,8 @@ export function PuntoRecoleccionView() {
                       </div>
 
                       <div className="flex sm:flex-col items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-zinc-100">
-                        <span className="text-xs font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-1 border border-emerald-200 font-mono flex items-center gap-1">
-                          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="text-xs font-semibold text-zinc-800 bg-zinc-100 px-2.5 py-1 border border-zinc-200 font-mono flex items-center gap-1">
+                          <Sparkles className="w-3.5 h-3.5 text-zinc-600" />
                           +{item.puntos_otorgados} Puntos acreditados
                         </span>
                         <span className="text-[11px] text-zinc-700 font-medium mt-1">
@@ -1092,16 +1092,16 @@ export function PuntoRecoleccionView() {
           /* OPERATOR TAB 2: INTERFAZ DE COMPRAS EN CUSTODIA (MARKETPLACE / ESCROW) */
           <div className="space-y-6">
             {/* Banner Custodia */}
-            <div className="bg-gradient-to-r from-amber-950 via-zinc-900 to-amber-950 text-white p-5 border border-amber-900/60 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+            <div className="bg-gradient-to-r from-zinc-800 via-zinc-900 to-zinc-800 text-white p-5 border border-zinc-700 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 bg-amber-950/80 px-2.5 py-1 border border-amber-700/50 inline-block mb-1">
+                <span className="text-[10px] uppercase font-mono tracking-widest text-zinc-300 bg-zinc-800/80 px-2.5 py-1 border border-zinc-700 inline-block mb-1">
                   Módulo de Custodia, Compras & Rentas
                 </span>
                 <h2 className="font-serif text-xl sm:text-2xl text-white flex items-center gap-2">
-                  <ShieldCheck className="w-6 h-6 text-amber-400" />
+                  <ShieldCheck className="w-6 h-6 text-zinc-300" />
                   Verificación de Entrega y Liberación de Pago al Vendedor
                 </h2>
-                <p className="text-xs text-amber-200/80 max-w-2xl leading-relaxed">
+                <p className="text-xs text-zinc-300 max-w-2xl leading-relaxed">
                   Verifica el código QR presentado por el comprador en el punto de acopio. Al confirmar la entrega física de las prendas en buen estado, se liberará el dinero retenido en custodia al vendedor.
                 </p>
               </div>
@@ -1115,7 +1115,7 @@ export function PuntoRecoleccionView() {
                     setScannerErrorMsg(null)
                     setIsScannerOpen(true)
                   }}
-                  className="px-4 py-3 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                  className="px-4 py-3 bg-white hover:bg-white text-zinc-950 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
                 >
                   <QrCode className="w-4 h-4 text-zinc-950" />
                   <span>Escanear QR de Custodia</span>
@@ -1126,7 +1126,7 @@ export function PuntoRecoleccionView() {
                   onClick={() => loadEscrowOrders()}
                   className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-semibold text-xs tracking-wide flex items-center justify-center gap-2 transition-colors"
                 >
-                  <RefreshCw className={`w-4 h-4 text-amber-400 ${loadingEscrow ? "animate-spin" : ""}`} />
+                  <RefreshCw className={`w-4 h-4 text-zinc-300 ${loadingEscrow ? "animate-spin" : ""}`} />
                   <span>Actualizar Lista</span>
                 </motion.button>
               </div>
@@ -1134,31 +1134,31 @@ export function PuntoRecoleccionView() {
 
             {/* KPI Cards Custodia */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white border border-amber-200 p-4 space-y-1 shadow-sm">
-                <div className="flex items-center justify-between text-amber-700">
+              <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
+                <div className="flex items-center justify-between text-zinc-700">
                   <PackageCheck className="w-4 h-4" />
-                  <span className="text-[10px] font-mono bg-amber-50 px-1.5 py-0.5 border border-amber-200">
+                  <span className="text-[10px] font-mono bg-zinc-50 px-1.5 py-0.5 border border-zinc-200">
                     Por Entregar
                   </span>
                 </div>
-                <p className="font-serif text-2xl sm:text-3xl text-amber-950">{escrowPendientes.length}</p>
+                <p className="font-serif text-2xl sm:text-3xl text-zinc-900">{escrowPendientes.length}</p>
                 <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Órdenes en Custodia</p>
               </div>
 
-              <div className="bg-white border border-emerald-200 p-4 space-y-1 shadow-sm">
-                <div className="flex items-center justify-between text-emerald-700">
+              <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
+                <div className="flex items-center justify-between text-zinc-700">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span className="text-[10px] font-mono bg-emerald-50 px-1.5 py-0.5 border border-emerald-200">
+                  <span className="text-[10px] font-mono bg-zinc-50 px-1.5 py-0.5 border border-zinc-200">
                     Completadas
                   </span>
                 </div>
-                <p className="font-serif text-2xl sm:text-3xl text-emerald-900">{escrowEntregadas.length}</p>
+                <p className="font-serif text-2xl sm:text-3xl text-zinc-900">{escrowEntregadas.length}</p>
                 <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Entregadas & Liberadas</p>
               </div>
 
               <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
                 <div className="flex items-center justify-between text-zinc-500">
-                  <DollarSign className="w-4 h-4 text-emerald-600" />
+                  <DollarSign className="w-4 h-4 text-zinc-600" />
                   <span className="text-[10px] font-mono text-zinc-500">Retenido</span>
                 </div>
                 <p className="font-serif text-2xl sm:text-3xl text-zinc-900">${totalFondosCustodia}</p>
@@ -1167,10 +1167,10 @@ export function PuntoRecoleccionView() {
 
               <div className="bg-white border border-zinc-200 p-4 space-y-1 shadow-sm">
                 <div className="flex items-center justify-between text-zinc-500">
-                  <Sparkles className="w-4 h-4 text-emerald-600" />
-                  <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5">Liberado</span>
+                  <Sparkles className="w-4 h-4 text-zinc-600" />
+                  <span className="text-[10px] font-mono text-zinc-700 bg-zinc-50 px-1.5 py-0.5">Liberado</span>
                 </div>
-                <p className="font-serif text-2xl sm:text-3xl text-emerald-800">${totalFondosLiberados}</p>
+                <p className="font-serif text-2xl sm:text-3xl text-zinc-800">${totalFondosLiberados}</p>
                 <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Pagos Entregados a Vendedores</p>
               </div>
             </div>
@@ -1179,19 +1179,19 @@ export function PuntoRecoleccionView() {
             <section className="bg-white border border-zinc-200 p-5 sm:p-6 shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-amber-600" />
+                  <ShieldCheck className="w-5 h-5 text-zinc-600" />
                   <h3 className="font-serif text-lg text-zinc-900">
                     Compras y Rentas Listas para Entrega en este Punto
                   </h3>
                 </div>
-                <span className="text-xs font-mono text-amber-900 bg-amber-100 border border-amber-300 px-3 py-1 font-bold">
+                <span className="text-xs font-mono text-zinc-900 bg-zinc-100 border border-zinc-300 px-3 py-1 font-bold">
                   {escrowPendientes.length} órdenes esperando comprador
                 </span>
               </div>
 
               {escrowPendientes.length === 0 ? (
-                <div className="py-12 text-center border border-dashed border-zinc-200 text-zinc-400">
-                  <PackageCheck className="w-8 h-8 mx-auto mb-2 opacity-50 text-amber-600" />
+                <div className="py-12 text-center border border-dashed border-zinc-200 text-zinc-500">
+                  <PackageCheck className="w-8 h-8 mx-auto mb-2 opacity-50 text-zinc-600" />
                   <p className="text-xs font-semibold text-zinc-700">No hay compras o rentas pendientes en este momento.</p>
                   <p className="text-[11px] text-zinc-500 mt-1">
                     Cuando un usuario compre o rente prendas en el Marketplace, aparecerán aquí para entrega.
@@ -1203,18 +1203,18 @@ export function PuntoRecoleccionView() {
                     <motion.div
                       key={order.id}
                       whileHover={{ y: -2 }}
-                      className="border border-amber-300 bg-amber-50/40 p-4 rounded-xl flex flex-col justify-between gap-3 relative shadow-xs"
+                      className="border border-zinc-300 bg-zinc-50 p-4 rounded-xl flex flex-col justify-between gap-3 relative shadow-xs"
                     >
-                      <div className="flex items-center justify-between border-b border-amber-200/80 pb-2.5">
+                      <div className="flex items-center justify-between border-b border-zinc-200 pb-2.5">
                         <div>
-                          <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-amber-950 bg-amber-200/80 px-2 py-0.5 rounded">
+                          <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-zinc-900 bg-zinc-200 px-2 py-0.5 rounded">
                             Código: #{order.orderCode}
                           </span>
                           <p className="text-[10px] text-zinc-500 font-mono mt-1">
                             QR Token: <span className="font-bold text-zinc-800">{order.qrToken}</span>
                           </p>
                         </div>
-                        <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                        <span className="bg-zinc-100 text-zinc-900 border border-zinc-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
                           <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                           En Custodia
                         </span>
@@ -1225,7 +1225,7 @@ export function PuntoRecoleccionView() {
                         <p className="text-[11px] font-mono text-zinc-600 font-semibold uppercase">
                           Prendas en la Orden ({order.items.length}):
                         </p>
-                        <div className="space-y-2 bg-white border border-amber-200/70 p-2.5 rounded-lg">
+                        <div className="space-y-2 bg-white border border-zinc-200 p-2.5 rounded-lg">
                           {order.items.map((item, idx) => (
                             <div key={idx} className="flex items-center gap-3 text-xs">
                               <img
@@ -1258,14 +1258,14 @@ export function PuntoRecoleccionView() {
                       </div>
 
                       {/* Buyer & Payment breakdown */}
-                      <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-200/80">
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-zinc-200">
                         <div>
                           <p className="text-[10px] text-zinc-500 font-mono">Comprador:</p>
                           <p className="font-semibold text-zinc-900">{order.buyerName}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-[10px] text-zinc-500 font-mono">Total Retenido:</p>
-                          <p className="font-mono text-base font-bold text-amber-950">${order.totalPagado} MXN</p>
+                          <p className="font-mono text-base font-bold text-zinc-900">${order.totalPagado} MXN</p>
                         </div>
                       </div>
 
@@ -1280,7 +1280,7 @@ export function PuntoRecoleccionView() {
                         }}
                         className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
                       >
-                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <ShieldCheck className="w-4 h-4 text-zinc-300" />
                         <span>Verificar QR y Entregar Prenda</span>
                       </motion.button>
                     </motion.div>
@@ -1302,7 +1302,7 @@ export function PuntoRecoleccionView() {
               </div>
 
               {escrowEntregadas.length === 0 ? (
-                <div className="p-6 text-center border border-zinc-200 text-zinc-400 text-xs">
+                <div className="p-6 text-center border border-zinc-200 text-zinc-500 text-xs">
                   Aún no hay entregas completadas en este turno.
                 </div>
               ) : (
@@ -1310,30 +1310,30 @@ export function PuntoRecoleccionView() {
                   {escrowEntregadas.map((o) => (
                     <div key={o.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
                       <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-9 h-9 rounded bg-zinc-100 text-zinc-800 border border-zinc-300 flex items-center justify-center shrink-0 mt-0.5">
                           <Check className="w-5 h-5" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-xs font-bold text-zinc-900">#{o.orderCode}</span>
-                            <span className="text-[10px] font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 border border-emerald-200">
+                            <span className="text-[10px] font-mono text-zinc-800 bg-zinc-50 px-2 py-0.5 border border-zinc-200">
                               ✓ Entregado & Pago Liberado
                             </span>
                           </div>
                           <p className="text-xs text-zinc-700 mt-0.5">
                             Comprador: <strong>{o.buyerName}</strong> · {o.items.length} {o.items.length === 1 ? "prenda" : "prendas"}
                           </p>
-                          <p className="text-[10px] text-zinc-400 font-mono mt-1">
+                          <p className="text-[10px] text-zinc-500 font-mono mt-1">
                             Punto de Acopio: {o.puntoAcopioNombre}
                           </p>
                         </div>
                       </div>
 
                       <div className="flex sm:flex-col items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-zinc-100">
-                        <span className="font-mono text-sm font-bold text-emerald-700">
+                        <span className="font-mono text-sm font-bold text-zinc-700">
                           ${o.totalPagado} MXN liberados
                         </span>
-                        <span className="text-[10px] text-zinc-400 font-mono">
+                        <span className="text-[10px] text-zinc-500 font-mono">
                           Liberado por operador
                         </span>
                       </div>
@@ -1347,15 +1347,15 @@ export function PuntoRecoleccionView() {
           /* PESTAÑA DEDICADA 3: CUSTODIA RENTAS (2 PASOS QR) */
           <div className="space-y-6">
             {/* Banner Header Rentas */}
-            <div className="bg-gradient-to-r from-purple-950 via-zinc-900 to-purple-950 text-white p-5 border border-purple-800/60 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md">
+            <div className="bg-gradient-to-r from-zinc-800 via-zinc-900 to-zinc-800 text-white p-5 border border-zinc-700 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md">
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-mono tracking-widest text-purple-300 bg-purple-900/80 px-2.5 py-1 border border-purple-700/50 inline-block mb-1">
+                <span className="text-[10px] uppercase font-mono tracking-widest text-zinc-200 bg-zinc-800/80 px-2.5 py-1 border border-zinc-700 inline-block mb-1">
                   Módulo de Gestión de Rentas
                 </span>
                 <h2 className="font-serif text-xl sm:text-2xl text-white">
                   Custodia y Seguimiento de Rentas en 2 Pasos QR
                 </h2>
-                <p className="text-xs text-purple-200/80 max-w-2xl leading-relaxed">
+                <p className="text-xs text-zinc-300 max-w-2xl leading-relaxed">
                   Controla la entrega inicial de la prenda al cliente (<strong>QR #1 Recolección</strong>) y valida el retorno de la prenda tras el evento para lavado (<strong>QR #2 Devolución y Liberación de Fondos</strong>).
                 </p>
               </div>
@@ -1366,7 +1366,7 @@ export function PuntoRecoleccionView() {
                   setScannerErrorMsg(null)
                   setIsScannerOpen(true)
                 }}
-                className="px-5 py-3 bg-purple-500 hover:bg-purple-400 text-zinc-950 font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all shrink-0 cursor-pointer"
+                className="px-5 py-3 bg-white hover:bg-white text-zinc-950 font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition-all shrink-0 cursor-pointer"
               >
                 <QrCode className="w-4 h-4 text-zinc-950" />
                 <span>Escanear QR de Renta (Paso 1 ó Paso 2)</span>
@@ -1375,47 +1375,47 @@ export function PuntoRecoleccionView() {
 
             {/* KPIs Rentas */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg flex items-center justify-between">
+              <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-lg flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-mono font-semibold uppercase text-amber-800 tracking-wider block">
+                  <span className="text-[10px] font-mono font-semibold uppercase text-zinc-800 tracking-wider block">
                     Paso 1: Por Entregar al Cliente
                   </span>
-                  <p className="font-serif text-2xl text-amber-950 mt-1">
+                  <p className="font-serif text-2xl text-zinc-900 mt-1">
                     {escrowOrders.filter((o) => o.status === "pago_en_custodia" && o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length}
                   </p>
-                  <p className="text-[11px] text-amber-700 mt-0.5">Pendientes de escanear QR #1</p>
+                  <p className="text-[11px] text-zinc-700 mt-0.5">Pendientes de escanear QR #1</p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-full bg-zinc-200 text-zinc-800 flex items-center justify-center font-bold">
                   1
                 </div>
               </div>
 
-              <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg flex items-center justify-between">
+              <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-lg flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-mono font-semibold uppercase text-purple-800 tracking-wider block">
+                  <span className="text-[10px] font-mono font-semibold uppercase text-zinc-800 tracking-wider block">
                     Paso 2: En Manos del Cliente
                   </span>
-                  <p className="font-serif text-2xl text-purple-950 mt-1">
+                  <p className="font-serif text-2xl text-zinc-900 mt-1">
                     {escrowOrders.filter((o) => o.status === "en_renta_cliente" && o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length}
                   </p>
-                  <p className="text-[11px] text-purple-700 mt-0.5">Pendientes de escanear QR #2 (Retorno)</p>
+                  <p className="text-[11px] text-zinc-700 mt-0.5">Pendientes de escanear QR #2 (Retorno)</p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-purple-200 text-purple-800 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-full bg-zinc-200 text-zinc-800 flex items-center justify-center font-bold">
                   2
                 </div>
               </div>
 
-              <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg flex items-center justify-between">
+              <div className="bg-zinc-50 border border-zinc-200 p-4 rounded-lg flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-mono font-semibold uppercase text-emerald-800 tracking-wider block">
+                  <span className="text-[10px] font-mono font-semibold uppercase text-zinc-800 tracking-wider block">
                     Completadas y Lavadas
                   </span>
-                  <p className="font-serif text-2xl text-emerald-950 mt-1">
+                  <p className="font-serif text-2xl text-zinc-900 mt-1">
                     {escrowOrders.filter((o) => o.status === "entregado_y_liberado" && o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length}
                   </p>
-                  <p className="text-[11px] text-emerald-700 mt-0.5">Fondos liberados al propietario</p>
+                  <p className="text-[11px] text-zinc-700 mt-0.5">Fondos liberados al propietario</p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-emerald-200 text-emerald-800 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-full bg-zinc-200 text-zinc-800 flex items-center justify-center font-bold">
                   ✓
                 </div>
               </div>
@@ -1434,7 +1434,7 @@ export function PuntoRecoleccionView() {
                 </div>
 
                 <div className="relative w-full sm:w-64">
-                  <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -1445,7 +1445,7 @@ export function PuntoRecoleccionView() {
               </div>
 
               {escrowOrders.filter((o) => o.items.some((i) => i.tipo === "renta" || !!i.fechaRenta)).length === 0 ? (
-                <div className="p-12 text-center text-xs text-zinc-400 border border-dashed border-zinc-200">
+                <div className="p-12 text-center text-xs text-zinc-500 border border-dashed border-zinc-200">
                   No hay órdenes de renta registradas actualmente.
                 </div>
               ) : (
@@ -1473,7 +1473,7 @@ export function PuntoRecoleccionView() {
                                 className={cn(
                                   "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border",
                                   isPaso1 && "bg-amber-50 text-amber-800 border-amber-200",
-                                  isPaso2 && "bg-purple-50 text-purple-800 border-purple-200",
+                                  isPaso2 && "bg-zinc-50 text-zinc-800 border-zinc-200",
                                   isCompletado && "bg-emerald-50 text-emerald-800 border-emerald-200"
                                 )}
                               >
@@ -1492,7 +1492,7 @@ export function PuntoRecoleccionView() {
                                 </div>
                               ))}
                               {fechaRentaItem && (
-                                <p className="text-purple-700 font-semibold">
+                                <p className="text-zinc-700 font-semibold">
                                   📅 Fecha de Evento: {fechaRentaItem} (Día posterior reservado para Lavado)
                                 </p>
                               )}
@@ -1506,7 +1506,7 @@ export function PuntoRecoleccionView() {
                                   setSelectedEscrowOrder(o)
                                   setIsEscrowVerifyModalOpen(true)
                                 }}
-                                className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded flex items-center gap-1.5 shadow-xs"
+                                className="px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold rounded flex items-center gap-1.5 shadow-xs"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 <span>1/2: Entregar a Cliente</span>
@@ -1519,7 +1519,7 @@ export function PuntoRecoleccionView() {
                                   setSelectedEscrowOrder(o)
                                   setIsEscrowVerifyModalOpen(true)
                                 }}
-                                className="px-3.5 py-2 bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold rounded flex items-center gap-1.5 shadow-xs"
+                                className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-800 text-white text-xs font-bold rounded flex items-center gap-1.5 shadow-xs"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 <span>2/2: Recibir y Lavar</span>
@@ -1553,12 +1553,12 @@ export function PuntoRecoleccionView() {
             <div className="flex items-center gap-2 text-xs">
               {operatorTab === "custodia_compras" || verifiedPackage?.isEscrow ? (
                 <>
-                  <ShieldCheck className="w-4 h-4 text-amber-400" />
+                  <ShieldCheck className="w-4 h-4 text-zinc-300" />
                   <span className="font-medium">Escáner de Custodia (Compras & Rentas)</span>
                 </>
               ) : (
                 <>
-                  <Scan className="w-4 h-4 text-emerald-400" />
+                  <Scan className="w-4 h-4 text-zinc-300" />
                   <span className="font-medium">Escáner de Donación</span>
                 </>
               )}
@@ -1583,13 +1583,13 @@ export function PuntoRecoleccionView() {
 
                 {/* Centered Square Viewfinder Frame */}
                 <div className={`relative w-48 h-48 sm:w-52 sm:h-52 border-2 rounded-lg z-10 flex items-center justify-center shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] pointer-events-none ${
-                  operatorTab === "custodia_compras" ? "border-amber-400" : "border-emerald-400"
+                  operatorTab === "custodia_compras" ? "border-zinc-700" : "border-zinc-700"
                 }`}>
                   {/* Corner Accents */}
-                  <div className={`absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 ${operatorTab === "custodia_compras" ? "border-amber-400" : "border-emerald-400"}`} />
-                  <div className={`absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 ${operatorTab === "custodia_compras" ? "border-amber-400" : "border-emerald-400"}`} />
-                  <div className={`absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 ${operatorTab === "custodia_compras" ? "border-amber-400" : "border-emerald-400"}`} />
-                  <div className={`absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 ${operatorTab === "custodia_compras" ? "border-amber-400" : "border-emerald-400"}`} />
+                  <div className={`absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 ${operatorTab === "custodia_compras" ? "border-zinc-700" : "border-zinc-700"}`} />
+                  <div className={`absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 ${operatorTab === "custodia_compras" ? "border-zinc-700" : "border-zinc-700"}`} />
+                  <div className={`absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 ${operatorTab === "custodia_compras" ? "border-zinc-700" : "border-zinc-700"}`} />
+                  <div className={`absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 ${operatorTab === "custodia_compras" ? "border-zinc-700" : "border-zinc-700"}`} />
                 </div>
 
                 {!cameraActive && (
@@ -1597,7 +1597,7 @@ export function PuntoRecoleccionView() {
                     {cameraError ? (
                       <CameraOff className="w-9 h-9 text-amber-400 mb-1" />
                     ) : (
-                      <Camera className={`w-9 h-9 animate-pulse mb-1 ${operatorTab === "custodia_compras" ? "text-amber-400/80" : "text-emerald-400/80"}`} />
+                      <Camera className={`w-9 h-9 animate-pulse mb-1 ${operatorTab === "custodia_compras" ? "text-zinc-300" : "text-zinc-300"}`} />
                     )}
                     <p className="text-xs text-zinc-200 font-mono">
                       {cameraError ? "Sin acceso a cámara" : "Iniciando cámara..."}
@@ -1638,7 +1638,7 @@ export function PuntoRecoleccionView() {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className={`text-[11px] font-medium hover:underline flex items-center gap-1 ${
-                      operatorTab === "custodia_compras" ? "text-amber-700" : "text-emerald-700"
+                      operatorTab === "custodia_compras" ? "text-zinc-700" : "text-zinc-700"
                     }`}
                   >
                     <Upload className="w-3.5 h-3.5" />
@@ -1676,7 +1676,7 @@ export function PuntoRecoleccionView() {
                   <button type="button" data-tour="acopio-qr-ejemplo" disabled={scannerStatus === "scanning"}
                     onClick={() => handleConfirmTicketValidation(
                       operatorTab === "donaciones" ? QR_DONACION_EJEMPLO : operatorTab === "custodia_rentas" ? QR_RENTA_EJEMPLO : QR_CUSTODIA_EJEMPLO)}
-                    className="w-full h-10 border border-emerald-600 bg-emerald-50 text-emerald-900 text-xs font-semibold disabled:opacity-50">
+                    className="w-full h-10 border border-zinc-900 bg-zinc-50 text-zinc-900 text-xs font-semibold disabled:opacity-50">
                     Usar QR de ejemplo (demo)
                   </button>
                 )}
@@ -1687,14 +1687,14 @@ export function PuntoRecoleccionView() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="py-5 flex flex-col items-center text-center space-y-4 bg-amber-50/70 border border-amber-200 p-5"
+              className="py-5 flex flex-col items-center text-center space-y-4 bg-zinc-50 border border-zinc-200 p-5"
             >
-              <div className="w-13 h-13 bg-amber-500 text-white rounded-full flex items-center justify-center shadow-md">
+              <div className="w-13 h-13 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-md">
                 <ShieldCheck className="w-8 h-8" />
               </div>
 
               <div>
-                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-900 bg-amber-200 px-2.5 py-0.5 rounded-full border border-amber-300">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-900 bg-zinc-200 px-2.5 py-0.5 rounded-full border border-zinc-300">
                   Folio Escrow #{verifiedPackage.orderCode}
                 </span>
                 <h4 className="font-serif text-xl text-zinc-900 mt-1">
@@ -1719,7 +1719,7 @@ export function PuntoRecoleccionView() {
                 )}
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-zinc-500">Prendas entregadas:</span>
-                  <span className="font-semibold text-zinc-900 bg-amber-100 text-amber-900 px-2 py-0.5 font-mono">
+                  <span className="font-semibold text-zinc-900 bg-zinc-100 text-zinc-900 px-2 py-0.5 font-mono">
                     {verifiedPackage?.count} {verifiedPackage?.count === 1 ? "prenda" : "prendas"}
                   </span>
                 </div>
@@ -1730,10 +1730,10 @@ export function PuntoRecoleccionView() {
                 <div className="w-full text-left space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-700 font-semibold flex items-center gap-1">
-                      <Shirt className="w-3.5 h-3.5 text-amber-600" />
+                      <Shirt className="w-3.5 h-3.5 text-zinc-600" />
                       Prendas entregadas al comprador ({verifiedPackage.prendas.length}):
                     </p>
-                    <span className="text-[10px] text-amber-900 bg-amber-100 px-2 py-0.5 font-medium">✓ Entregadas</span>
+                    <span className="text-[10px] text-zinc-900 bg-zinc-100 px-2 py-0.5 font-medium">✓ Entregadas</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 bg-zinc-100 border border-zinc-200">
@@ -1743,7 +1743,7 @@ export function PuntoRecoleccionView() {
                           <img src={p.image_url} alt={p.name} className="w-10 h-10 object-cover shrink-0 border border-zinc-200" />
                         ) : (
                           <div className="w-10 h-10 bg-zinc-200 flex items-center justify-center shrink-0">
-                            <Shirt className="w-5 h-5 text-zinc-400" />
+                            <Shirt className="w-5 h-5 text-zinc-500" />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
@@ -1767,7 +1767,7 @@ export function PuntoRecoleccionView() {
                 }}
                 className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold tracking-wide flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
               >
-                <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400" />
+                <CheckCircle2 className="w-4.5 h-4.5 text-zinc-300" />
                 <span>Confirmar Entrega de Ropa a {verifiedPackage?.name}</span>
               </motion.button>
 
@@ -1834,7 +1834,7 @@ export function PuntoRecoleccionView() {
                           <img src={p.image_url} alt={p.name} className="w-10 h-10 object-cover shrink-0 border border-zinc-200" />
                         ) : (
                           <div className="w-10 h-10 bg-zinc-200 flex items-center justify-center shrink-0">
-                            <Shirt className="w-5 h-5 text-zinc-400" />
+                            <Shirt className="w-5 h-5 text-zinc-500" />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
@@ -1856,7 +1856,7 @@ export function PuntoRecoleccionView() {
                   setScannerStatus("idle")
                   setIsScannerOpen(false)
                 }}
-                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold tracking-wide flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
+                className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold tracking-wide flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
               >
                 <CheckCircle2 className="w-4.5 h-4.5 text-white" />
                 <span>Recibir Ropa y Agregar {verifiedPackage?.points} Puntos a {verifiedPackage?.name}</span>
@@ -1876,7 +1876,7 @@ export function PuntoRecoleccionView() {
         <div className="p-1 space-y-4 max-h-[85vh] overflow-y-auto">
           <div className="bg-zinc-900 text-white p-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs">
-              <Plus className="w-4 h-4 text-amber-400" />
+              <Plus className="w-4 h-4 text-zinc-300" />
               <span className="font-medium">Registrar Donación Física Presencial</span>
             </div>
             <span className="text-[10px] font-mono text-zinc-400">Sin QR previo</span>
@@ -1893,7 +1893,7 @@ export function PuntoRecoleccionView() {
                 <label className="text-[10px] uppercase font-mono text-zinc-500 font-semibold flex items-center justify-between">
                   <span>Nombre del donante / Persona registrada</span>
                   {selectedDonor && (
-                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 border border-emerald-200 font-sans">
+                    <span className="text-[10px] text-zinc-700 bg-zinc-50 px-2 py-0.5 border border-zinc-200 font-sans">
                       ✓ Donante Registrado
                     </span>
                   )}
@@ -1966,7 +1966,7 @@ export function PuntoRecoleccionView() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
-                          <Shirt className="w-4 h-4 text-emerald-600" />
+                          <Shirt className="w-4 h-4 text-zinc-600" />
                           Ropa que más usa (Sugerencias para donar)
                         </p>
                         <p className="text-[11px] text-zinc-500">
@@ -1974,7 +1974,7 @@ export function PuntoRecoleccionView() {
                         </p>
                       </div>
 
-                      <span className="text-[10px] font-mono font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 border border-emerald-200">
+                      <span className="text-[10px] font-mono font-semibold bg-zinc-100 text-zinc-800 px-2 py-0.5 border border-zinc-200">
                         {selectedPrendaIds.length} seleccionada(s)
                       </span>
                     </div>
@@ -1989,14 +1989,14 @@ export function PuntoRecoleccionView() {
                             onClick={() => togglePrenda(p.id, p.category)}
                             className={`cursor-pointer p-2.5 bg-white border transition-all relative flex flex-col justify-between ${
                               isSelected
-                                ? "border-emerald-600 ring-2 ring-emerald-500/20 bg-emerald-50/40"
+                                ? "border-zinc-900 ring-2 ring-zinc-900 bg-zinc-50"
                                 : "border-zinc-200 hover:border-zinc-400"
                             }`}
                           >
                             <div className="flex items-start gap-2 mb-1.5">
                               <img src={p.image_url} alt={p.name} className="w-12 aspect-[3/4] object-cover object-top border border-zinc-200 shrink-0 rounded-xs" />
                               <div className="min-w-0 flex-1">
-                                <span className="text-[9px] font-mono uppercase bg-amber-50 text-amber-800 border border-amber-200 px-1 py-0.5 font-bold inline-block mb-1">
+                                <span className="text-[9px] font-mono uppercase bg-zinc-50 text-zinc-800 border border-zinc-200 px-1 py-0.5 font-bold inline-block mb-1">
                                   🔥 {p.usos || 0} usos
                                 </span>
                                 <p className="text-xs font-semibold text-zinc-900 line-clamp-2 leading-tight">{p.name}</p>
@@ -2005,7 +2005,7 @@ export function PuntoRecoleccionView() {
                             </div>
 
                             <div className="mt-1 flex items-center justify-between border-t border-zinc-100 pt-1 text-[10px]">
-                              <span className={isSelected ? "font-bold text-emerald-700" : "text-zinc-500"}>
+                              <span className={isSelected ? "font-bold text-zinc-700" : "text-zinc-500"}>
                                 {isSelected ? "✓ Seleccionada" : "+ Toca para elegir"}
                               </span>
                             </div>
@@ -2035,7 +2035,7 @@ export function PuntoRecoleccionView() {
                                   onClick={() => togglePrenda(p.id, p.category)}
                                   className={`cursor-pointer p-2 bg-white border transition-all flex items-start gap-2 ${
                                     isSelected
-                                      ? "border-emerald-600 ring-2 ring-emerald-500/20 bg-emerald-50/40"
+                                      ? "border-zinc-900 ring-2 ring-zinc-900 bg-zinc-50"
                                       : "border-zinc-200 hover:border-zinc-400"
                                   }`}
                                 >
@@ -2043,7 +2043,7 @@ export function PuntoRecoleccionView() {
                                   <div className="min-w-0 flex-1">
                                     <p className="text-xs font-semibold text-zinc-900 truncate">{p.name}</p>
                                     <p className="text-[10px] text-zinc-500 truncate">{p.category}</p>
-                                    <span className="text-[9px] text-zinc-400 font-mono">{p.usos || 0} usos</span>
+                                    <span className="text-[9px] text-zinc-500 font-mono">{p.usos || 0} usos</span>
                                   </div>
                                 </div>
                               )
@@ -2090,12 +2090,12 @@ export function PuntoRecoleccionView() {
                 </div>
               </div>
 
-              <div className="p-3 bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
+              <div className="p-3 bg-zinc-50 border border-zinc-200 text-xs text-zinc-900 space-y-1">
                 <p className="font-semibold flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <Sparkles className="w-3.5 h-3.5 text-zinc-600" />
                   Puntos estimados: +{donorPrendasCount >= 3 ? 100 + (donorPrendasCount - 3) * 20 : 50} Puntos
                 </p>
-                <p className="text-[11px] text-amber-800">
+                <p className="text-[11px] text-zinc-800">
                   Se sumarán automáticamente a la meta mensual del centro de acopio.
                 </p>
               </div>
@@ -2122,10 +2122,10 @@ export function PuntoRecoleccionView() {
           {/* Header Banner */}
           <div className="bg-zinc-900 text-white p-3.5 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs">
-              <PieChart className="w-4 h-4 text-amber-400" />
+              <PieChart className="w-4 h-4 text-zinc-300" />
               <span className="font-medium font-serif text-sm">Confirmar Recepción & Desglose en Métricas</span>
             </div>
-            <span className="text-[10px] uppercase font-mono tracking-widest text-amber-400 bg-zinc-800 px-2.5 py-0.5 border border-amber-500/30 flex items-center gap-1">
+            <span className="text-[10px] uppercase font-mono tracking-widest text-zinc-300 bg-zinc-800 px-2.5 py-0.5 border border-zinc-700 flex items-center gap-1">
               <Scale className="w-3 h-3" /> Impacto Ecológico
             </span>
           </div>
@@ -2153,7 +2153,7 @@ export function PuntoRecoleccionView() {
               {/* Desglose de prendas por categoría */}
               <div className="space-y-2 border border-zinc-200 p-3 bg-zinc-50">
                 <p className="text-[11px] font-mono uppercase font-bold text-zinc-700 flex items-center gap-1">
-                  <Shirt className="w-3.5 h-3.5 text-emerald-600" />
+                  <Shirt className="w-3.5 h-3.5 text-zinc-600" />
                   División de Prendas por Categorías del Centro:
                 </p>
 
@@ -2208,10 +2208,10 @@ export function PuntoRecoleccionView() {
               <div className="space-y-2 border border-zinc-200 p-3 bg-zinc-50">
                 <div className="flex items-center justify-between text-xs font-semibold">
                   <span className="flex items-center gap-1 text-zinc-800">
-                    <Leaf className="w-3.5 h-3.5 text-emerald-600" />
+                    <Leaf className="w-3.5 h-3.5 text-zinc-600" />
                     Destino Ecológico:
                   </span>
-                  <span className="font-mono text-emerald-700">{confirmReusoPct}% Reuso Directo</span>
+                  <span className="font-mono text-zinc-700">{confirmReusoPct}% Reuso Directo</span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -2222,7 +2222,7 @@ export function PuntoRecoleccionView() {
                     max={100}
                     value={confirmReusoPct}
                     onChange={(e) => setConfirmReusoPct(parseInt(e.target.value, 10) || 80)}
-                    className="w-full accent-emerald-600 cursor-pointer"
+                    className="w-full accent-zinc-900 cursor-pointer"
                   />
                   <span className="text-[10px] text-zinc-500 font-mono">Reciclaje</span>
                 </div>
@@ -2235,25 +2235,25 @@ export function PuntoRecoleccionView() {
                 const co2 = (total * 0.45 * 12.5).toFixed(1)
                 const pts = total >= 3 ? 100 + (total - 3) * 20 : 50
                 return (
-                  <div className="bg-emerald-950 text-emerald-100 p-3.5 border border-emerald-800 space-y-2">
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-bold">
+                  <div className="bg-zinc-800 text-zinc-300 p-3.5 border border-zinc-700 space-y-2">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-300 font-bold">
                       Resumen de Métricas Generadas:
                     </p>
                     <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
-                      <div className="bg-emerald-900/60 p-2 border border-emerald-800">
-                        <span className="block text-[10px] text-emerald-300">Total Prendas</span>
+                      <div className="bg-zinc-800/60 p-2 border border-zinc-700">
+                        <span className="block text-[10px] text-zinc-200">Total Prendas</span>
                         <strong className="text-base text-white">{total}</strong>
                       </div>
-                      <div className="bg-emerald-900/60 p-2 border border-emerald-800">
-                        <span className="block text-[10px] text-emerald-300">Textil Procesado</span>
+                      <div className="bg-zinc-800/60 p-2 border border-zinc-700">
+                        <span className="block text-[10px] text-zinc-200">Textil Procesado</span>
                         <strong className="text-base text-white">{kg} kg</strong>
                       </div>
-                      <div className="bg-emerald-900/60 p-2 border border-emerald-800">
-                        <span className="block text-[10px] text-emerald-300">CO2 Ahorrado</span>
-                        <strong className="text-base text-amber-300">{co2} kg</strong>
+                      <div className="bg-zinc-800/60 p-2 border border-zinc-700">
+                        <span className="block text-[10px] text-zinc-200">CO2 Ahorrado</span>
+                        <strong className="text-base text-zinc-200">{co2} kg</strong>
                       </div>
                     </div>
-                    <p className="text-[10px] text-emerald-300 text-center font-mono">
+                    <p className="text-[10px] text-zinc-200 text-center font-mono">
                       ✨ Otorgará <strong>+{pts} Puntos ClossApp</strong> al donante.
                     </p>
                   </div>
@@ -2262,7 +2262,7 @@ export function PuntoRecoleccionView() {
 
               <button
                 onClick={handleConfirmarYDividirMetricas}
-                className="w-full py-3 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs tracking-wide transition-colors flex items-center justify-center gap-2 shadow-sm"
+                className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs tracking-wide transition-colors flex items-center justify-center gap-2 shadow-sm"
               >
                 <CheckCircle2 className="w-4 h-4 text-zinc-950" />
                 <span>Confirmar Recepción e Integrar a Métricas del Centro</span>
@@ -2286,12 +2286,12 @@ export function PuntoRecoleccionView() {
       <CenteredModal open={isEscrowVerifyModalOpen} onClose={() => setIsEscrowVerifyModalOpen(false)}>
         <div className="flex flex-col gap-4 p-1 max-h-[85vh] overflow-y-auto">
           {/* Header Banner */}
-          <div className="bg-amber-950 text-white p-3.5 flex items-center justify-between">
+          <div className="bg-zinc-800 text-white p-3.5 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs">
-              <ShieldCheck className="w-5 h-5 text-amber-400" />
+              <ShieldCheck className="w-5 h-5 text-zinc-300" />
               <span className="font-medium font-serif text-sm">Verificación de Custodia & Entrega</span>
             </div>
-            <span className="text-[10px] uppercase font-mono tracking-widest text-amber-300 bg-amber-900/60 px-2.5 py-0.5 border border-amber-700 font-bold">
+            <span className="text-[10px] uppercase font-mono tracking-widest text-zinc-200 bg-zinc-800/60 px-2.5 py-0.5 border border-zinc-700 font-bold">
               #{selectedEscrowOrder?.orderCode}
             </span>
           </div>
@@ -2342,11 +2342,11 @@ export function PuntoRecoleccionView() {
                     ))}
                   </div>
 
-                  <div className="bg-amber-100/70 border border-amber-300 p-2.5 flex items-center justify-between text-xs">
-                    <span className="font-semibold text-amber-950 flex items-center gap-1.5">
-                      <DollarSign className="w-4 h-4 text-amber-700" /> Total a Liberar al Vendedor:
+                  <div className="bg-zinc-100 border border-zinc-300 p-2.5 flex items-center justify-between text-xs">
+                    <span className="font-semibold text-zinc-900 flex items-center gap-1.5">
+                      <DollarSign className="w-4 h-4 text-zinc-700" /> Total a Liberar al Vendedor:
                     </span>
-                    <strong className="font-mono text-base text-amber-950">${selectedEscrowOrder.totalPagado} MXN</strong>
+                    <strong className="font-mono text-base text-zinc-900">${selectedEscrowOrder.totalPagado} MXN</strong>
                   </div>
                 </div>
               )}
@@ -2378,7 +2378,7 @@ export function PuntoRecoleccionView() {
 
               <button
                 onClick={() => handleVerifyAndReleaseEscrow()}
-                className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold text-xs tracking-wide transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs tracking-wide transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
               >
                 <ShieldCheck className="w-4 h-4 text-zinc-950" />
                 <span>Entregar Prenda y Liberar ${selectedEscrowOrder?.totalPagado} MXN</span>

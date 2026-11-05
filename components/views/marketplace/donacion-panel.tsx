@@ -106,12 +106,12 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
       {/* Top Banner: User Puntos ClossApp Balance from Database */}
       <div className="bg-zinc-900 text-white p-4 border border-zinc-800 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-amber-400/20 border border-amber-400/40 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-amber-400" />
+          <div className="w-9 h-9 rounded-full bg-white/20 border border-zinc-700 flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-zinc-300" />
           </div>
           <div>
             <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-medium">Tus Puntos ClossApp</p>
-            <p className="font-serif text-xl text-amber-300">{puntos} pts</p>
+            <p className="font-serif text-xl text-zinc-200">{puntos} pts</p>
           </div>
         </div>
 
@@ -123,7 +123,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
           >
             <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
           </button>
-          <span className="text-[10px] bg-zinc-800 text-amber-300 border border-amber-400/30 px-2.5 py-1 font-mono uppercase tracking-wide hidden sm:inline-block">
+          <span className="text-[10px] bg-zinc-800 text-zinc-200 border border-zinc-700 px-2.5 py-1 font-mono uppercase tracking-wide hidden sm:inline-block">
             Suscripciones
           </span>
         </div>
@@ -143,7 +143,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
             <div className="border border-zinc-200 p-5 flex flex-col gap-3 bg-white">
               <div className="flex items-center justify-between">
                 <Heart className="w-5 h-5 text-zinc-900" />
-                <span className="text-[10px] font-mono uppercase tracking-wider bg-emerald-50 text-emerald-700 px-2 py-0.5 border border-emerald-200 flex items-center gap-1">
+                <span className="text-[10px] font-mono uppercase tracking-wider bg-zinc-50 text-zinc-700 px-2 py-0.5 border border-zinc-200 flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3" /> Verificación QR & DB Live
                 </span>
               </div>
@@ -170,7 +170,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
 
             {/* Action button */}
             {isGuest ? (
-              <p className="text-xs text-zinc-400 border border-zinc-100 p-4 text-center">
+              <p className="text-xs text-zinc-500 border border-zinc-100 p-4 text-center">
                 Crea una cuenta para registrar tus donaciones en la base de datos y ganar puntos.
               </p>
             ) : (
@@ -192,7 +192,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
                     <Database className="w-3.5 h-3.5 text-zinc-700" />
                     Mis Tickets de Donación en BD
                   </p>
-                  <span className="text-xs font-mono text-zinc-400">{tickets.length} registradas</span>
+                  <span className="text-xs font-mono text-zinc-500">{tickets.length} registradas</span>
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -213,7 +213,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
                           <p className="text-xs font-medium text-zinc-900">
                             {t.cantidadPrendas} prendas · {t.puntoAcopioNombre}
                           </p>
-                          <p className="text-[10px] font-mono text-zinc-400 mt-0.5">
+                          <p className="text-[10px] font-mono text-zinc-500 mt-0.5">
                             QR Token: {t.qrToken}
                           </p>
                         </div>
@@ -243,12 +243,12 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
             <div className="flex flex-col gap-3 mt-4 border-t border-zinc-200 pt-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-emerald-600" />
+                  <Layers className="w-4 h-4 text-zinc-600" />
                   <p className="text-xs uppercase tracking-widest text-zinc-900 font-bold">
                     Bitácora en Vivo: Registros de Centro de Acopio (Tabla SQL)
                   </p>
                 </div>
-                <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 font-semibold">
+                <span className="text-[10px] font-mono bg-zinc-100 text-zinc-800 px-2 py-0.5 font-semibold">
                   {acopioRegistros.length} registros
                 </span>
               </div>
@@ -287,7 +287,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
                           <td className="p-2.5 text-center font-semibold text-zinc-800">
                             {reg.cantidad_prendas}
                           </td>
-                          <td className="p-2.5 text-center text-emerald-700 font-semibold bg-emerald-50/50">
+                          <td className="p-2.5 text-center text-zinc-700 font-semibold bg-zinc-50">
                             +{reg.puntos_otorgados}
                           </td>
                           <td className="p-2.5 text-[11px] text-zinc-600 truncate max-w-[150px]">
@@ -312,7 +312,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
             transition={{ duration: 0.2 }}
             className="flex flex-col gap-4"
           >
-            <button onClick={() => setPaso("intro")} className="text-xs text-zinc-400 underline w-fit">
+            <button onClick={() => setPaso("intro")} className="text-xs text-zinc-500 underline w-fit">
               ← Volver
             </button>
 
@@ -333,14 +333,14 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
             <div
               className={`p-3 border text-xs flex items-center justify-between transition-all ${
                 cantidadSeleccionada >= MIN_PRENDAS_PUNTOS
-                  ? "bg-amber-50 border-amber-300 text-amber-900"
+                  ? "bg-zinc-50 border-zinc-300 text-zinc-900"
                   : "bg-zinc-50 border-zinc-200 text-zinc-600"
               }`}
             >
               <div className="flex items-center gap-2">
                 <Sparkles
                   className={`w-4 h-4 ${
-                    cantidadSeleccionada >= MIN_PRENDAS_PUNTOS ? "text-amber-600" : "text-zinc-400"
+                    cantidadSeleccionada >= MIN_PRENDAS_PUNTOS ? "text-zinc-600" : "text-zinc-500"
                   }`}
                 />
                 <span>
@@ -352,7 +352,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
             </div>
 
             {disponibles.length === 0 ? (
-              <p className="text-xs text-zinc-400 border border-zinc-100 p-6 text-center">
+              <p className="text-xs text-zinc-500 border border-zinc-100 p-6 text-center">
                 No tienes prendas disponibles en tu armario para donar.
               </p>
             ) : (
@@ -378,7 +378,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
                             "w-6 h-6 rounded-full flex items-center justify-center transition-all shadow-sm",
                             isSelected
                               ? "bg-zinc-900 text-white scale-105"
-                              : "bg-white/85 backdrop-blur-xs text-zinc-400 border border-zinc-200 hover:bg-white"
+                              : "bg-white/85 backdrop-blur-xs text-zinc-500 border border-zinc-200 hover:bg-white"
                           )}
                         >
                           {isSelected ? (
@@ -438,7 +438,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
             transition={{ duration: 0.2 }}
             className="flex flex-col gap-4"
           >
-            <button onClick={() => setPaso("seleccion")} className="text-xs text-zinc-400 underline w-fit">
+            <button onClick={() => setPaso("seleccion")} className="text-xs text-zinc-500 underline w-fit">
               ← Volver
             </button>
 
@@ -490,7 +490,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
 
             {modo === "acopio" ? (
               <div className="flex flex-col gap-2">
-                <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-medium">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">
                   Selecciona el Punto de Acopio (Cargados desde BD)
                 </p>
                 {puntosAcopio.map((p) => (
@@ -511,7 +511,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-medium">
+                <label className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium">
                   Dirección de recolección
                 </label>
                 <Input
@@ -529,7 +529,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
               onClick={handleCrearTicketSubmit}
               className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold tracking-wide disabled:opacity-50 transition-colors shadow-sm flex items-center justify-center gap-2 mt-2"
             >
-              <QrCode className="w-4 h-4 text-amber-400" />
+              <QrCode className="w-4 h-4 text-zinc-300" />
               <span>Generar Código QR</span>
             </motion.button>
           </motion.div>

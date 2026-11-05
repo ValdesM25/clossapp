@@ -28,7 +28,7 @@ export function OutfitForm({
     <div data-tour="simulador-form" className="mx-4 border border-zinc-200 p-5 flex flex-col gap-4">
       {/* Ocasión */}
       <div>
-        <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block">Ocasión</label>
+        <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1.5 block">Ocasión</label>
         <div className="flex flex-wrap gap-2">
           {["Casual", "Oficina", "Cena", "Formal", "Deporte"].map((o) => (
             <button key={o} onClick={() => setOcasion(o === ocasion ? "" : o)}
@@ -43,7 +43,7 @@ export function OutfitForm({
 
       {/* Clima */}
       <div>
-        <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block">Clima</label>
+        <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1.5 block">Clima</label>
         <div className="flex flex-wrap gap-2">
           {["Frío", "Templado", "Calor", "Lluvia"].map((c) => (
             <button key={c} onClick={() => setClima(c === clima ? "" : c)}
@@ -58,7 +58,7 @@ export function OutfitForm({
 
       {/* Prenda destacada — autocomplete */}
       <div className="relative">
-        <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block">
+        <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1.5 block">
           Prenda a destacar (opcional)
         </label>
         <input
@@ -75,7 +75,7 @@ export function OutfitForm({
                 className="w-full flex items-center gap-2 px-3 py-2 hover:bg-zinc-50 text-left">
                 {p.image_url && <img src={p.image_url} alt={p.name} className="w-7 h-7 object-cover shrink-0" />}
                 <span className="text-xs text-zinc-700">{p.name}</span>
-                <span className="text-[10px] text-zinc-400 ml-auto">{p.category}</span>
+                <span className="text-[10px] text-zinc-500 ml-auto">{p.category}</span>
               </button>
             ))}
           </div>
@@ -99,7 +99,7 @@ export function OutfitForm({
       </button>
 
       {!isGuest && prendas.length === 0 && (
-        <p className="text-[10px] text-zinc-400 text-center">Sube prendas a tu armario primero</p>
+        <p className="text-[10px] text-zinc-500 text-center">Sube prendas a tu armario primero</p>
       )}
     </div>
   )

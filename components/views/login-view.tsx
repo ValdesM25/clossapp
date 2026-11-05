@@ -168,7 +168,7 @@ export function LoginView() {
                     Demo de usuario
                   </motion.button>
                   <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => entrarModoDemo("acopio")}
-                    className="w-full h-11 border border-emerald-600 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-900 text-xs font-medium tracking-wide transition-colors">
+                    className="w-full h-11 border border-zinc-900 bg-zinc-50 hover:bg-zinc-100 text-zinc-900 text-xs font-medium tracking-wide transition-colors">
                     Demo de centro de acopio
                   </motion.button>
                 </div>

@@ -155,13 +155,13 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
               ))}
             </div>
             {sellMode === "renta" && (
-              <p className="text-[10px] text-zinc-400 border border-zinc-100 px-3 py-2">
+              <p className="text-[10px] text-zinc-500 border border-zinc-100 px-3 py-2">
                 Solo vestidos y accesorios aplican para renta
               </p>
             )}
             <p className="font-serif text-zinc-900 text-lg">¿Qué prenda?</p>
             {available.length === 0 ? (
-              <p className="text-xs text-zinc-400 border border-zinc-100 p-4 text-center">No tienes prendas disponibles.</p>
+              <p className="text-xs text-zinc-500 border border-zinc-100 p-4 text-center">No tienes prendas disponibles.</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {available.map((p) => {
@@ -183,7 +183,7 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
         ) : (
           <>
             <div className="flex items-center gap-3 pr-8">
-              <button onClick={() => setStep("select")} className="text-xs text-zinc-400 underline">← Volver</button>
+              <button onClick={() => setStep("select")} className="text-xs text-zinc-500 underline">← Volver</button>
               <p className="font-serif text-zinc-900 text-lg">{sellPrenda?.name}</p>
             </div>
             {sellPrenda && <img src={sellPrenda.image_url} alt={sellPrenda.name} className="w-full h-40 object-cover" />}
@@ -191,10 +191,10 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
             {sellMode === "venta" && (
               <div className="flex flex-col gap-3 border border-zinc-200 p-3">
                 <div className="flex items-baseline justify-between">
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest">
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest">
                     Fotos para tasar
                   </p>
-                  <p className="text-[10px] text-zinc-400">
+                  <p className="text-[10px] text-zinc-500">
                     {MIN_FOTOS - ejesFaltantes.length}/{MIN_FOTOS} obligatorias
                   </p>
                 </div>
@@ -219,13 +219,13 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
                         ) : (
                           <label title={eje.ayuda}
                             className="h-16 border border-dashed border-zinc-300 flex items-center justify-center cursor-pointer hover:border-zinc-900 transition-colors">
-                            <Camera className="w-4 h-4 text-zinc-400" />
+                            <Camera className="w-4 h-4 text-zinc-500" />
                             <input type="file" accept="image/*" className="hidden"
                               onChange={(e) => { ponerFotoEje(eje.id, e.target.files); e.target.value = "" }} />
                           </label>
                         )}
                         <span className={cn("text-[10px] text-center tracking-wide",
-                          foto ? "text-zinc-600" : "text-zinc-400")}>
+                          foto ? "text-zinc-600" : "text-zinc-500")}>
                           {eje.label}
                         </span>
                       </div>
@@ -264,7 +264,7 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
                 </motion.button>
 
                 {ejesFaltantes.length > 0 && (
-                  <p className="text-[11px] text-zinc-400">
+                  <p className="text-[11px] text-zinc-500">
                     Falta: {ejesFaltantes.map((e) => e.label.toLowerCase()).join(", ")}.
                   </p>
                 )}
@@ -299,7 +299,7 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
                     )}
 
                     <div>
-                      <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Rango estimado</p>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Rango estimado</p>
                       <p className="font-serif text-lg text-zinc-900 mt-0.5">
                         ${tasacion.precio_estimado_mxn.min.toLocaleString("es-MX")} – ${tasacion.precio_estimado_mxn.max.toLocaleString("es-MX")} MXN
                       </p>
@@ -310,20 +310,20 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
 
                     {tasacion.descripcion_venta && (
                       <div>
-                        <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">Descripción sugerida</p>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Descripción sugerida</p>
                         <p className="text-[13px] text-zinc-600 leading-relaxed">{tasacion.descripcion_venta}</p>
                       </div>
                     )}
 
                     {tasacion.defectos.length > 0 && (
                       <div>
-                        <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">
                           Desperfectos detectados
                         </p>
                         <ul className="flex flex-col gap-1">
                           {tasacion.defectos.map((d, i) => (
                             <li key={i} className="text-[13px] text-zinc-600 flex gap-2">
-                              <span className="text-[10px] text-zinc-400 uppercase tracking-wide shrink-0 mt-0.5">
+                              <span className="text-[10px] text-zinc-500 uppercase tracking-wide shrink-0 mt-0.5">
                                 {SEVERIDAD_LABEL[d.severidad] ?? d.severidad}
                               </span>
                               <span>{d.descripcion}</span>
@@ -335,7 +335,7 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
 
                     {tasacion.etiquetas_originalidad.length > 0 && (
                       <div>
-                        <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">
                           Etiquetas leídas
                         </p>
                         <div className="flex flex-wrap gap-1.5">
@@ -354,13 +354,13 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
             <div className="flex gap-4">
               {form.talla && (
                 <div className="flex-1">
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">Talla</p>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Talla</p>
                   <p className="text-sm text-zinc-700 border border-zinc-100 px-3 py-2 bg-zinc-50">{form.talla}</p>
                 </div>
               )}
               {form.estado_uso && (
                 <div className="flex-1">
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">Estado</p>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Estado</p>
                   <p className="text-sm text-zinc-700 border border-zinc-100 px-3 py-2 bg-zinc-50">{form.estado_uso}</p>
                 </div>
               )}

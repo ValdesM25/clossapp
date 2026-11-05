@@ -63,7 +63,7 @@ export function SimuladorView({ onElegir }: { onElegir: () => void }) {
       <AnimatePresence>
         {outfits.length > 0 && (
           <section className="px-4 flex flex-col gap-6">
-            <p className="text-xs text-zinc-400 uppercase tracking-widest">Propuestas</p>
+            <p className="text-xs text-zinc-500 uppercase tracking-widest">Propuestas</p>
             {outfits.map((outfit, i) => {
               const normalizedIds = outfit.prenda_ids.map((id) => String(id).trim())
               const outfitPrendas = prendas.filter((p) => normalizedIds.includes(String(p.id).trim()))
@@ -90,7 +90,7 @@ export function SimuladorView({ onElegir }: { onElegir: () => void }) {
       {outfits.length === 0 && !generating && (
         <div className="mx-4 flex flex-col items-center justify-center py-12 gap-2 border border-zinc-100">
           <Sparkles className="w-5 h-5 text-zinc-300" />
-          <p className="text-xs text-zinc-400 uppercase tracking-widest">Configura y genera propuestas</p>
+          <p className="text-xs text-zinc-500 uppercase tracking-widest">Configura y genera propuestas</p>
         </div>
       )}
     </motion.div>

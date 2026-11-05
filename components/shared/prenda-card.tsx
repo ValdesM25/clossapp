@@ -30,7 +30,7 @@ export function PrendaCard({ pren, i, height, badge, caption, onClick, className
       {badge}
       <div className="p-3">
         <p className="text-xs font-medium text-zinc-900 truncate">{pren.name}</p>
-        <p className="text-[10px] text-zinc-400 mt-0.5">{pren.category}</p>
+        <p className="text-[10px] text-zinc-500 mt-0.5">{pren.category}</p>
         {caption}
       </div>
     </div>

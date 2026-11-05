@@ -43,7 +43,7 @@ export function OutfitCard({
         </div>
       ) : (
         <div className="bg-zinc-50 flex items-center justify-center py-8">
-          <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Sin imágenes disponibles</p>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Sin imágenes disponibles</p>
         </div>
       )}
 
@@ -53,7 +53,7 @@ export function OutfitCard({
         </div>
         <button
           onClick={() => setShowDesc((v) => !v)}
-          className="shrink-0 mt-1 w-6 h-6 border border-zinc-300 flex items-center justify-center text-zinc-400 hover:border-zinc-900 hover:text-zinc-900 transition-colors"
+          className="shrink-0 mt-1 w-6 h-6 border border-zinc-300 flex items-center justify-center text-zinc-500 hover:border-zinc-900 hover:text-zinc-900 transition-colors"
           title="Ver justificación">
           <span className="text-[10px] font-medium">?</span>
         </button>
@@ -74,7 +74,7 @@ export function OutfitCard({
       <div className="px-4 pb-4">
         {isElegido ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="w-full py-2.5 border border-zinc-200 text-zinc-400 text-xs text-center tracking-widest uppercase">
+            className="w-full py-2.5 border border-zinc-200 text-zinc-500 text-xs text-center tracking-widest uppercase">
             Outfit registrado
           </motion.div>
         ) : (

@@ -72,7 +72,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
         {/* Modal Header */}
         <div className="p-3.5 sm:p-4 bg-zinc-900 text-white flex items-center justify-between border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-400" />
+            <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-zinc-300" />
             <h3 className="font-serif text-sm sm:text-base text-white">Pago Seguro en Custodia</h3>
           </div>
           <button onClick={onClose} className="p-1 text-zinc-400 hover:text-white transition-colors" aria-label="Cerrar">
@@ -100,13 +100,13 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
             <div className="p-3.5 sm:p-4 bg-zinc-50 border border-zinc-200 rounded-lg text-left space-y-3">
               <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
                 <div>
-                  <p className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-widest">Folio de Pedido</p>
+                  <p className="text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-widest">Folio de Pedido</p>
                   <p className="font-mono text-sm sm:text-base font-bold text-zinc-900">{completedOrder.orderCode}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-widest">Punto de Entrega</p>
+                  <p className="text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-widest">Punto de Entrega</p>
                   <p className="text-xs font-semibold text-zinc-800 flex items-center justify-end gap-1">
-                    <Store className="w-3.5 h-3.5 text-emerald-600" /> {completedOrder.puntoAcopioNombre}
+                    <Store className="w-3.5 h-3.5 text-zinc-600" /> {completedOrder.puntoAcopioNombre}
                   </p>
                 </div>
               </div>
@@ -128,7 +128,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
                   />
                 </div>
                 <p className="font-mono text-xs font-bold text-zinc-900 mt-2.5 tracking-wider">{completedOrder.qrToken}</p>
-                <p className="text-[10px] text-emerald-700 font-medium mt-1 text-center">
+                <p className="text-[10px] text-zinc-700 font-medium mt-1 text-center">
                   Presenta este QR al operador en el punto de acopio
                 </p>
               </div>
@@ -154,10 +154,10 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
           /* Payment Form Screen */
           <div className="p-4 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto max-h-[calc(90dvh-4rem)]">
             {/* Banner info */}
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-[11px] sm:text-xs text-emerald-900 flex items-start gap-2.5">
-              <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-3 text-[11px] sm:text-xs text-zinc-900 flex items-start gap-2.5">
+              <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-zinc-600 shrink-0 mt-0.5" />
               <div>
-                <strong className="block text-emerald-950 font-bold">Intermediario Custodio ClossApp</strong>
+                <strong className="block text-zinc-900 font-bold">Intermediario Custodio ClossApp</strong>
                 Al pagar, tus fondos quedan en custodia segura. Solo liberaremos el pago al vendedor cuando escanees el código QR al recoger tus prendas.
               </div>
             </div>
@@ -271,7 +271,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
                   <span>Reteniendo fondos en custodia...</span>
                 ) : (
                   <>
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <ShieldCheck className="w-4 h-4 text-zinc-300" />
                     <span>Pagar y Retener ${totalPrice} MXN</span>
                   </>
                 )}

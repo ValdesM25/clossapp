@@ -19,7 +19,7 @@ const secciones = [
 /** Dato legal que sólo puede llenarse cuando la sociedad esté constituida. */
 function Pendiente({ children }: { children: React.ReactNode }) {
   return (
-    <mark className="bg-zinc-100 text-zinc-500 border border-dashed border-zinc-300 px-1.5 py-0.5 text-[13px]">
+    <mark className="bg-zinc-100 text-zinc-600 border border-dashed border-zinc-300 px-1.5 py-0.5 text-[13px]">
       {children}
     </mark>
   )
@@ -31,7 +31,7 @@ function Seccion({ id, numero, titulo, children }: {
   return (
     <section id={id} className="scroll-mt-8 flex flex-col gap-4">
       <div className="border-t border-zinc-200 pt-6">
-        <p className="text-xs text-zinc-400 uppercase tracking-widest">{numero}</p>
+        <p className="text-xs text-zinc-500 uppercase tracking-widest">{numero}</p>
         <h2 className="font-serif text-xl text-zinc-900 mt-0.5">{titulo}</h2>
       </div>
       <div className="flex flex-col gap-4 text-[15px] leading-relaxed text-zinc-600">
@@ -55,11 +55,10 @@ export default function PoliticasPage() {
     <main className="min-h-screen bg-white">
       <div className="mx-auto w-full max-w-3xl px-5 py-10 flex flex-col gap-8">
         <header className="flex flex-col gap-4">
-          <Link href="/" className="text-xs text-zinc-400 hover:text-zinc-900 transition-colors w-fit">
+          <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors w-fit">
             ← Volver a Clossapp
           </Link>
           <div>
-            <p className="text-xs text-zinc-400 uppercase tracking-widest">Legal</p>
             <h1 className="font-serif text-3xl text-zinc-900 mt-1">Políticas y Términos</h1>
           </div>
           <p className="text-[15px] leading-relaxed text-zinc-600">
@@ -67,11 +66,11 @@ export default function PoliticasPage() {
             la compartimos y bajo qué reglas funciona Clossapp. Está redactado para leerse,
             no para esconder nada.
           </p>
-          <p className="text-xs text-zinc-400">Última actualización: {LEGAL_VIGENCIA}</p>
+          <p className="text-xs text-zinc-500">Última actualización: {LEGAL_VIGENCIA}</p>
         </header>
 
         <nav className="border border-zinc-200 p-4 flex flex-col gap-1.5">
-          <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">Contenido</p>
+          <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1">Contenido</p>
           {secciones.map((s, i) => (
             <a key={s.id} href={`#${s.id}`}
               className="text-sm text-zinc-600 hover:text-zinc-900 transition-colors">
@@ -345,7 +344,7 @@ export default function PoliticasPage() {
         <Seccion id="planes" numero="04" titulo="Planes">
           <div className="border border-zinc-200">
             <div className="border-b border-zinc-200 px-4 py-4">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest">Invitado</p>
+              <p className="text-xs text-zinc-500 uppercase tracking-widest">Invitado</p>
               <p className="font-serif text-lg text-zinc-900 mt-0.5">Sin costo</p>
               <p className="text-[14px] mt-2">
                 Acceso de demostración con datos de ejemplo. Permite recorrer la aplicación sin
@@ -354,7 +353,7 @@ export default function PoliticasPage() {
               </p>
             </div>
             <div className="border-b border-zinc-200 px-4 py-4">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest">Registrado</p>
+              <p className="text-xs text-zinc-500 uppercase tracking-widest">Registrado</p>
               <p className="font-serif text-lg text-zinc-900 mt-0.5">Sin costo durante la fase de prueba</p>
               <p className="text-[14px] mt-2">
                 Armario digital completo, análisis automático de prendas, generación de outfits,
@@ -362,7 +361,7 @@ export default function PoliticasPage() {
               </p>
             </div>
             <div className="px-4 py-4">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest">Premium</p>
+              <p className="text-xs text-zinc-500 uppercase tracking-widest">Premium</p>
               <p className="font-serif text-lg text-zinc-900 mt-0.5">
                 <Pendiente>[precio por definir]</Pendiente>
               </p>
@@ -395,11 +394,11 @@ export default function PoliticasPage() {
         </Seccion>
 
         <footer className="border-t border-zinc-200 pt-6 flex flex-col gap-3">
-          <p className="text-xs text-zinc-400 leading-relaxed">
+          <p className="text-xs text-zinc-500 leading-relaxed">
             Clossapp es un proyecto en fase de desarrollo. Los datos legales marcados en gris se
             completarán una vez constituida formalmente la sociedad.
           </p>
-          <Link href="/" className="text-xs text-zinc-400 hover:text-zinc-900 transition-colors w-fit">
+          <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors w-fit">
             ← Volver a Clossapp
           </Link>
         </footer>

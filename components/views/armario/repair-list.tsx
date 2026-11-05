@@ -15,14 +15,14 @@ interface RepairListProps {
 export function RepairList({ reparaciones, prendas, loading, onComplete }: RepairListProps) {
   if (loading) {
     return (
-      <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 text-zinc-400 animate-spin" /></div>
+      <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 text-zinc-500 animate-spin" /></div>
     )
   }
 
   return (
     <AnimatePresence>
       {reparaciones.length === 0 ? (
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-zinc-400 text-center py-4">
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-zinc-500 text-center py-4">
           Sin reparaciones pendientes
         </motion.p>
       ) : reparaciones.map((rep) => {
@@ -36,12 +36,12 @@ export function RepairList({ reparaciones, prendas, loading, onComplete }: Repai
               : <div className="w-10 h-10 bg-zinc-100 flex items-center justify-center shrink-0"><Shirt className="w-4 h-4 text-zinc-300" /></div>}
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-zinc-900 truncate">{rep.prenda}</p>
-              <p className="text-[10px] text-zinc-400 truncate">{rep.tarea}</p>
+              <p className="text-[10px] text-zinc-500 truncate">{rep.tarea}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className={cn("text-[10px] px-2 py-0.5 border",
                 rep.prioridad === "Alta" ? "border-zinc-900 text-zinc-900" :
-                  rep.prioridad === "Media" ? "border-zinc-400 text-zinc-500" : "border-zinc-200 text-zinc-400")}>
+                  rep.prioridad === "Media" ? "border-zinc-400 text-zinc-500" : "border-zinc-200 text-zinc-500")}>
                 {rep.prioridad}
               </span>
               <motion.button whileTap={{ scale: 0.9 }} onClick={() => onComplete(rep.id)}

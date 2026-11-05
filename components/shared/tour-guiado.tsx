@@ -122,18 +122,18 @@ export function TourGuiado({ pasos, onCerrar, accionFinal }: TourGuiadoProps) {
           !centrada && (libre ? "bottom-4 border border-zinc-200" : tarjetaArriba ? "top-4" : "bottom-4"),
         )}>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] text-zinc-400 uppercase tracking-widest tabular-nums">
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest tabular-nums">
             {paso.etiqueta ?? "Guía"} · {indice + 1} de {pasos.length}
           </p>
           <button type="button" onClick={onCerrar} aria-label="Salir de la guía"
-            className="w-8 h-8 -mr-2 -mt-1 flex items-center justify-center text-zinc-400 hover:text-zinc-900">
+            className="w-8 h-8 -mr-2 -mt-1 flex items-center justify-center text-zinc-500 hover:text-zinc-900">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <h2 className={cn("font-serif text-zinc-900", centrada ? "text-2xl" : "text-lg")}>{paso.titulo}</h2>
         <p className={cn("text-zinc-600 mt-2 leading-relaxed", centrada ? "text-sm" : "text-[13px]")}>{paso.texto}</p>
-        {paso.interactivo && <p className="text-[11px] text-emerald-700 mt-2">Puedes tocar lo resaltado para probarlo.</p>}
+        {paso.interactivo && <p className="text-[11px] text-zinc-700 mt-2">Puedes tocar lo resaltado para probarlo.</p>}
 
         <div className="mt-5 h-0.5 bg-zinc-100" aria-hidden="true">
           <div className="h-full bg-zinc-900 transition-[width] duration-300" style={{ width: `${((indice + 1) / pasos.length) * 100}%` }} />
