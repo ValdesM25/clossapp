@@ -1,7 +1,6 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Loader2 } from "lucide-react"
 import { pageProps } from "@/constants/animation"
 import { GUEST_PRENDAS } from "@/constants/demo-data"
 import { useAuthContext } from "@/context/auth-context"
@@ -36,11 +35,17 @@ export function EstadisticasView({ onSellPrenda }: EstadisticasViewProps) {
   return (
     <motion.div {...pageProps} className="flex flex-col gap-8 pb-32 pt-8">
       <div className="px-4">
-        <p className="text-xs text-zinc-400 uppercase tracking-widest">Insights</p>
-        <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">Estadísticas</h1>
+        <h1 className="font-serif text-2xl text-zinc-900">Estadísticas</h1>
       </div>
       {loading ? (
-        <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 text-zinc-400 animate-spin" /></div>
+        <div className="flex flex-col gap-8 px-4 animate-pulse" aria-label="Cargando estadísticas">
+          <div className="grid grid-cols-2 gap-3">
+            {[0, 1, 2, 3].map((i) => <div key={i} className="h-[92px] bg-zinc-100" />)}
+          </div>
+          <div className="flex flex-col gap-3">
+            {[0, 1, 2].map((i) => <div key={i} className="h-20 bg-zinc-100" />)}
+          </div>
+        </div>
       ) : (
         <>
           <div data-tour="estadisticas"><KpiGrid kpis={kpis} /></div>

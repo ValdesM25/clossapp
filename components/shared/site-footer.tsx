@@ -10,7 +10,7 @@ export function SiteFooter() {
     <footer className="mt-12 border-t border-zinc-200 px-4 pt-6 flex flex-col gap-5">
       {REDES_ACTIVAS.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Síguenos</p>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Síguenos</p>
           <div className="flex flex-wrap gap-x-4 gap-y-1.5">
             {REDES_ACTIVAS.map((red) => (
               <a key={red.id} href={red.url} target="_blank" rel="noopener noreferrer"
@@ -23,7 +23,7 @@ export function SiteFooter() {
       )}
 
       <div className="flex flex-col gap-2">
-        <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Clossapp</p>
+        <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Clossapp</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1.5">
           <Link href="/politicas"
             className="text-sm text-zinc-600 hover:text-zinc-900 transition-colors">
@@ -36,7 +36,7 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <p className="text-[11px] text-zinc-400 leading-relaxed">
+      <p className="text-[11px] text-zinc-500 leading-relaxed">
         © {new Date().getFullYear()} Clossapp · Saltillo, Coahuila, México
       </p>
     </footer>

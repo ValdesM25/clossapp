@@ -36,19 +36,19 @@ export function UploadModal({ preview, previewForm, analyzing, analyzeError, upl
 
       {analyzing && (
         <div className="flex items-center gap-3 border border-zinc-100 px-4 py-3">
-          <Loader2 className="w-4 h-4 text-zinc-400 animate-spin shrink-0" />
+          <Loader2 className="w-4 h-4 text-zinc-500 animate-spin shrink-0" />
           <p className="text-xs text-zinc-500 tracking-wide">Analizando prenda...</p>
         </div>
       )}
 
       {analyzeError && (
-        <p className="text-xs text-zinc-400 border border-zinc-100 px-4 py-3">{analyzeError}</p>
+        <p className="text-xs text-zinc-500 border border-zinc-100 px-4 py-3">{analyzeError}</p>
       )}
 
       {!analyzing && (
         <>
           <div>
-            <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Nombre</label>
+            <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 block">Nombre</label>
             <Input value={previewForm.nombre}
               onChange={(e) => updateForm("nombre", e.target.value)}
               placeholder="Ej. Blazer de Lino Negro"
@@ -56,14 +56,14 @@ export function UploadModal({ preview, previewForm, analyzing, analyzeError, upl
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Categoría</label>
+              <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 block">Categoría</label>
               <Input value={previewForm.categoria}
                 onChange={(e) => updateForm("categoria", e.target.value)}
                 placeholder="Top, Bottom..."
                 className="rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900 text-sm" />
             </div>
             <div>
-              <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Color</label>
+              <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 block">Color</label>
               <Input value={previewForm.color_principal}
                 onChange={(e) => updateForm("color_principal", e.target.value)}
                 placeholder="Negro, Beige..."
@@ -71,7 +71,7 @@ export function UploadModal({ preview, previewForm, analyzing, analyzeError, upl
             </div>
           </div>
           <div>
-            <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Estilo</label>
+            <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 block">Estilo</label>
             <Input value={previewForm.estilo}
               onChange={(e) => updateForm("estilo", e.target.value)}
               placeholder="Minimalista, Casual..."
@@ -80,14 +80,14 @@ export function UploadModal({ preview, previewForm, analyzing, analyzeError, upl
 
           <div className="grid grid-cols-2 gap-3 pt-1 border-t border-zinc-100">
             <div>
-              <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Talla</label>
+              <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 block">Talla</label>
               <Input value={previewForm.talla}
                 onChange={(e) => updateForm("talla", e.target.value)}
                 placeholder="XS, S, M, 38..."
                 className="rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900 text-sm" />
             </div>
             <div>
-              <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Estado</label>
+              <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 block">Estado</label>
               <Select value={previewForm.estado_uso} onValueChange={(v) => updateForm("estado_uso", v)}>
                 <SelectTrigger className="rounded-none border-zinc-300 focus:ring-0 text-sm h-10"><SelectValue placeholder="Estado" /></SelectTrigger>
                 <SelectContent className="z-[110]">
@@ -108,14 +108,14 @@ export function UploadModal({ preview, previewForm, analyzing, analyzeError, upl
                   updateForm("comprada_reciente", e.target.checked ? "si" : "")
                   if (e.target.checked && !previewForm.compra_fecha) updateForm("compra_fecha", hoy)
                 }} />
-              La compré recientemente <span className="text-zinc-400">(+10 puntos al usarla)</span>
+              La compré recientemente <span className="text-zinc-500">(+10 puntos al usarla)</span>
             </label>
 
             {compraMarcada && (
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Dónde</label>
+                    <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 block">Dónde</label>
                     <Select value={previewForm.compra_lugar} onValueChange={(v) => updateForm("compra_lugar", v)}>
                       <SelectTrigger className="rounded-none border-zinc-300 focus:ring-0 text-sm h-10"><SelectValue placeholder="Elige" /></SelectTrigger>
                       <SelectContent className="z-[110]">
@@ -126,7 +126,7 @@ export function UploadModal({ preview, previewForm, analyzing, analyzeError, upl
                     </Select>
                   </div>
                   <div>
-                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Tienda (opcional)</label>
+                    <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 block">Tienda (opcional)</label>
                     <Input value={previewForm.compra_tienda} maxLength={80}
                       onChange={(e) => updateForm("compra_tienda", e.target.value)}
                       placeholder="Ej. Zara"
@@ -135,14 +135,14 @@ export function UploadModal({ preview, previewForm, analyzing, analyzeError, upl
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Precio (MXN)</label>
+                    <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 block">Precio (MXN)</label>
                     <Input value={previewForm.compra_precio} type="number" inputMode="decimal" min={0}
                       onChange={(e) => updateForm("compra_precio", e.target.value)}
                       placeholder="Ej. 799"
                       className="rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900 text-sm" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1 block">Fecha</label>
+                    <label className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 block">Fecha</label>
                     <Input value={previewForm.compra_fecha} type="date" max={hoy} min={hace60}
                       onChange={(e) => updateForm("compra_fecha", e.target.value)}
                       className="rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900 text-sm" />

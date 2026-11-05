@@ -82,8 +82,8 @@ export function QRDonacionModal({ ticket, isOpen, onClose }: QRDonacionModalProp
             />
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-950/60 px-3 py-1 border border-amber-800/40">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <div className="flex items-center gap-1.5 text-xs text-zinc-200 bg-zinc-800/60 px-3 py-1 border border-zinc-700">
+            <Sparkles className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
             <span>
               Recompensa: <strong>+{ticket.puntosOtorgados} Puntos ClossApp</strong>
             </span>

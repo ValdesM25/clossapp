@@ -13,9 +13,8 @@ export type Prenda = {
   fecha_renta?: string | null
   metadata?: Record<string, string> | null
   created_at: string
+  usos?: number
+  ultimo_uso?: string | null
 }
 
-export type PrendaExt = Prenda & {
-  usos?: number
-  ultimo_uso?: string
-}
+export type PrendaExt = Prenda

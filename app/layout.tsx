@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, Fraunces } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SerwistProvider } from '@serwist/turbopack/react'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
+// Serif de los títulos: sin cargarla, cada teléfono dibujaba su serif del sistema.
+// Variable con tamaño óptico: se ajusta sola entre títulos chicos y grandes.
+const fraunces = Fraunces({ subsets: ["latin"], axes: ["opsz"], variable: "--font-titulos" });
 
 export const metadata: Metadata = {
   title: 'Clossapp - Tu Armario Inteligente',
@@ -35,8 +38,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Sin bloquear el zoom (accesibilidad): el zoom al enfocar campos se evita con inputs de 16px.
   themeColor: '#ffffff',
   // Que el contenido llegue hasta los bordes en pantallas con notch; el
   // espacio del indicador de inicio lo maneja pb-safe en la barra inferior.
@@ -49,9 +51,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className={fraunces.variable}>
       <body className="font-sans antialiased">
-        <SerwistProvider swUrl="/serwist/sw.js">
+        {/* En desarrollo el service worker guarda páginas y chunks de compilaciones viejas:
+            al reiniciar el servidor el navegador pide archivos que ya no existen y recarga en bucle. */}
+        <SerwistProvider swUrl="/serwist/sw.js" disable={process.env.NODE_ENV === 'development'}>
           {children}
         </SerwistProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}

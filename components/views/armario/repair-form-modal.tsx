@@ -33,7 +33,7 @@ export function RepairFormModal({
       <div>
         <label className="text-xs text-zinc-500 uppercase tracking-widest mb-2 block">Selecciona la prenda</label>
         {prendas.length === 0 ? (
-          <p className="text-xs text-zinc-400 border border-zinc-100 p-4 text-center">Sube prendas primero.</p>
+          <p className="text-xs text-zinc-500 border border-zinc-100 p-4 text-center">Sube prendas primero.</p>
         ) : (
           <div className="grid grid-cols-3 gap-2">
             {prendas.map((p) => (

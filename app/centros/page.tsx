@@ -86,7 +86,6 @@ export default function CentrosPage() {
       <div className="max-w-2xl mx-auto px-6 py-10 space-y-10">
         <header className="text-center space-y-3">
           <Link href="/" className="inline-block mb-2"><img src="/logo.svg" alt="Clossapp" className="mx-auto h-10 w-auto" /></Link>
-          <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Centros de acopio</p>
           <h1 className="font-serif text-3xl text-zinc-900">Haz de tu negocio un Punto verde</h1>
           <p className="text-sm text-zinc-500 max-w-lg mx-auto leading-relaxed">
             Recibe donaciones de ropa y entregas del marketplace de Clossapp. Ayudas a que la ropa tenga otra vida y llevas gente a tu local.
@@ -105,7 +104,7 @@ export default function CentrosPage() {
 
         <section className="border border-zinc-900 p-6">
           {estado === "cargando" && (
-            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
+            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-zinc-500" /></div>
           )}
 
           {estado === "sin-sesion" && (
@@ -117,7 +116,7 @@ export default function CentrosPage() {
               <Link href="/?volver=/centros" className="inline-flex h-11 px-6 items-center bg-zinc-900 text-white text-sm font-medium tracking-wide">
                 Crear cuenta o entrar
               </Link>
-              <p className="text-[11px] text-zinc-400">Al terminar te traemos de regreso a esta página.</p>
+              <p className="text-xs text-zinc-500">Al terminar te traemos de regreso a esta página.</p>
             </div>
           )}
 
@@ -164,7 +163,7 @@ export default function CentrosPage() {
                 className="w-full h-11 bg-zinc-900 text-white text-sm font-medium tracking-wide disabled:opacity-50 flex items-center justify-center">
                 {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : "Enviar solicitud"}
               </button>
-              <p className="text-[11px] text-zinc-400 text-center">La revisamos y te contactamos. Al aprobarse, esta cuenta se convierte en la del centro.</p>
+              <p className="text-xs text-zinc-500 text-center">La revisamos y te contactamos. Al aprobarse, esta cuenta se convierte en la del centro.</p>
             </form>
           )}
         </section>

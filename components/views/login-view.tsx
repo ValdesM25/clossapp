@@ -113,7 +113,7 @@ export function LoginView() {
                   </div>
                   <div className="flex items-center gap-3 py-1" aria-hidden="true">
                     <span className="h-px flex-1 bg-zinc-200" />
-                    <span className="text-[10px] text-zinc-400 uppercase tracking-widest">o con tu correo</span>
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-widest">o con tu correo</span>
                     <span className="h-px flex-1 bg-zinc-200" />
                   </div>
                 </>
@@ -133,7 +133,7 @@ export function LoginView() {
                     <Input id="login-password" value={password} onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••" type="password" autoComplete={modo === "crear" ? "new-password" : "current-password"}
                       className="mt-2 h-11 w-full rounded-none border border-zinc-900 text-sm text-zinc-900 focus-visible:ring-0 focus-visible:border-zinc-900" />
-                    {modo === "crear" && <p className="mt-1.5 text-[11px] text-zinc-400">Mínimo 8 caracteres, con letras y números.</p>}
+                    {modo === "crear" && <p className="mt-1.5 text-xs text-zinc-500">Mínimo 8 caracteres, con letras y números.</p>}
                   </div>
                 )}
 
@@ -161,27 +161,27 @@ export function LoginView() {
 
               {/* Modo demo: datos de ejemplo y recorrido guiado; no toca cuentas reales. */}
               <div className="!mt-6 border border-zinc-200 p-3 space-y-2">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-widest text-center">¿Solo quieres conocer Clossapp?</p>
+                <p className="text-xs text-zinc-500 uppercase tracking-widest text-center">¿Solo quieres conocer Clossapp?</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => entrarModoDemo("usuario")}
                     className="w-full h-11 border border-zinc-300 text-zinc-700 text-xs font-medium tracking-wide hover:border-zinc-900 transition-colors">
                     Demo de usuario
                   </motion.button>
                   <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => entrarModoDemo("acopio")}
-                    className="w-full h-11 border border-emerald-600 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-900 text-xs font-medium tracking-wide transition-colors">
+                    className="w-full h-11 border border-zinc-900 bg-zinc-50 hover:bg-zinc-100 text-zinc-900 text-xs font-medium tracking-wide transition-colors">
                     Demo de centro de acopio
                   </motion.button>
                 </div>
-                <p className="text-[11px] text-zinc-400 text-center">Datos de ejemplo y una guía paso a paso. Nada se guarda.</p>
+                <p className="text-xs text-zinc-500 text-center">Datos de ejemplo y una guía paso a paso. Nada se guarda.</p>
               </div>
 
               {/* El portal de recolección ya no tiene botón público: se entra con la cuenta del centro (perfiles.rol = 'acopio'). */}
-              <p className="text-[11px] text-zinc-400 text-center">
+              <p className="text-xs text-zinc-500 text-center">
                 ¿Eres un punto de recolección? Entra con el correo de tu centro.{" "}
                 <Link href="/centros" className="underline underline-offset-2 text-zinc-600 hover:text-zinc-900">Quiero ser centro de acopio</Link>
               </p>
 
-              <p className="text-[11px] leading-relaxed text-zinc-400 text-center">
+              <p className="text-xs leading-relaxed text-zinc-500 text-center">
                 Al continuar aceptas nuestros{" "}
                 <Link href="/politicas#terminos" className="text-zinc-600 underline underline-offset-2 hover:text-zinc-900 transition-colors">
                   términos y condiciones

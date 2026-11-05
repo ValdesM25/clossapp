@@ -38,7 +38,8 @@ export function usePrendas(userId: string, isGuest: boolean) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : JSON.stringify(err)
       console.error("Error fetching prendas:", msg)
-      setPrendas(deduplicatePrendas(GUEST_PRENDAS))
+      // Se conservan las reales que ya había; las de ejemplo (de antes de iniciar sesión) se quitan.
+      setPrendas((prev) => prev.filter((p) => p.user_id === userId))
     } finally {
       setLoading(false)
     }

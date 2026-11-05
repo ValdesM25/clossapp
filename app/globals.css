@@ -87,6 +87,7 @@
 @theme inline {
   --font-sans: 'Geist', 'Geist Fallback';
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-serif: var(--font-titulos), Georgia, serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -139,6 +140,37 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Que se sienta app instalada y no página web en el teléfono. */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    /* La app tiene su propio contenedor con scroll: el rebote de la página no aporta. */
+    overscroll-behavior: none;
+  }
+
+  button, a, [role="button"], summary {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Sin palabras sueltas al final de párrafos ni títulos desbalanceados. */
+  p, li, dd { text-wrap: pretty; }
+  h1, h2, h3 { text-wrap: balance; }
+
+  /* Foco de teclado visible en todo lo interactivo; el gris tenue por defecto casi no se veía. */
+  :focus-visible {
+    outline: 2px solid var(--foreground);
+    outline-offset: 2px;
+  }
+
+  /* iOS hace zoom al enfocar un campo de menos de 16px y no regresa. */
+  @media (pointer: coarse) {
+    input, textarea, select {
+      font-size: 16px;
+    }
   }
 }
 

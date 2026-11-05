@@ -154,7 +154,7 @@ export function PlanesView() {
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <Crown className="w-5 h-5 text-zinc-900" />
-          <p className="text-xs text-zinc-400 uppercase tracking-widest">Membresías & Recompensas</p>
+          <p className="text-xs text-zinc-500 uppercase tracking-widest">Membresías & Recompensas</p>
         </div>
         <h1 className="font-serif text-3xl text-zinc-900">Planes de Suscripción</h1>
         <p className="text-xs text-zinc-500 max-w-lg leading-relaxed mt-1">
@@ -165,16 +165,16 @@ export function PlanesView() {
       {/* Banner de Puntos por Donaciones */}
       <div data-tour="planes-puntos" className="bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-white p-5 border border-zinc-800 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-amber-400/20 border border-amber-400/50 flex items-center justify-center shrink-0">
-            <Sparkles className="w-6 h-6 text-amber-400" />
+          <div className="w-12 h-12 rounded-full bg-white/20 border border-zinc-700 flex items-center justify-center shrink-0">
+            <Sparkles className="w-6 h-6 text-zinc-300" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-mono tracking-widest text-amber-300">Programa de Donaciones</span>
+              <span className="text-[10px] uppercase font-mono tracking-widest text-zinc-200">Programa de Donaciones</span>
             </div>
-            <p className="font-serif text-2xl text-amber-300 font-medium mt-0.5">{puntos} Puntos ClossApp</p>
+            <p className="font-serif text-2xl text-zinc-200 mt-0.5">{puntos} Puntos ClossApp</p>
             {pendientes > 0 && (
-              <p className="text-[11px] text-amber-200/80 mt-0.5">+{pendientes} pendientes por compras recientes (se acreditan al usar las prendas)</p>
+              <p className="text-[11px] text-zinc-300 mt-0.5">+{pendientes} pendientes por compras recientes (se acreditan al usar las prendas)</p>
             )}
             <p className="text-xs text-zinc-400 mt-1">
               Ganas +100 pts por cada donación de 3+ prendas verificada con Código QR.
@@ -184,7 +184,7 @@ export function PlanesView() {
 
         <button
           onClick={() => setCanjeModalOpen(true)}
-          className="w-full md:w-auto px-4 py-2.5 bg-amber-400 text-zinc-950 font-semibold text-xs tracking-wide hover:bg-amber-300 transition-colors flex items-center justify-center gap-2"
+          className="w-full md:w-auto px-4 py-2.5 bg-white text-zinc-950 font-semibold text-xs tracking-wide hover:bg-white transition-colors flex items-center justify-center gap-2"
         >
           <Gift className="w-4 h-4" />
           Canjear Puntos por Descuentos
@@ -233,7 +233,7 @@ export function PlanesView() {
                   <p
                     className={cn(
                       "text-xs mt-1 leading-relaxed",
-                      plan.highlight ? "text-zinc-400" : "text-zinc-500"
+                      plan.highlight ? "text-zinc-500" : "text-zinc-500"
                     )}
                   >
                     {plan.desc}
@@ -253,7 +253,7 @@ export function PlanesView() {
                     <span
                       className={cn(
                         "text-xs",
-                        plan.highlight ? "text-zinc-400" : "text-zinc-500"
+                        plan.highlight ? "text-zinc-500" : "text-zinc-500"
                       )}
                     >
                       {plan.period}
@@ -267,13 +267,13 @@ export function PlanesView() {
                       <Check
                         className={cn(
                           "w-4 h-4 shrink-0 mt-0.5",
-                          plan.highlight ? "text-emerald-400" : "text-zinc-900"
+                          plan.highlight ? "text-zinc-500" : "text-zinc-900"
                         )}
                       />
                       <span
                         className={cn(
                           "text-xs leading-relaxed",
-                          plan.highlight ? "text-zinc-300" : "text-zinc-600"
+                          plan.highlight ? "text-zinc-500" : "text-zinc-600"
                         )}
                       >
                         {f}
@@ -290,7 +290,7 @@ export function PlanesView() {
                 className={cn(
                   "w-full py-3 text-xs font-medium tracking-wider uppercase transition-colors flex items-center justify-center gap-2",
                   isCurrent
-                    ? "bg-emerald-600 text-white cursor-default"
+                    ? "bg-zinc-900 text-white cursor-default"
                     : plan.highlight
                     ? "bg-white text-zinc-900 hover:bg-zinc-100"
                     : "border border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white"
@@ -319,7 +319,7 @@ export function PlanesView() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {canjes.map((c) => (
-              <div key={c.id} className="border border-amber-200 bg-amber-50/60 p-3.5 flex items-center justify-between">
+              <div key={c.id} className="border border-zinc-200 bg-zinc-50 p-3.5 flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-zinc-900">{c.titulo}</p>
                   <p className="text-[10px] text-zinc-500 font-mono mt-0.5">Usó {c.puntosUsados} pts</p>
@@ -328,7 +328,7 @@ export function PlanesView() {
                   onClick={() => copyCode(c.codigo)}
                   className="px-2.5 py-1 bg-zinc-900 text-white font-mono text-xs flex items-center gap-1 hover:bg-zinc-800"
                 >
-                  <Copy className="w-3 h-3 text-amber-300" />
+                  <Copy className="w-3 h-3 text-zinc-300" />
                   {c.codigo}
                 </button>
               </div>
@@ -344,8 +344,7 @@ export function PlanesView() {
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Suscripción Clossapp</p>
-            <h3 className="font-serif text-xl text-zinc-900 mt-0.5">Plan {selectedPlan}</h3>
+            <h3 className="font-serif text-xl text-zinc-900">Plan {selectedPlan}</h3>
           </div>
           <p className="text-xs text-zinc-500 leading-relaxed">
             ¿Deseas activar el plan <strong>{selectedPlan}</strong> para tu cuenta? Podrás cambiar o cancelar en cualquier momento.
@@ -373,9 +372,9 @@ export function PlanesView() {
         <div className="p-1 flex flex-col gap-4 max-h-[75vh] overflow-y-auto">
           {!canjeExitoso ? (
             <>
-              <div className="bg-amber-50 border border-amber-200 p-3 flex items-center justify-between">
-                <span className="text-xs text-amber-900 font-medium">Saldo disponible:</span>
-                <span className="font-serif font-semibold text-amber-900 text-base">{puntos} Puntos</span>
+              <div className="bg-zinc-50 border border-zinc-200 p-3 flex items-center justify-between">
+                <span className="text-xs text-zinc-900 font-medium">Saldo disponible:</span>
+                <span className="font-serif text-zinc-900 text-base">{puntos} Puntos</span>
               </div>
 
               <p className="text-xs text-zinc-600">
@@ -393,13 +392,13 @@ export function PlanesView() {
                       onClick={() => alcanza && setSelectedCanje(opcion)}
                       className={cn(
                         "border p-4 transition-all flex flex-col gap-2 bg-white cursor-pointer",
-                        isSelected ? "border-amber-500 ring-2 ring-amber-500/20" : "border-zinc-200",
+                        isSelected ? "border-zinc-900 ring-2 ring-zinc-900" : "border-zinc-200",
                         !alcanza && "opacity-50 cursor-not-allowed bg-zinc-50"
                       )}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-serif text-sm font-semibold text-zinc-900">{opcion.titulo}</span>
-                        <span className="text-xs font-mono font-semibold px-2 py-0.5 bg-amber-100 text-amber-900">
+                        <span className="font-serif text-sm text-zinc-900">{opcion.titulo}</span>
+                        <span className="text-xs font-mono font-semibold px-2 py-0.5 bg-zinc-100 text-zinc-900">
                           {opcion.puntosCoste} pts
                         </span>
                       </div>
@@ -446,8 +445,8 @@ export function PlanesView() {
               </p>
 
               <div className="w-full bg-zinc-900 text-white p-4 flex flex-col items-center gap-2 border border-zinc-800">
-                <span className="text-[10px] uppercase font-mono text-amber-400">Código de Descuento Generado</span>
-                <span className="font-mono text-lg font-bold text-amber-300 tracking-wider">
+                <span className="text-[10px] uppercase font-mono text-zinc-300">Código de Descuento Generado</span>
+                <span className="font-mono text-lg font-bold text-zinc-200 tracking-wider">
                   {canjeExitoso.codigo}
                 </span>
                 <button

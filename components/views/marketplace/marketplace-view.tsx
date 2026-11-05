@@ -104,8 +104,7 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
     <motion.div {...pageProps} className="flex flex-col gap-6 pb-32 pt-8">
       <div className="px-4 flex items-center justify-between gap-2">
         <div>
-          <p className="text-xs text-zinc-400 uppercase tracking-widest">Descubre</p>
-          <h1 className="font-serif text-2xl text-zinc-900 mt-0.5">Marketplace</h1>
+          <h1 className="font-serif text-2xl text-zinc-900">Marketplace</h1>
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -117,10 +116,10 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
               className="border border-zinc-200 text-zinc-700 hover:bg-zinc-50 text-xs px-2 sm:px-2.5 py-1.5 flex items-center gap-1 font-medium rounded shrink-0 relative"
               title="Ver mis pedidos"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <ShieldCheck className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
               <span className="text-[11px] sm:text-xs">Mis Pedidos</span>
               {escrowOrdersCount > 0 && (
-                <span className="bg-emerald-500 text-zinc-950 font-bold text-[10px] px-1.5 py-0.2 rounded-full min-w-[16px] text-center">
+                <span className="bg-zinc-900 text-white font-bold text-[10px] px-1.5 py-0.2 rounded-full min-w-[16px] text-center">
                   {escrowOrdersCount}
                 </span>
               )}
@@ -134,10 +133,10 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
               onClick={() => setIsCartOpen(true)}
               className="bg-zinc-900 text-white text-xs px-2.5 sm:px-3 py-1.5 flex items-center gap-1.5 font-medium rounded shadow-xs relative shrink-0"
             >
-              <ShoppingBag className="w-3.5 h-3.5 text-emerald-400" />
+              <ShoppingBag className="w-3.5 h-3.5 text-zinc-300" />
               <span>Carrito</span>
               {itemCount > 0 && (
-                <span className="bg-emerald-500 text-zinc-950 font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center -mr-1">
+                <span className="bg-white text-zinc-950 font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center -mr-1">
                   {itemCount}
                 </span>
               )}
@@ -160,7 +159,7 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
         {(["comprar", "rentar", "donar"] as const).map((tab) => (
           <button key={tab} onClick={() => { setMarketTab(tab); setActiveFilter("Todos") }}
             className={cn("flex-1 py-2.5 text-xs font-medium tracking-widest uppercase transition-colors border-b-2 -mb-px",
-              marketTab === tab ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-400")}>
+              marketTab === tab ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-500")}>
             {tab === "comprar" ? "Comprar" : tab === "rentar" ? "Rentar" : "Donar"}
           </button>
         ))}
@@ -171,8 +170,8 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
       ) : (
         <>
           <div className="px-4 relative">
-            <Search className="absolute left-7 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-            <Input placeholder="Buscar prendas..." className="pl-10 rounded-none border-zinc-200 focus-visible:ring-0 focus-visible:border-zinc-900 text-zinc-700 placeholder:text-zinc-400" />
+            <Search className="absolute left-7 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Input placeholder="Buscar prendas..." className="pl-10 rounded-none border-zinc-200 focus-visible:ring-0 focus-visible:border-zinc-900 text-zinc-700 placeholder:text-zinc-500" />
           </div>
 
           <div className="flex gap-2 overflow-x-auto pb-1 px-4">
@@ -187,7 +186,7 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
 
           {loading ? <PrendaSkeleton /> : filtered.length === 0 ? (
             <div className="mx-4 flex flex-col items-center justify-center py-12 gap-2 border border-zinc-100">
-              <p className="text-xs text-zinc-400 uppercase tracking-widest">Sin prendas disponibles</p>
+              <p className="text-xs text-zinc-500 uppercase tracking-widest">Sin prendas disponibles</p>
             </div>
           ) : (
             <div className="columns-2 gap-3 px-4 space-y-3">

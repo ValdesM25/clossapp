@@ -41,7 +41,7 @@ export default function AdminPage() {
   }, [supabase, cargar])
 
   if (acceso === "cargando") {
-    return <div className="min-h-dvh flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
+    return <div className="min-h-dvh flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-zinc-500" /></div>
   }
   if (acceso === "no") {
     return (
@@ -61,7 +61,7 @@ export default function AdminPage() {
       <header className="bg-white border-b border-zinc-200">
         <div className="max-w-4xl mx-auto px-4 py-5 flex items-center justify-between">
           <div>
-            <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Administración</p>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Administración</p>
             <h1 className="font-serif text-2xl text-zinc-900">Solicitudes de centros de acopio</h1>
           </div>
           <Link href="/" className="text-xs underline underline-offset-2 text-zinc-600">Volver a la app</Link>
@@ -71,7 +71,7 @@ export default function AdminPage() {
             <button key={p.id} type="button" onClick={() => setPestana(p.id)} aria-pressed={pestana === p.id}
               className={cn("px-4 py-2.5 text-xs tracking-wide border-b-2 -mb-px",
                 pestana === p.id ? "border-zinc-900 text-zinc-900 font-medium" : "border-transparent text-zinc-500 hover:text-zinc-900")}>
-              {p.label} <span className="tabular-nums text-zinc-400">({conteo(p.id)})</span>
+              {p.label} <span className="tabular-nums text-zinc-500">({conteo(p.id)})</span>
             </button>
           ))}
         </nav>
@@ -181,7 +181,7 @@ function TarjetaSolicitud({ solicitud: s, correo, onRevisada }: { solicitud: Sol
 function Dato({ icono: Icono, texto }: { icono: typeof MapPin; texto: string }) {
   return (
     <div className="flex items-start gap-2">
-      <Icono className="w-4 h-4 text-zinc-400 mt-0.5 shrink-0" aria-hidden="true" />
+      <Icono className="w-4 h-4 text-zinc-500 mt-0.5 shrink-0" aria-hidden="true" />
       <p className="break-words">{texto}</p>
     </div>
   )

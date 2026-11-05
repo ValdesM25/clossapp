@@ -27,6 +27,8 @@ export function useInstalarApp() {
   // true hasta medir, para no mostrar el aviso un instante en una app ya instalada.
   const [instalada, setInstalada] = useState(true)
   const [ios, setIos] = useState(false)
+  // Navegador dentro de otra app (Instagram, Facebook, TikTok…): ahí no se puede añadir a inicio.
+  const [enApp, setEnApp] = useState(false)
   const [evento, setEvento] = useState<EventoInstalar | null>(guardado)
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export function useInstalarApp() {
     )
     // iPadOS 13+ se identifica como Mac: se distingue por la pantalla táctil.
     setIos(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1))
+    setEnApp(/FBAN|FBAV|Instagram|TikTok|musical_ly|Snapchat|LinkedInApp|Line\//.test(navigator.userAgent))
     const actualizar = () => setEvento(guardado)
     oyentes.add(actualizar)
     actualizar()
@@ -49,5 +52,5 @@ export function useInstalarApp() {
     setEvento(null)
   }
 
-  return { instalada, ios, puedeInstalar: !!evento, instalar }
+  return { instalada, ios, enApp, puedeInstalar: !!evento, instalar }
 }

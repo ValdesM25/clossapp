@@ -1,3 +1,6 @@
+import { motion } from "framer-motion"
+import { Briefcase, Check, CloudRain, CloudSun, Dumbbell, Gem, Search, Shirt, Snowflake, Sparkles, Sun, Wine, type LucideIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 import type { Prenda } from "@/types"
 
 interface OutfitFormProps {
@@ -12,95 +15,126 @@ interface OutfitFormProps {
   destacadaQuery: string
   setDestacadaQuery: (v: string) => void
   setDestacada: (v: string) => void
-  showSuggestions: boolean
-  setShowSuggestions: (v: boolean) => void
-  suggestions: Prenda[]
   errorMsg: string | null
   onGenerate: () => void
 }
 
+const OCASIONES: [string, LucideIcon][] = [
+  ["Casual", Shirt], ["Oficina", Briefcase], ["Cena", Wine], ["Formal", Gem], ["Deporte", Dumbbell],
+]
+const CLIMAS: [string, LucideIcon][] = [
+  ["Frío", Snowflake], ["Templado", CloudSun], ["Calor", Sun], ["Lluvia", CloudRain],
+]
+const MAX_TIRA = 24
+
 export function OutfitForm({
   prendas, isGuest, generating, ocasion, setOcasion, clima, setClima,
-  destacada, destacadaQuery, setDestacadaQuery, setDestacada,
-  showSuggestions, setShowSuggestions, suggestions, errorMsg, onGenerate,
+  destacada, destacadaQuery, setDestacadaQuery, setDestacada, errorMsg, onGenerate,
 }: OutfitFormProps) {
+  const busqueda = destacadaQuery.trim().toLowerCase()
+  const tira = (busqueda ? prendas.filter((p) => `${p.name} ${p.category}`.toLowerCase().includes(busqueda)) : prendas).slice(0, MAX_TIRA)
+  const sinPrendas = !isGuest && prendas.length === 0
+
+  function elegirDestacada(p: Prenda) {
+    const quitar = destacada === p.name
+    setDestacada(quitar ? "" : p.name)
+  }
+
   return (
-    <div data-tour="simulador-form" className="mx-4 border border-zinc-200 p-5 flex flex-col gap-4">
-      {/* Ocasión */}
-      <div>
-        <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block">Ocasión</label>
-        <div className="flex flex-wrap gap-2">
-          {["Casual", "Oficina", "Cena", "Formal", "Deporte"].map((o) => (
-            <button key={o} onClick={() => setOcasion(o === ocasion ? "" : o)}
-              className={`text-xs px-3 py-1.5 border tracking-wide transition-colors ${
-                ocasion === o ? "bg-zinc-900 text-white border-zinc-900" : "border-zinc-200 text-zinc-600"
-              }`}>
-              {o}
-            </button>
-          ))}
+    <div data-tour="simulador-form" className="flex flex-col gap-7">
+      <fieldset className="px-4 min-w-0">
+        <legend className="text-sm font-medium text-zinc-900 mb-3">Ocasión</legend>
+        <div className="grid grid-cols-5 gap-2">
+          {OCASIONES.map(([nombre, Icono]) => {
+            const activo = ocasion === nombre
+            return (
+              <motion.button key={nombre} type="button" whileTap={{ scale: 0.96 }} aria-pressed={activo}
+                onClick={() => setOcasion(activo ? "" : nombre)}
+                className={cn(
+                  "h-[4.5rem] flex flex-col items-center justify-center gap-1.5 border transition-colors",
+                  activo ? "bg-zinc-900 border-zinc-900 text-white" : "border-zinc-200 text-zinc-700 hover:border-zinc-400",
+                )}>
+                <Icono className="w-5 h-5" aria-hidden="true" />
+                <span className="text-[11px]">{nombre}</span>
+              </motion.button>
+            )
+          })}
         </div>
-      </div>
+      </fieldset>
 
-      {/* Clima */}
-      <div>
-        <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block">Clima</label>
-        <div className="flex flex-wrap gap-2">
-          {["Frío", "Templado", "Calor", "Lluvia"].map((c) => (
-            <button key={c} onClick={() => setClima(c === clima ? "" : c)}
-              className={`text-xs px-3 py-1.5 border tracking-wide transition-colors ${
-                clima === c ? "bg-zinc-900 text-white border-zinc-900" : "border-zinc-200 text-zinc-600"
-              }`}>
-              {c}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Prenda destacada — autocomplete */}
-      <div className="relative">
-        <label className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1.5 block">
-          Prenda a destacar (opcional)
-        </label>
-        <input
-          value={destacadaQuery}
-          onChange={(e) => { setDestacadaQuery(e.target.value); setDestacada(e.target.value); setShowSuggestions(true) }}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-          placeholder="Busca una prenda..."
-          className="w-full h-9 rounded-none border border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900 text-sm px-3"
-        />
-        {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 bg-white border border-zinc-200 border-t-0 z-20 shadow-sm">
-            {suggestions.map((p) => (
-              <button key={p.id} onMouseDown={() => { setDestacada(p.name); setDestacadaQuery(p.name); setShowSuggestions(false) }}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-zinc-50 text-left">
-                {p.image_url && <img src={p.image_url} alt={p.name} className="w-7 h-7 object-cover shrink-0" />}
-                <span className="text-xs text-zinc-700">{p.name}</span>
-                <span className="text-[10px] text-zinc-400 ml-auto">{p.category}</span>
+      <fieldset className="px-4 min-w-0">
+        <legend className="text-sm font-medium text-zinc-900 mb-3">Clima</legend>
+        <div className="grid grid-cols-4 border border-zinc-200 divide-x divide-zinc-200">
+          {CLIMAS.map(([nombre, Icono]) => {
+            const activo = clima === nombre
+            return (
+              <button key={nombre} type="button" aria-pressed={activo} onClick={() => setClima(activo ? "" : nombre)}
+                className={cn(
+                  "h-11 flex items-center justify-center gap-1.5 text-xs transition-colors",
+                  activo ? "bg-zinc-900 text-white" : "text-zinc-700 hover:bg-zinc-50",
+                )}>
+                <Icono className="w-4 h-4" aria-hidden="true" /> {nombre}
               </button>
-            ))}
+            )
+          })}
+        </div>
+      </fieldset>
+
+      {prendas.length > 0 && (
+        <fieldset className="min-w-0">
+          <div className="px-4 flex items-baseline justify-between gap-3 mb-3">
+            <legend className="text-sm font-medium text-zinc-900">Lleva sí o sí <span className="font-normal text-zinc-500">(opcional)</span></legend>
+            {destacada && (
+              <button type="button" onClick={() => setDestacada("")} className="min-h-10 -my-3 text-xs text-zinc-600 hover:text-zinc-900">
+                Quitar
+              </button>
+            )}
           </div>
-        )}
-      </div>
-
-      {errorMsg && <p className="text-xs text-zinc-500">{errorMsg}</p>}
-
-      <button onClick={onGenerate}
-        disabled={generating || isGuest || (!isGuest && prendas.length === 0)}
-        className={`w-full py-3 text-sm font-medium tracking-widest uppercase flex items-center justify-center gap-2 ${
-          isGuest
-            ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
-            : "bg-zinc-900 text-white disabled:opacity-40"
-        }`}>
-        {generating
-          ? <><span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Diseñando propuestas...</>
-          : isGuest
-            ? <><span className="text-lg">🔒</span>Inicia sesión para usar IA</>
-            : "Generar Propuestas"}
-      </button>
-
-      {!isGuest && prendas.length === 0 && (
-        <p className="text-[10px] text-zinc-400 text-center">Sube prendas a tu armario primero</p>
+          <div className="px-4 relative mb-3">
+            <Search className="w-4 h-4 text-zinc-500 absolute left-7 top-1/2 -translate-y-1/2" aria-hidden="true" />
+            <input value={destacadaQuery} onChange={(e) => { setDestacadaQuery(e.target.value); setDestacada(e.target.value) }}
+              placeholder="Busca en tu armario…" aria-label="Buscar prenda a destacar"
+              className="w-full h-10 border border-zinc-200 pl-9 pr-3 text-sm focus:border-zinc-900 outline-none" />
+          </div>
+          <div className="flex gap-2 overflow-x-auto px-4 pb-1 snap-x [scrollbar-width:none] overscroll-x-contain">
+            {tira.map((p) => {
+              const activo = destacada === p.name
+              return (
+                <button key={p.id} type="button" onClick={() => elegirDestacada(p)} aria-pressed={activo}
+                  className="shrink-0 w-[4.5rem] snap-start text-left">
+                  <span className="relative block">
+                    <img src={p.image_url} alt="" loading="lazy" decoding="async"
+                      className={cn("w-full aspect-[4/5] object-cover bg-zinc-100 transition-opacity", destacada && !activo && "opacity-50")} />
+                    {activo && (
+                      <span className="absolute inset-0 ring-2 ring-inset ring-zinc-900 flex items-start justify-end p-1">
+                        <span className="w-5 h-5 bg-zinc-900 text-white flex items-center justify-center"><Check className="w-3 h-3" /></span>
+                      </span>
+                    )}
+                  </span>
+                  <span className="block text-[11px] text-zinc-700 truncate mt-1">{p.name}</span>
+                </button>
+              )
+            })}
+            {tira.length === 0 && <p className="text-xs text-zinc-500 py-6">Nada con “{destacadaQuery}” en tu armario.</p>}
+          </div>
+        </fieldset>
       )}
+
+      <div className="px-4 flex flex-col gap-3">
+        {errorMsg && <p role="alert" className="text-sm text-zinc-700 border border-zinc-200 bg-zinc-50 px-4 py-3">{errorMsg}</p>}
+        <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={onGenerate}
+          disabled={generating || sinPrendas}
+          className="w-full h-14 bg-zinc-900 text-white text-base font-medium flex items-center justify-center gap-2.5 transition-colors hover:bg-zinc-800 disabled:opacity-60">
+          {generating ? (
+            <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" /> Armando tus looks…</>
+          ) : (
+            <><Sparkles className="w-5 h-5" aria-hidden="true" /> Armar mis 3 looks</>
+          )}
+        </motion.button>
+        {sinPrendas && <p className="text-xs text-zinc-500 text-center">Sube prendas a tu armario primero.</p>}
+        {/* La demo muestra looks de ejemplo al instante, sin gastar IA (use-outfits). */}
+        {isGuest && <p className="text-xs text-zinc-500 text-center">En la demo verás looks de ejemplo.</p>}
+      </div>
     </div>
   )
 }

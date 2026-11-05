@@ -17,7 +17,7 @@ export function PrendaGrid({ prendas, loading, onSelect, emptyMessage, getBadge,
   if (prendas.length === 0) {
     return (
       <div className="mx-4 flex flex-col items-center justify-center py-12 gap-2 border border-zinc-100">
-        <p className="text-xs text-zinc-400 uppercase tracking-widest">{emptyMessage ?? "Sin prendas"}</p>
+        <p className="text-xs text-zinc-500 uppercase tracking-widest">{emptyMessage ?? "Sin prendas"}</p>
       </div>
     )
   }

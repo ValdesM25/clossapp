@@ -124,8 +124,8 @@ export function RentDatePicker({ prendaId, onConfirm, onCancel, aparting }: Rent
       {/* Header del Calendario */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <CalendarIcon className="w-4 h-4 text-emerald-600" />
-          <h4 className="font-serif text-sm font-semibold text-zinc-900">
+          <CalendarIcon className="w-4 h-4 text-zinc-600" />
+          <h4 className="font-serif text-sm text-zinc-900">
             {monthNames[month]} {year}
           </h4>
         </div>
@@ -150,18 +150,18 @@ export function RentDatePicker({ prendaId, onConfirm, onCancel, aparting }: Rent
       {/* Leyenda de Estados */}
       <div className="flex flex-wrap items-center gap-2 py-1 text-[10px] text-zinc-600 border-y border-zinc-200/80 my-0.5">
         <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Disponible
+          <span className="w-2.5 h-2.5 rounded-full bg-white border border-zinc-300 inline-block"></span> Disponible
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Rentado (Tachado)
+          <span className="w-2.5 h-2.5 rounded-full bg-zinc-900 inline-block"></span> Elegido
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"></span> Día de Lavado (Desactivado)
+          <span className="w-2.5 h-2.5 rounded-full bg-zinc-200 inline-block"></span> Rentado o en lavado
         </span>
       </div>
 
       {/* Días de la semana */}
-      <div className="grid grid-cols-7 text-center text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+      <div className="grid grid-cols-7 text-center text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
         {weekDays.map((d) => (
           <div key={d} className="py-1">
             {d}
@@ -194,24 +194,24 @@ export function RentDatePicker({ prendaId, onConfirm, onCancel, aparting }: Rent
               disabled={isDisabled}
               onClick={() => setSelectedDateStr(dayStr)}
               className={cn(
-                "h-9.5 rounded-lg flex flex-col items-center justify-center relative transition-all text-xs font-medium border",
-                isSelected && "bg-emerald-600 border-emerald-700 text-white font-bold shadow-sm scale-105 z-10",
-                !isSelected && !isDisabled && "bg-white border-zinc-200 text-zinc-800 hover:border-emerald-400 hover:bg-emerald-50/50",
+                "h-9.5 rounded-lg flex flex-col items-center justify-center relative transition-colors text-xs font-medium border",
+                isSelected && "bg-zinc-900 border-zinc-900 text-white font-bold shadow-sm scale-105 z-10",
+                !isSelected && !isDisabled && "bg-white border-zinc-200 text-zinc-800 hover:border-zinc-400 hover:bg-zinc-50",
                 isPast && "bg-zinc-100 border-transparent text-zinc-300 cursor-not-allowed",
-                isBooked && "bg-rose-50 border-rose-200 text-rose-700 line-through font-semibold cursor-not-allowed opacity-90",
-                isWashing && "bg-purple-50 border-purple-200 text-purple-700 line-through font-semibold cursor-not-allowed opacity-90"
+                isBooked && "bg-zinc-100 border-transparent text-zinc-500 line-through cursor-not-allowed",
+                isWashing && "bg-zinc-100 border-transparent text-zinc-500 line-through cursor-not-allowed"
               )}
             >
               <span>{dayNum}</span>
 
               {/* Indicador visual de estado */}
               {isBooked && (
-                <span className="text-[7.5px] font-bold text-rose-600 no-underline leading-none mt-0.5">
+                <span className="text-[9px] text-zinc-500 no-underline leading-none mt-0.5">
                   Rentado
                 </span>
               )}
               {isWashing && (
-                <span className="text-[7.5px] font-bold text-purple-600 no-underline leading-none mt-0.5">
+                <span className="text-[9px] text-zinc-500 no-underline leading-none mt-0.5">
                   Lavado
                 </span>
               )}
@@ -222,14 +222,14 @@ export function RentDatePicker({ prendaId, onConfirm, onCancel, aparting }: Rent
 
       {/* Resumen de Fecha Seleccionada */}
       {selectedDateStr ? (
-        <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-lg space-y-1 text-xs text-emerald-900 mt-1">
-          <p className="font-semibold flex items-center gap-1.5 capitalize text-emerald-950">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+        <div className="bg-zinc-50 border border-zinc-200 p-2.5 rounded-lg space-y-1 text-xs text-zinc-900 mt-1">
+          <p className="font-semibold flex items-center gap-1.5 capitalize text-zinc-900">
+            <Sparkles className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
             Renta para el {formatDisplayDate(selectedDateStr)}
           </p>
           {returnDateStr && (
-            <p className="text-[11px] text-emerald-700 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3 text-purple-600 shrink-0" />
+            <p className="text-[11px] text-zinc-700 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3 text-zinc-600 shrink-0" />
               Devolución y lavado obligatorio: {formatDisplayDate(returnDateStr)} (Tachado para otros clientes)
             </p>
           )}

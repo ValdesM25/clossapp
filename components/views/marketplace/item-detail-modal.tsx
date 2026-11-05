@@ -47,11 +47,11 @@ export function ItemDetailModal({ item, isRenta, apartSuccess, aparting, isGuest
           <div className="p-6 flex flex-col gap-4">
             <div>
               <h2 className="font-serif text-xl text-zinc-900">{item.name}</h2>
-              <p className="text-xs text-zinc-400 uppercase tracking-widest mt-1">{item.category}</p>
+              <p className="text-xs text-zinc-500 uppercase tracking-widest mt-1">{item.category}</p>
             </div>
             <div className="flex gap-6">
               <div>
-                <p className="text-[10px] text-zinc-400 uppercase tracking-widest">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-widest">
                   {isRenta ? "Precio / día" : "Precio"}
                 </p>
                 <p className="font-serif text-2xl text-zinc-900">
@@ -60,21 +60,21 @@ export function ItemDetailModal({ item, isRenta, apartSuccess, aparting, isGuest
               </div>
               {item.talla && (
                 <div>
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Talla</p>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Talla</p>
                   <p className="text-sm font-medium text-zinc-900">{item.talla}</p>
                 </div>
               )}
               {item.estado_uso && (
                 <div>
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Estado</p>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Estado</p>
                   <p className="text-sm font-medium text-zinc-900">{item.estado_uso}</p>
                 </div>
               )}
             </div>
 
             {/* Escrow Custody Protection Notice */}
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 flex items-center gap-2 text-xs text-emerald-900">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+            <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-2.5 flex items-center gap-2 text-xs text-zinc-900">
+              <ShieldCheck className="w-4 h-4 text-zinc-600 shrink-0" />
               <span>
                 <strong>Pago en Custodia Escrow:</strong> Tu dinero queda retenido de forma segura hasta que recojas el producto.
               </span>
@@ -99,7 +99,7 @@ export function ItemDetailModal({ item, isRenta, apartSuccess, aparting, isGuest
               <motion.button whileTap={{ scale: 0.98 }} onClick={handleApartar} disabled={aparting || isGuest}
                 className={cn("w-full py-3 text-sm font-medium tracking-wide flex items-center justify-center gap-2 rounded",
                   isGuest ? "bg-zinc-100 text-zinc-400 cursor-default" : "bg-zinc-900 text-white hover:bg-zinc-800 transition-colors disabled:opacity-50")}>
-                {aparting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4 text-emerald-400" />}
+                {aparting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4 text-zinc-300" />}
                 {isGuest ? "Solo lectura" : aparting ? "Procesando..." : isRenta ? "Solicitar Renta" : "Agregar al Carrito de Custodia"}
               </motion.button>
             )}

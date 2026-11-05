@@ -56,10 +56,10 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
             {/* Header */}
             <div className="p-3.5 sm:p-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-900 text-white shrink-0">
               <div className="flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-emerald-400" />
+                <ShoppingBag className="w-5 h-5 text-zinc-300" />
                 <h2 className="font-serif text-base sm:text-lg text-white">Tu Carrito de Custodia</h2>
                 {itemCount > 0 && (
-                  <span className="bg-emerald-500 text-zinc-950 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-white text-zinc-950 text-[11px] font-bold px-2 py-0.5 rounded-full">
                     {itemCount}
                   </span>
                 )}
@@ -74,15 +74,15 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
             </div>
 
             {/* Banner Anti-Estafas / Escrow */}
-            <div className="bg-emerald-50 border-b border-emerald-100 p-3 sm:p-3.5 flex items-start gap-2.5 sm:gap-3 shrink-0">
-              <div className="p-1.5 bg-emerald-100 rounded-lg text-emerald-800 shrink-0 mt-0.5">
+            <div className="bg-zinc-50 border-b border-zinc-200 p-3 sm:p-3.5 flex items-start gap-2.5 sm:gap-3 shrink-0">
+              <div className="p-1.5 bg-zinc-100 rounded-lg text-zinc-800 shrink-0 mt-0.5">
                 <ShieldCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <h4 className="text-[11px] sm:text-xs font-bold text-emerald-950 uppercase tracking-wider">
+                <h4 className="text-[11px] sm:text-xs font-bold text-zinc-900 uppercase tracking-wider">
                   Protección Anti-Estafas ClossApp
                 </h4>
-                <p className="text-[10px] sm:text-[11px] text-emerald-800 mt-0.5 leading-snug">
+                <p className="text-[10px] sm:text-[11px] text-zinc-800 mt-0.5 leading-snug">
                   Tus fondos quedan retenidos de forma segura en custodia. El vendedor <strong>NO</strong> recibe el dinero hasta que tú acudas al Punto de Recolección a revisar y confirmar la prenda.
                 </p>
               </div>
@@ -90,16 +90,16 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
 
             {/* Sub-banner: Compras Activas en Custodia con QR */}
             {custodiaActivas.length > 0 && (
-              <div className="bg-amber-50 border-b border-amber-200 p-3 flex items-center justify-between shrink-0">
+              <div className="bg-zinc-50 border-b border-zinc-200 p-3 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 bg-amber-100 rounded-md text-amber-800 shrink-0">
+                  <div className="p-1.5 bg-zinc-100 rounded-md text-zinc-800 shrink-0">
                     <QrCode className="w-4.5 h-4.5" />
                   </div>
                   <div>
-                    <h5 className="text-[11px] sm:text-xs font-bold text-amber-950">
+                    <h5 className="text-[11px] sm:text-xs font-bold text-zinc-900">
                       {custodiaActivas.length} {custodiaActivas.length === 1 ? "Compra en Custodia (QR)" : "Compras en Custodia (QR)"}
                     </h5>
-                    <p className="text-[10px] text-amber-800">Muestra tu QR en el punto de acopio</p>
+                    <p className="text-[10px] text-zinc-800">Muestra tu QR en el punto de acopio</p>
                   </div>
                 </div>
                 <button
@@ -118,7 +118,7 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
             <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
               {cart.length === 0 ? (
                 <div className="py-10 sm:py-14 text-center flex flex-col items-center justify-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-zinc-100 flex items-center justify-center mb-3 text-zinc-400">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-zinc-100 flex items-center justify-center mb-3 text-zinc-500">
                     <ShoppingBag className="w-7 h-7 sm:w-8 sm:h-8" />
                   </div>
                   <h3 className="font-serif text-base text-zinc-800">Tu carrito está vacío</h3>
@@ -127,16 +127,16 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
                   </p>
 
                   {custodiaActivas.length > 0 && (
-                    <div className="mt-6 w-full p-4 border border-amber-200 bg-amber-50/70 rounded-xl text-left space-y-2.5">
-                      <div className="flex items-center justify-between border-b border-amber-200/60 pb-2">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-amber-900 flex items-center gap-1">
-                          <QrCode className="w-3.5 h-3.5 text-amber-700" /> Compras Activas en Custodia
+                    <div className="mt-6 w-full p-4 border border-zinc-200 bg-zinc-50 rounded-xl text-left space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-900 flex items-center gap-1">
+                          <QrCode className="w-3.5 h-3.5 text-zinc-700" /> Compras Activas en Custodia
                         </span>
-                        <span className="bg-amber-200 text-amber-950 font-bold text-[10px] px-2 py-0.5 rounded-full">
+                        <span className="bg-zinc-200 text-zinc-900 font-bold text-[10px] px-2 py-0.5 rounded-full">
                           {custodiaActivas.length} QR listos
                         </span>
                       </div>
-                      <p className="text-[11px] text-amber-900 leading-snug">
+                      <p className="text-[11px] text-zinc-900 leading-snug">
                         Tienes {custodiaActivas.length} órdenes pagadas y protegidas en Custodia. Presenta el código QR al operador para recibir tus prendas.
                       </p>
                       <button
@@ -146,7 +146,7 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
                         }}
                         className="w-full bg-zinc-900 text-white font-medium text-xs py-2.5 rounded hover:bg-zinc-800 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
                       >
-                        <QrCode className="w-3.5 h-3.5 text-emerald-400" />
+                        <QrCode className="w-3.5 h-3.5 text-zinc-300" />
                         <span>Ver mis {custodiaActivas.length} Códigos QR en Custodia</span>
                       </button>
                     </div>
@@ -204,7 +204,7 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
                     </div>
                     <button
                       onClick={() => removeFromCart(item.id)}
-                      className="absolute right-2 top-2 p-1.5 text-zinc-400 hover:text-red-600 transition-colors"
+                      className="absolute right-2 top-2 p-1.5 text-zinc-500 hover:text-red-600 transition-colors"
                       title="Eliminar del carrito"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -228,7 +228,7 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
                     </span>
                     <span>$0.00 (Gratis)</span>
                   </div>
-                  <div className="flex justify-between text-sm font-serif font-bold text-zinc-900 pt-2 border-t border-zinc-200">
+                  <div className="flex justify-between text-sm font-serif text-zinc-900 pt-2 border-t border-zinc-200">
                     <span>Total a Pagar</span>
                     <span className="font-mono text-base">${totalPrice} MXN</span>
                   </div>
@@ -250,7 +250,7 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
                     className="flex-1 bg-zinc-900 text-white font-medium text-xs px-4 py-3 rounded flex items-center justify-center gap-2 hover:bg-zinc-800 transition-colors shadow-lg shadow-zinc-900/10"
                   >
                     <span>Pagar con Custodia Segura</span>
-                    <ArrowRight className="w-4 h-4 text-emerald-400" />
+                    <ArrowRight className="w-4 h-4 text-zinc-300" />
                   </motion.button>
                 </div>
               </div>

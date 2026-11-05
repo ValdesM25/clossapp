@@ -16,7 +16,7 @@ export function OutfitVisual({ outfitPrendas }: { outfitPrendas: Prenda[] }) {
     <div className="flex flex-col gap-2">
       {display.map(({ cat, items }) => (
         <div key={cat}>
-          <p className="text-[9px] text-zinc-400 uppercase tracking-widest mb-1">{cat}</p>
+          <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1">{cat}</p>
           <div className="flex gap-2 flex-wrap">
             {items.map((p) => (
               <div key={p.id} className="flex items-center gap-1.5 border border-zinc-100 px-2 py-1">
