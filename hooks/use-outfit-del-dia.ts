@@ -90,7 +90,7 @@ export function useOutfitDelDia(prendas: Prenda[], userId: string, plan: Plan | 
       if (plan === "premium") {
         try {
           const texto = c ? `${c.texto}, ${c.temp}°C` : ""
-          const [primero] = await generateOutfits({ ocasion: "Día a día", clima: texto, destacada: "" }, mapWardrobe(prendas))
+          const [primero] = await generateOutfits({ ocasion: "Día a día", clima: texto, destacada: "" }, mapWardrobe(prendas), userId)
           if (primero) g = { clima: c, titulo: primero.titulo, descripcion: primero.descripcion, prenda_ids: primero.prenda_ids.map(String) }
         } catch (err) {
           console.error("[outfit-del-dia]", err instanceof Error ? err.message : err)
