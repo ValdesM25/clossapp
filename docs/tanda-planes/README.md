@@ -2,7 +2,7 @@
 
 Pedido de Mauri (2026-11-05): planear toda la lógica de planes antes de invitar a amigos (ingenieros) a usar la app, con énfasis en que nadie pueda drenar los créditos de la API de Claude.
 
-Rama: `feat/planes-limites`. Estado: **fases 1 y 2 hechas (código + SQL probado con rollback); SQL sin aplicar en producción; fase 3 (UX de límites) pendiente.**
+Rama: `feat/planes-limites`. Estado: **fases 1 y 2 hechas (código + SQL probado con rollback); SQL 15 y 16 aplicados en producción el 2026-11-05; fase 3 (UX de límites) pendiente.**
 
 ## Hecho en esta rama
 
