@@ -12,6 +12,9 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 type Modo = "alta" | "venta"
 type MediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp"
+const TIPOS_IMAGEN: unknown[] = ["image/jpeg", "image/png", "image/gif", "image/webp"] satisfies MediaType[]
+/** ~1.5 MB por foto en base64. */
+const MAX_BASE64 = 2_000_000
 
 const SISTEMA_ALTA = `Eres un analista de moda experto. Analiza la imagen de esta prenda y devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura: { "nombre": "Nombre descriptivo corto, ej. Blazer de Lino Negro", "categoria": "Top, Bottom, Calzado, Outerwear o Accesorio", "color_principal": "Color predominante", "estilo": "Ej. Minimalista, Business, Casual", "descripcion": "Breve descripción de corte y material" }. No incluyas markdown ni texto adicional.`
 
@@ -72,6 +75,14 @@ export async function POST(req: NextRequest) {
         { error: `Máximo ${MAX_IMAGENES} fotos por prenda` },
         { status: 400 }
       )
+    }
+
+    // El cliente manda fotos de 800 px (~100 KB); esto solo frena pedidos armados a mano.
+    if (imagenes.some((img) => typeof img !== "string" || img.length > MAX_BASE64)) {
+      return NextResponse.json({ error: "Foto demasiado grande" }, { status: 413 })
+    }
+    if (mediaType && !TIPOS_IMAGEN.includes(mediaType)) {
+      return NextResponse.json({ error: "Formato de imagen no permitido" }, { status: 400 })
     }
 
     const esVenta = (modo as Modo) === "venta"
