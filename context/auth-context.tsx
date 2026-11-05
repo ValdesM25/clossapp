@@ -4,7 +4,7 @@ import { createContext, useContext, type ReactNode } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import type { UserMode } from "@/types"
 import type { Plan } from "@/constants/planes"
-import type { EstiloPerfil } from "@/constants/onboarding"
+import type { EstiloPerfil, ModoOnboarding } from "@/constants/onboarding"
 import type { ProveedorSocial } from "@/services/auth.service"
 import type { TipoDemo } from "@/lib/demo"
 
@@ -24,10 +24,11 @@ type AuthContextValue = {
   plan: Plan | null
   /** Perfil de estilo guardado; null si no lo llenó. */
   estilo: EstiloPerfil | null
-  mostrarOnboarding: boolean
+  /** Qué preguntas de estilo mostrar; false si no toca. */
+  mostrarOnboarding: ModoOnboarding | false
   /** Muestra el acceso al panel /admin (la base valida el permiso real). */
   esAdmin: boolean
-  abrirOnboarding: () => void
+  abrirOnboarding: (modo?: ModoOnboarding) => void
   terminarOnboarding: (estilo?: EstiloPerfil) => Promise<void>
   login: (email: string, password: string, captchaToken?: string) => Promise<void>
   register: (email: string, password: string, captchaToken?: string) => Promise<{ requiereConfirmacion: boolean }>

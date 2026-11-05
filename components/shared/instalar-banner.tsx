@@ -4,18 +4,38 @@ import { useEffect, useState } from "react"
 import { Download, Ellipsis, Share, SquarePlus, X } from "lucide-react"
 import { useInstalarApp } from "@/hooks/use-instalar-app"
 
-const CLAVE = "instalar-banner-cerrado"
+const CLAVE_CIERRES = "instalar-banner-cierres"
+const CLAVE_HASTA = "instalar-banner-hasta"
+// Tras el 1er cierre vuelve a las 2 semanas, tras el 2º a las 4; al 3º ya no vuelve.
+const ESPERAS_DIAS = [14, 28]
+const DIA_MS = 86_400_000
+
+function leerCierres(): number {
+  // Versión anterior: un solo cierre para siempre. Cuenta como el primero.
+  if (localStorage.getItem("instalar-banner-cerrado") === "1") {
+    localStorage.removeItem("instalar-banner-cerrado")
+    localStorage.setItem(CLAVE_CIERRES, "1")
+    localStorage.setItem(CLAVE_HASTA, String(Date.now() + ESPERAS_DIAS[0] * DIA_MS))
+  }
+  return Number(localStorage.getItem(CLAVE_CIERRES) ?? 0)
+}
 
 /** Invita a instalar la app: botón en Android/Chrome, pasos manuales en iPhone/iPad. */
 export function InstalarBanner() {
   const { instalada, ios, enApp, puedeInstalar, instalar } = useInstalarApp()
   const [cerrado, setCerrado] = useState(true)
-  useEffect(() => { setCerrado(localStorage.getItem(CLAVE) === "1") }, [])
+  useEffect(() => {
+    const cierres = leerCierres()
+    setCerrado(cierres > ESPERAS_DIAS.length || Date.now() < Number(localStorage.getItem(CLAVE_HASTA) ?? 0))
+  }, [])
 
   if (instalada || cerrado || (!ios && !puedeInstalar)) return null
 
   function cerrar() {
-    localStorage.setItem(CLAVE, "1")
+    const cierres = leerCierres() + 1
+    localStorage.setItem(CLAVE_CIERRES, String(cierres))
+    const espera = ESPERAS_DIAS[cierres - 1]
+    if (espera) localStorage.setItem(CLAVE_HASTA, String(Date.now() + espera * DIA_MS))
     setCerrado(true)
   }
 

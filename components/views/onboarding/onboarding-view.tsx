@@ -5,15 +5,28 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ArrowLeft, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
-import { PASOS_ONBOARDING, type CampoOnboarding, type EstiloPerfil } from "@/constants/onboarding"
+import { pasosDe, type CampoOnboarding, type EstiloPerfil, type ModoOnboarding } from "@/constants/onboarding"
 
 interface OnboardingViewProps {
+  modo: ModoOnboarding
   inicial: EstiloPerfil | null
   onTerminar: (estilo?: EstiloPerfil) => void
 }
 
+/**
+ * Opciones a mostrar. Lo ya elegido siempre aparece, aunque la opción se haya
+ * renombrado o no aplique a la ropa elegida, para poder quitarlo.
+ */
+function opcionesDe(campo: CampoOnboarding, respuestas: EstiloPerfil): string[] {
+  const visibles = (campo.opciones ?? []).filter((o) => respuestas.ropa !== "Masculina" || !campo.noMasculina?.includes(o))
+  const v = respuestas[campo.key]
+  const elegidas = Array.isArray(v) ? v : typeof v === "string" && v ? [v] : []
+  return [...visibles, ...elegidas.filter((o) => !visibles.includes(o))]
+}
+
 /** Recorrido de estilo: un paso por pantalla, "Saltar" siempre a mano. */
-export function OnboardingView({ inicial, onTerminar }: OnboardingViewProps) {
+export function OnboardingView({ modo, inicial, onTerminar }: OnboardingViewProps) {
+  const PASOS_ONBOARDING = pasosDe(modo)
   const [paso, setPaso] = useState(0)
   const [respuestas, setRespuestas] = useState<EstiloPerfil>(inicial ?? {})
   const actual = PASOS_ONBOARDING[paso]
@@ -79,7 +92,7 @@ export function OnboardingView({ inicial, onTerminar }: OnboardingViewProps) {
                     className="h-11 rounded-none border border-zinc-900 text-sm text-zinc-900 focus-visible:ring-0 focus-visible:border-zinc-900" />
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {campo.opciones?.filter((o) => respuestas.ropa !== "Masculina" || !campo.noMasculina?.includes(o)).map((opcion) => {
+                    {opcionesDe(campo, respuestas).map((opcion) => {
                       const v = respuestas[campo.key]
                       const activo = Array.isArray(v) ? v.includes(opcion) : v === opcion
                       return (
@@ -105,7 +118,7 @@ export function OnboardingView({ inicial, onTerminar }: OnboardingViewProps) {
         <div className="max-w-xl mx-auto">
           <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={siguiente}
             className="w-full h-12 bg-zinc-900 text-white text-sm font-medium">
-            {esUltimo ? "Listo, ver mi armario" : "Siguiente"}
+            {esUltimo ? (modo === "inicial" ? "Listo, ver mi armario" : "Guardar") : "Siguiente"}
           </motion.button>
         </div>
       </footer>

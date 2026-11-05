@@ -102,7 +102,7 @@ function Contenido() {
 
   // Cuentas con sesión que no han visto el recorrido, o que lo abrieron desde "Mi estilo".
   if (userMode === "VIP" && mostrarOnboarding) {
-    return <OnboardingView inicial={estilo} onTerminar={(e) => void terminarOnboarding(e)} />
+    return <OnboardingView modo={mostrarOnboarding} inicial={estilo} onTerminar={(e) => void terminarOnboarding(e)} />
   }
 
   return (

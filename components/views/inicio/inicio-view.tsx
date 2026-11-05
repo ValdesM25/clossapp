@@ -10,6 +10,8 @@ import { usePrendasContext } from "@/context/prendas-context"
 import { UserAvatarMenu } from "@/components/shared/user-avatar-menu"
 import { RecordatorioArmario } from "./recordatorio-armario"
 import { PrimerosPasos } from "./primeros-pasos"
+import { CompletarPerfil } from "./completar-perfil"
+import { faltanPreguntasDespues } from "@/constants/onboarding"
 import { useOutfitDelDia } from "@/hooks/use-outfit-del-dia"
 import { registrarUso, incrementarOutfits } from "@/services/outfits.service"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
@@ -48,6 +50,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
     .sort((a, b) => (b.usos ?? 0) - (a.usos ?? 0))
     .slice(0, 4)
   const irArmario = () => onNavigate?.("armario")
+  const tieneEstilo = !!estilo && Object.keys(estilo).length > 0
 
   // Una vez por dia: la marca vive en localStorage para que recargar no permita contar el mismo outfit dos veces.
   const claveUsado = `outfit-dia-usado:${userId}:${new Date().toLocaleDateString("en-CA")}`
@@ -93,8 +96,13 @@ export function InicioView({ onNavigate }: InicioViewProps) {
         <PrimerosPasos userId={userId} pasos={[
           { titulo: "Sube tu primera prenda", texto: "Tómale foto y la IA llena los datos por ti.", hecho: prendas.length >= 1, accion: irArmario },
           { titulo: "Completa lo básico", texto: "Algo de arriba, algo de abajo y calzado: con eso armamos tu outfit del día.", hecho: prendas.length >= 3, accion: irArmario },
-          { titulo: "Cuéntanos tu estilo", texto: "Colores, ocasiones y clima, para que los outfits se parezcan a ti.", hecho: !!estilo && Object.keys(estilo).length > 0, accion: abrirOnboarding },
+          { titulo: "Cuéntanos tu estilo", texto: "Colores, ocasiones y clima, para que los outfits se parezcan a ti.", hecho: tieneEstilo, accion: () => abrirOnboarding("inicial") },
         ]} />
+      )}
+
+      {/* Las preguntas que se sacaron del registro, una vez terminados los primeros pasos. */}
+      {!isGuest && !loading && prendas.length >= 3 && tieneEstilo && faltanPreguntasDespues(estilo) && (
+        <CompletarPerfil userId={userId} onAbrir={() => abrirOnboarding("despues")} />
       )}
 
       {!isGuest && <InstalarBanner />}

@@ -46,3 +46,13 @@ Rama: `feat/ui-ux-primera-impresion`. Pedido de Mauri: priorizar que la app no s
 ## Sin probar
 
 - No se probó en navegador (la extensión de Chrome no estaba conectada) ni en iPhone real. Se verificó `tsc` y `next build`.
+
+## 7. Ajustes tras revisión de Mauri
+
+- **Onboarding de 4 pasos** (`constants/onboarding.ts`): "Cuerpo y tallas", "Inspiración" y "Cómo compras" llevan `despues: true` y no salen al registrarse. Se piden con la tarjeta "Afina tus sugerencias" en Inicio (`completar-perfil.tsx`) cuando ya terminaste "Empieza aquí" y no contestaste ninguna; la X la pospone 2 semanas. "Mi estilo" sigue mostrando los 7 pasos. `mostrarOnboarding` pasó de booleano a modo: `"inicial" | "despues" | "todo"`.
+  - Decisión de Mauri: bajar a 4 pasos sin perder esa información para después.
+- **Letrero de instalar**: vuelve a las 2 semanas del primer cierre y a las 4 del segundo; al tercero ya no. Quien lo cerró con la versión anterior cuenta como primer cierre.
+  - Decisión de Mauri.
+- **Opciones que ya no aparecen**: lo que elegiste siempre se muestra en el onboarding, aunque la opción se haya renombrado ("Romántico") o no aplique a la ropa elegida, para poder quitarlo.
+  - Decisión de Mauri.
+- Umbrales de 30 días y 8 usos: aprobados por Mauri.

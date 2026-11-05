@@ -38,6 +38,23 @@ export type PasoOnboarding = {
   titulo: string
   subtitulo: string
   campos: CampoOnboarding[]
+  /** No va en el registro: se pide después desde Inicio para que el alta sea corta. */
+  despues?: boolean
+}
+
+/** inicial = al registrarse; despues = las preguntas pospuestas; todo = desde "Mi estilo". */
+export type ModoOnboarding = "inicial" | "despues" | "todo"
+
+export function pasosDe(modo: ModoOnboarding): PasoOnboarding[] {
+  return modo === "todo" ? PASOS_ONBOARDING : PASOS_ONBOARDING.filter((p) => !!p.despues === (modo === "despues"))
+}
+
+/** true si no contestó ninguna de las preguntas pospuestas. */
+export function faltanPreguntasDespues(estilo: EstiloPerfil | null): boolean {
+  return pasosDe("despues").every((p) => p.campos.every((c) => {
+    const v = estilo?.[c.key]
+    return Array.isArray(v) ? v.length === 0 : !v
+  }))
 }
 
 const COLORES = [
@@ -80,6 +97,7 @@ export const PASOS_ONBOARDING: PasoOnboarding[] = [
   {
     titulo: "Cuerpo y tallas",
     subtitulo: "Opcional. Ayuda a sugerir cortes que te favorezcan.",
+    despues: true,
     campos: [
       {
         key: "cuerpo", label: "¿Cómo describirías tu tipo de cuerpo?", tipo: "uno",
@@ -102,6 +120,7 @@ export const PASOS_ONBOARDING: PasoOnboarding[] = [
   {
     titulo: "Inspiración",
     subtitulo: "Para afinar el tono de las sugerencias.",
+    despues: true,
     campos: [
       {
         key: "presupuesto", label: "¿Cuánto sueles gastar por prenda?", tipo: "uno",
@@ -113,6 +132,7 @@ export const PASOS_ONBOARDING: PasoOnboarding[] = [
   {
     titulo: "Cómo compras",
     subtitulo: "Nos ayuda a mejorar Clossapp para ti.",
+    despues: true,
     campos: [
       {
         key: "frecuencia_compra", label: "¿Cada cuánto compras ropa nueva?", tipo: "uno",

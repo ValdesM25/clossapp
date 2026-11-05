@@ -165,7 +165,7 @@ export function UserAvatarMenu() {
 
           {userMode === "VIP" && (
             <DropdownMenuItem
-              onClick={abrirOnboarding}
+              onClick={() => abrirOnboarding()}
               className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 cursor-pointer hover:bg-zinc-50 focus:bg-zinc-50 rounded-none transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5 text-zinc-500" />

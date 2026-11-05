@@ -5,7 +5,7 @@ import { signIn, signUp, signInWithProvider, requestPasswordReset, displayNameFo
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import type { UserMode } from "@/types"
 import type { Plan } from "@/constants/planes"
-import type { EstiloPerfil } from "@/constants/onboarding"
+import type { EstiloPerfil, ModoOnboarding } from "@/constants/onboarding"
 import { entrarDemo, salirDemo, restaurarSiQuedoDemo, type TipoDemo } from "@/lib/demo"
 
 const GUEST = { id: "guest", name: "Visita" } as const
@@ -27,8 +27,8 @@ export function useAuth() {
   const [estilo, setEstilo] = useState<EstiloPerfil | null>(null)
   // Solo muestra el acceso a /admin; los permisos reales los revisa la base.
   const [esAdmin, setEsAdmin] = useState(false)
-  // true = mostrar el recorrido de estilo (cuenta nueva o abierto desde el menú).
-  const [mostrarOnboarding, setMostrarOnboarding] = useState(false)
+  // Qué parte del recorrido de estilo mostrar (cuenta nueva, preguntas pospuestas o desde el menú).
+  const [mostrarOnboarding, setMostrarOnboarding] = useState<ModoOnboarding | false>(false)
   // Modo demo (reemplaza al invitado): datos simulados + recorrido guiado.
   const [demo, setDemo] = useState<TipoDemo | null>(null)
   const [tourActivo, setTourActivo] = useState(false)
@@ -72,7 +72,7 @@ export function useAuth() {
     setEsAdmin(!!data.es_admin)
     setPlan(data.plan as Plan)
     setEstilo((data.estilo as EstiloPerfil | null) ?? null)
-    if (!data.onboarding_completado) setMostrarOnboarding(true)
+    if (!data.onboarding_completado) setMostrarOnboarding("inicial")
   }, [supabase])
 
   useEffect(() => {
@@ -233,7 +233,7 @@ export function useAuth() {
     if (error) console.error("[perfil] no se guardó el estilo", error.message)
   }, [supabase, userId, userMode])
 
-  const abrirOnboarding = useCallback(() => setMostrarOnboarding(true), [])
+  const abrirOnboarding = useCallback((modo: ModoOnboarding = "todo") => setMostrarOnboarding(modo), [])
 
   const updateProfile = useCallback(async (data: {
     name?: string
