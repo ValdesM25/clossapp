@@ -26,7 +26,7 @@ export const PASOS_DEMO_USUARIO: PasoTour[] = [
   {
     etiqueta: "Navegación",
     titulo: "Todo está a un toque",
-    texto: "Desde esta barra llegas a cada sección: Inicio, Armario, Outfit (al centro), Shop y Stats.",
+    texto: "Desde esta barra llegas a cada sección: Inicio, Armario, Outfit (al centro), Shop y Perfil.",
     ancla: "nav",
     clickAntes: ["nav-inicio"],
   },
@@ -67,14 +67,14 @@ export const PASOS_DEMO_USUARIO: PasoTour[] = [
   {
     etiqueta: "Stats",
     titulo: "Conoce tus hábitos",
-    texto: "Ve qué usas más y qué llevas meses sin ponerte. Esas prendas olvidadas son perfectas para donar o vender.",
+    texto: "Ve qué usas más y qué llevas meses sin ponerte. Esas prendas olvidadas son perfectas para donar o vender. Lo encuentras en Perfil.",
     ancla: "estadisticas",
-    clickAntes: ["nav-estadisticas"],
+    vista: "estadisticas",
   },
   {
     etiqueta: "Planes",
     titulo: "Tus puntos valen",
-    texto: "Donar ropa te da puntos que canjeas por descuentos en Clossapp Pro. Entras aquí desde tu foto de perfil, arriba en Inicio.",
+    texto: "Donar ropa te da puntos que canjeas por descuentos en Clossapp Pro. Entras desde Perfil, en la barra de abajo.",
     ancla: "planes-puntos",
     vista: "planes",
   },

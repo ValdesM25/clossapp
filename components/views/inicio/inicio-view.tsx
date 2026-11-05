@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { pageProps } from "@/constants/animation"
 import { useAuthContext } from "@/context/auth-context"
 import { usePrendasContext } from "@/context/prendas-context"
-import { UserAvatarMenu } from "@/components/shared/user-avatar-menu"
+import { navegarA } from "@/lib/navegar"
 import { RecordatorioArmario } from "./recordatorio-armario"
 import { PrimerosPasos } from "./primeros-pasos"
 import { CompletarPerfil } from "./completar-perfil"
@@ -32,7 +32,7 @@ function diasSinUsar(p: Prenda): number {
 }
 
 export function InicioView({ onNavigate }: InicioViewProps) {
-  const { userName, isGuest, userId, plan, estilo, abrirOnboarding } = useAuthContext()
+  const { userName, userAvatarUrl, isGuest, userId, plan, estilo, abrirOnboarding } = useAuthContext()
   const { prendas, loading } = usePrendasContext()
   const [wornToday, setWornToday] = useState(false)
   const { clima, outfit, cargando } = useOutfitDelDia(prendas, userId, plan, !isGuest)
@@ -88,7 +88,10 @@ export function InicioView({ onNavigate }: InicioViewProps) {
             </span>
           )}
         </div>
-        <UserAvatarMenu />
+        <button type="button" onClick={() => navegarA("perfil")} aria-label="Abrir tu perfil"
+          className="w-11 h-11 rounded-full overflow-hidden border border-zinc-200 shrink-0">
+          <img src={userAvatarUrl} alt="" className="w-full h-full object-cover" />
+        </button>
       </div>
 
       {!isGuest && !loading && (

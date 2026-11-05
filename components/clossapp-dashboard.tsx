@@ -17,6 +17,8 @@ import { MarketplaceView } from "@/components/views/marketplace/marketplace-view
 import { ArmarioView } from "@/components/views/armario/armario-view"
 import { PlanesView } from "@/components/views/planes/planes-view"
 import { PuntoRecoleccionView } from "@/components/views/punto-recoleccion/punto-recoleccion-view"
+import { PerfilView } from "@/components/views/perfil/perfil-view"
+import { ArrowLeft } from "lucide-react"
 import { OnboardingView } from "@/components/views/onboarding/onboarding-view"
 import { TourGuiado } from "@/components/shared/tour-guiado"
 import { tomarVolverA } from "@/lib/volver-a"
@@ -134,6 +136,7 @@ function AuthenticatedShell() {
     marketplace: <MarketplaceView onApartar={refresh} />,
     estadisticas: <EstadisticasView onSellPrenda={() => setActiveView("marketplace")} />,
     planes: <PlanesView />,
+    perfil: <PerfilView />,
     punto_recoleccion: <PuntoRecoleccionView />,
   }
 
@@ -142,6 +145,13 @@ function AuthenticatedShell() {
       <div className="overflow-y-auto h-dvh overscroll-contain pb-40 lg:pb-48">
         <AnimatePresence mode="wait">
           <div key={activeView} className="mx-auto w-full max-w-6xl">
+            {/* Estadísticas y Planes se abren desde Perfil: se vuelve a él. */}
+            {(activeView === "estadisticas" || activeView === "planes") && (
+              <button type="button" onClick={() => setActiveView("perfil")}
+                className="mx-4 mt-4 -mb-4 min-h-10 flex items-center gap-1.5 text-sm text-zinc-600 hover:text-zinc-900">
+                <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Perfil
+              </button>
+            )}
             {views[activeView]}
             <SiteFooter />
           </div>

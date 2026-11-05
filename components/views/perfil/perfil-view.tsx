@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, ChangeEvent } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { User, LogOut, Camera, Lock, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck, Crown } from "lucide-react"
+import { User, LogOut, Camera, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck, Crown, BarChart3, ChevronRight, type LucideIcon } from "lucide-react"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { activarPush, pushActivo, pushDisponible } from "@/lib/push"
@@ -10,16 +10,10 @@ import { navegarA } from "@/lib/navegar"
 import { CenteredModal } from "@/components/shared/centered-modal"
 import { AvatarCropper } from "@/components/shared/avatar-cropper"
 import { Input } from "@/components/ui/input"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { pageProps } from "@/constants/animation"
 
-export function UserAvatarMenu() {
+/** Pestaña Perfil: cuenta, estilo, estadísticas, planes y recordatorios, cada opción con lo que hace. */
+export function PerfilView() {
   const { userName, userEmail, userPhone, userAvatarUrl, userMode, isGuest, plan, logout, updateProfile, abrirOnboarding, userId, esAdmin } = useAuthContext()
   const [pushOn, setPushOn] = useState(false)
   const [pushMsg, setPushMsg] = useState<string | null>(null)
@@ -110,121 +104,75 @@ export function UserAvatarMenu() {
   }
 
   return (
-    <>
+    <motion.div {...pageProps} className="flex flex-col gap-8 pb-36 px-4 pt-8">
       {pushMsg && (
         <p role="status" className="fixed top-4 inset-x-4 z-[120] mx-auto max-w-sm bg-zinc-900 text-white text-xs px-4 py-3 shadow-lg"
           onClick={() => setPushMsg(null)}>
           {pushMsg}
         </p>
       )}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            aria-label="Menú de perfil"
-            className="relative group focus:outline-none rounded-full p-0.5 border-2 border-transparent hover:border-zinc-900 transition-colors"
-          >
-            <div className="w-10 h-10 rounded-full overflow-hidden border border-zinc-200 shadow-sm relative">
-              <img
-                src={avatarPreview || userAvatarUrl}
-                alt={userName || "avatar"}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <User className="w-4 h-4 text-white drop-shadow" />
-              </div>
-            </div>
-          </button>
-        </DropdownMenuTrigger>
+      <header className="flex items-center gap-4">
+        <img src={avatarPreview || userAvatarUrl} alt="" className="w-16 h-16 rounded-full object-cover border border-zinc-200 shrink-0" />
+        <div className="min-w-0">
+          <h1 className="font-serif text-3xl text-zinc-900 truncate">{userName || "Tu perfil"}</h1>
+          <p className="text-sm text-zinc-500 truncate">{userEmail}</p>
+          <span className="mt-1.5 inline-block text-[11px] uppercase tracking-widest px-1.5 py-0.5 border border-zinc-200 text-zinc-600">
+            {isGuest ? "Modo demo" : plan === "premium" ? "Premium" : "Plan gratis"}
+          </span>
+        </div>
+      </header>
 
-        <DropdownMenuContent align="end" className="w-64 p-2 bg-white rounded-none border border-zinc-200 shadow-lg">
-          <DropdownMenuLabel className="font-normal p-2">
-            <div className="flex items-center gap-3">
-              <img
-                src={avatarPreview || userAvatarUrl}
-                alt={userName}
-                className="w-9 h-9 rounded-full object-cover border border-zinc-200"
-              />
-              <div className="flex flex-col min-w-0">
-                <p className="text-xs font-serif text-zinc-900 truncate">{userName || "Usuario"}</p>
-                <p className="text-[11px] text-zinc-500 truncate">{userEmail || "sin@correo.com"}</p>
-                <span className="mt-1 text-[9px] uppercase tracking-widest px-1.5 py-0.5 border border-zinc-200 text-zinc-500 w-fit">
-                  {isGuest ? "Modo demo" : plan === "gratis" ? "Plan Gratis" : "Cuenta Premium"}
-                </span>
-              </div>
-            </div>
-          </DropdownMenuLabel>
+      <Grupo titulo="Tu actividad">
+        <Fila icono={BarChart3} titulo="Mis estadísticas" dataTour="perfil-estadisticas"
+          texto="Qué usas más, qué llevas meses sin ponerte y cuántos outfits has armado."
+          onClick={() => navegarA("estadisticas")} />
+        {/* Planes solo mientras no pague: con premium ya no tiene nada que ofrecer. */}
+        {plan !== "premium" && (
+          <Fila icono={Crown} titulo="Planes y puntos" dataTour="perfil-planes"
+            texto="Tu plan, los puntos que ganas al donar ropa y cómo canjearlos por descuentos."
+            onClick={() => navegarA("planes")} />
+        )}
+      </Grupo>
 
-          <DropdownMenuSeparator className="bg-zinc-100 my-1" />
+      <Grupo titulo="Tu cuenta">
+        <Fila icono={User} titulo="Información personal"
+          texto="Nombre, teléfono, foto y contraseña. El correo no se puede cambiar."
+          onClick={handleOpenModal} />
+        {userMode === "VIP" && (
+          <Fila icono={Sparkles} titulo="Mi estilo"
+            texto="Tus colores, ocasiones y clima. Con esto la IA arma outfits que se parecen a ti."
+            onClick={() => abrirOnboarding()} />
+        )}
+        {userMode === "VIP" && pushDisponible() && (
+          <Fila icono={Bell} titulo="Recordatorios"
+            texto={pushOn
+              ? "Activados. Te avisamos cuando tu armario lleve tiempo sin prendas nuevas."
+              : "Te avisamos cuando tu armario lleve tiempo sin prendas nuevas, para tenerlo al día."}
+            estado={pushOn ? "Activados" : "Activar"}
+            onClick={pushOn ? undefined : () => void handleActivarPush()} />
+        )}
+      </Grupo>
 
-          <DropdownMenuItem
-            onClick={handleOpenModal}
-            className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 cursor-pointer hover:bg-zinc-50 focus:bg-zinc-50 rounded-none transition-colors"
-          >
-            <User className="w-3.5 h-3.5 text-zinc-500" />
-            <span>Editar información personal</span>
-          </DropdownMenuItem>
-
-          {/* Planes solo mientras no pague: con premium ya no tiene nada que ofrecer. */}
-          {plan !== "premium" && (
-            <DropdownMenuItem
-              data-tour="menu-planes"
-              onClick={() => navegarA("planes")}
-              className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 cursor-pointer hover:bg-zinc-50 focus:bg-zinc-50 rounded-none transition-colors"
-            >
-              <Crown className="w-3.5 h-3.5 text-zinc-500" />
-              <span>Planes y puntos</span>
-            </DropdownMenuItem>
-          )}
-
+      {(userMode === "VIP" || esAdmin) && (
+        <Grupo titulo="Más">
           {userMode === "VIP" && (
-            <DropdownMenuItem
-              onClick={() => abrirOnboarding()}
-              className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 cursor-pointer hover:bg-zinc-50 focus:bg-zinc-50 rounded-none transition-colors"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-zinc-500" />
-              <span>Mi estilo</span>
-            </DropdownMenuItem>
+            <Fila icono={Store} titulo="Quiero ser centro de acopio" href="/centros"
+              texto="Recibe donaciones y entregas del marketplace en tu negocio." />
           )}
-
-          {userMode === "VIP" && (
-            <DropdownMenuItem asChild className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 cursor-pointer hover:bg-zinc-50 focus:bg-zinc-50 rounded-none transition-colors">
-              <a href="/centros">
-                <Store className="w-3.5 h-3.5 text-zinc-500" />
-                <span>Quiero ser centro de acopio</span>
-              </a>
-            </DropdownMenuItem>
-          )}
-
           {esAdmin && (
-            <DropdownMenuItem asChild className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 cursor-pointer hover:bg-zinc-50 focus:bg-zinc-50 rounded-none transition-colors">
-              <a href="/admin">
-                <ShieldCheck className="w-3.5 h-3.5 text-zinc-500" />
-                <span>Panel de admin</span>
-              </a>
-            </DropdownMenuItem>
+            <Fila icono={ShieldCheck} titulo="Panel de admin" href="/admin"
+              texto="Revisa las solicitudes de centros de acopio." />
           )}
+        </Grupo>
+      )}
 
-          {userMode === "VIP" && pushDisponible() && !pushOn && (
-            <DropdownMenuItem
-              onClick={() => void handleActivarPush()}
-              className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 cursor-pointer hover:bg-zinc-50 focus:bg-zinc-50 rounded-none transition-colors"
-            >
-              <Bell className="w-3.5 h-3.5 text-zinc-500" />
-              <span>Activar recordatorios</span>
-            </DropdownMenuItem>
-          )}
-
-          <DropdownMenuSeparator className="bg-zinc-100 my-1" />
-
-          <DropdownMenuItem
-            onClick={logout}
-            className="flex items-center gap-2 px-3 py-2 text-xs text-red-600 font-medium cursor-pointer hover:bg-red-50 focus:bg-red-50 rounded-none transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5 text-red-500" />
-            <span>Cerrar sesión</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex flex-col gap-2">
+        <button type="button" onClick={() => void logout()}
+          className="h-12 border border-zinc-200 text-sm text-red-600 font-medium flex items-center justify-center gap-2 hover:border-red-300 transition-colors">
+          <LogOut className="w-4 h-4" aria-hidden="true" /> {isGuest ? "Salir de la demo" : "Cerrar sesión"}
+        </button>
+        {isGuest && <p className="text-xs text-zinc-500 text-center">En la demo puedes probar todo, pero nada se guarda.</p>}
+      </div>
 
       {/* Modal de edición de perfil */}
       <CenteredModal open={openModal} onClose={() => setOpenModal(false)}>
@@ -374,6 +322,44 @@ export function UserAvatarMenu() {
         </div>
         )}
       </CenteredModal>
+    </motion.div>
+  )
+}
+
+function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col">
+      <h2 className="text-xs text-zinc-500 uppercase tracking-widest mb-2">{titulo}</h2>
+      <div className="border border-zinc-200 divide-y divide-zinc-100">{children}</div>
+    </section>
+  )
+}
+
+interface FilaProps {
+  icono: LucideIcon
+  titulo: string
+  texto: string
+  onClick?: () => void
+  href?: string
+  /** Texto corto a la derecha en lugar de la flecha (ej. "Activados"). */
+  estado?: string
+  dataTour?: string
+}
+
+function Fila({ icono: Icono, titulo, texto, onClick, href, estado, dataTour }: FilaProps) {
+  const contenido = (
+    <>
+      <Icono className="w-5 h-5 text-zinc-500 shrink-0 mt-0.5" aria-hidden="true" />
+      <span className="flex-1 min-w-0">
+        <span className="block text-sm text-zinc-900">{titulo}</span>
+        <span className="block text-xs text-zinc-500 mt-0.5 leading-relaxed">{texto}</span>
+      </span>
+      {estado
+        ? <span className="text-xs text-zinc-600 shrink-0 mt-0.5">{estado}</span>
+        : <ChevronRight className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" aria-hidden="true" />}
     </>
   )
+  const clase = "w-full min-h-16 px-4 py-3.5 flex items-start gap-3 text-left hover:bg-zinc-50 transition-colors disabled:hover:bg-transparent"
+  if (href) return <a href={href} data-tour={dataTour} className={clase}>{contenido}</a>
+  return <button type="button" onClick={onClick} disabled={!onClick} data-tour={dataTour} className={clase}>{contenido}</button>
 }

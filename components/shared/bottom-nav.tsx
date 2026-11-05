@@ -21,7 +21,7 @@ export function BottomNav({ activeView, onNavigate, open, flash }: BottomNavProp
           className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-safe pointer-events-none">
           <nav data-tour="nav" className="w-[92%] max-w-5xl bg-white/85 backdrop-blur-xl border border-zinc-200 px-1 sm:px-4 py-1.5 flex items-stretch shadow-lg pointer-events-auto lg:w-[calc(100%-2rem)]">
             {navItems.map((item) => {
-              const isActive = activeView === item.id
+              const isActive = activeView === item.id || !!item.incluye?.includes(activeView)
               const isFlashing = flash != null && flash === item.id
               return (
                 <motion.button key={item.id} type="button" data-tour={`nav-${item.id}`} whileTap={{ scale: 0.95 }} onClick={() => onNavigate(item.id)}

@@ -88,3 +88,20 @@ Pendiente de decisión de Mauri: tipografía serif real, etiquetas en mayúscula
 Verificación: escaneo renderizado de login, /centros, /politicas y /offline a 390×844 sin fallas (queda solo la nota "una sola tipografía", intencional en UI de producto). El detector estático marca las esquinas del visor QR del portal como "borde lateral": falso positivo.
 
 Pendiente de Mauri: si se mantiene Inicio (ver pros y contras en el reporte).
+
+## 10. Perfil como pestaña (Mauri eligió A + Perfil en lugar de Stats)
+
+Se probó la opción B (Inicio dentro de Outfit) en un worktree y se descartó: Mauri se queda con Inicio separado. La rama de prueba se borró.
+
+- **Barra:** Inicio · Armario · **Outfit** · Shop · **Perfil**. Stats sale de la barra.
+- **`components/views/perfil/perfil-view.tsx`** (antes `shared/user-avatar-menu.tsx`, movido con historial): pantalla completa con foto, nombre, correo y plan, y tres grupos con una línea que explica cada opción:
+  - *Tu actividad:* Mis estadísticas, Planes y puntos (solo sin premium).
+  - *Tu cuenta:* Información personal, Mi estilo, Recordatorios (con estado activados/activar).
+  - *Más:* Quiero ser centro de acopio, Panel de admin (solo admins).
+  - Cerrar sesión (o "Salir de la demo").
+- Estadísticas y Planes se abren desde Perfil, con botón "← Perfil", y la pestaña Perfil queda marcada mientras estás en ellas (`incluye` en `constants/navigation.ts`).
+- En Inicio, tu foto lleva a Perfil.
+- Guía de la demo actualizada (Stats y Planes se abren con `vista`).
+- Pastilla del modo demo: ya no tapa el botón de Outfit ni los menús (subida y en capa z-40).
+
+Verificado con capturas en iPhone SE, iPhone 15, iPhone 15 Pro Max, Pixel 8 y Galaxy S9 (Chromium emulando cada uno).
