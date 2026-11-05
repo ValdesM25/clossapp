@@ -13,13 +13,13 @@ Rama: `feat/planes-limites`. Estado: **fases 1 y 2 hechas (código + SQL probado
 - `/api/renta`: el dueño sale de la sesión, no del `user_id` del body.
 
 **Cuotas en la base (fase 2)** — `supabase/15-limites-plan.sql`
-- Tabla `limites_plan` (free: 50 prendas, 10 análisis/día, 60 de por vida, 1 outfit/día, fusible 1000/día; premium: 30 análisis/día, 15 outfits/día, sin fusible). Se cambia con un `update`, sin deploy.
+- Tabla `limites_plan` (free: 50 prendas, 10 análisis/día, 60 de por vida, 1 outfit/día, fusible 200/día; premium: 30 análisis/día, 15 outfits/día, sin fusible). Se cambia con un `update`, sin deploy.
 - `usar_ia(p_tipo)` reemplaza a `consumir_cuota`: devuelve `ok` o el motivo (`outfit_dia`, `analisis_dia`, `analisis_total`, `global`, `sin_sesion`); `lib/cuota.server.ts` lo traduce a un mensaje (429 con `limite`).
 - Fusible: tabla `uso_ia_dia`, una fila por día y plan; nadie la lee ni escribe desde el cliente.
 - Los mensajes de límite ya no dicen "pásate a Premium" porque premium también los ve; ofrecer premium lo hará la UI (fase 3) solo a cuentas gratis.
 - `consumir_cuota` se queda viva hasta el deploy (el código actual la usa). Después: `drop function public.consumir_cuota(text);`
 
-**Probado en la base real con rollback:** free 2.º outfit, 11.º análisis del día, análisis 61 y prenda 51 → rechazados; fusible en 1000 → `global`; premium análisis 31 y outfit 16 → rechazados; sin sesión → rechazado; desde el cliente no se puede cambiar `plan`, contadores ni límites, ni leer el fusible.
+**Probado en la base real con rollback:** free 2.º outfit, 11.º análisis del día, análisis 61 y prenda 51 → rechazados; fusible lleno → `global`; premium análisis 31 y outfit 16 → rechazados; sin sesión → rechazado; desde el cliente no se puede cambiar `plan`, contadores ni límites, ni leer el fusible.
 
 ## Hallazgo: las cuentas nuevas no podían guardar prendas
 
@@ -37,7 +37,7 @@ Precios: `claude-sonnet-5` $2 / $10 por millón de tokens (entrada/salida); `cla
 | Tasación de venta (hasta 10 fotos) | hasta ~$0.04 |
 | Outfit (armario de 50 prendas) | ~$0.007 |
 
-Con 1000 llamadas gratis al día: uso normal ~$5-7 USD/día; el peor caso (todas tasaciones de 10 fotos) ~$40/día. Para unos 20 amigos, ~300 al día sobra. Cambiarlo: `update limites_plan set tope_global_dia = 300 where plan = 'gratis';`
+Fusible en **200** llamadas gratis al día (decisión de Mauri, 2026-11-05): uso normal ~$1-1.5 USD/día; peor caso (todas tasaciones de 10 fotos) ~$8/día. Cambiarlo: `update limites_plan set tope_global_dia = N where plan = 'gratis';`
 
 ## Advisors de Supabase (2026-11-05)
 

@@ -20,7 +20,7 @@ revoke all on public.limites_plan from anon, authenticated;
 grant select on public.limites_plan to authenticated;
 
 insert into public.limites_plan (plan, prendas, analisis_dia, analisis_total, outfits_dia, tope_global_dia) values
-  ('gratis', 50, 10, 60, 1, 1000),
+  ('gratis', 50, 10, 60, 1, 200),
   ('premium', null, 30, null, 15, null)
 on conflict (plan) do update set
   prendas = excluded.prendas,
