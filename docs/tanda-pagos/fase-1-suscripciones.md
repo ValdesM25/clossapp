@@ -34,7 +34,7 @@ Cobrar Plus ($59) y Elite ($99) al mes con Stripe, con el pago fuera de cualquie
 
 - `constants/planes.ts`: `Plan` es `gratis | plus | elite`, `TOPE_PRENDAS`, `PLANES` (lo que se muestra de cada plan, igual que la landing), `esDePago` y `normalizarPlan`. Mientras no se aplique el SQL, `premium` se lee como `elite`.
 - `app/planes/page.tsx`: página pública. Sin sesión muestra los planes y lleva a crear cuenta con `?volver=` para regresar. Con sesión, "Elegir Plus/Elite" abre Checkout. A quien paga le muestra "Administrar suscripción". Al volver con `?pago=ok` consulta el perfil cada 2 s hasta 20 s, esperando al webhook.
-- `planes-view.tsx`: usa `PLANES` y sus botones llevan a `/planes`. Se quitó el modal que fingía activar el plan.
+- `planes-view.tsx`: usa `PLANES` y sus botones llevan a `/planes`. Se quitó el modal que fingía activar el plan. Como decidió la tanda de límites para premium, quien paga (Plus o Elite) ve solo sus puntos y el canje, más "Administrar suscripción", que lleva a `/planes`. En Perfil su entrada se llama "Mis puntos y suscripción".
 - Las comparaciones contra `"premium"` pasan a `esDePago` (perfil, inicio, outfit del día). El contador del armario se muestra en todos los planes con su tope.
 
 ### Landing (`clossapp-landing`)
