@@ -10,9 +10,27 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 // Variable con tamaño óptico: se ajusta sola entre títulos chicos y grandes.
 const fraunces = Fraunces({ subsets: ["latin"], axes: ["opsz"], variable: "--font-titulos" });
 
+const TITULO = 'Clossapp · Tu armario inteligente'
+const DESCRIPCION = 'Organiza tu ropa, arma outfits con IA usando lo que ya tienes y vende, renta o dona lo que ya no usas.'
+
 export const metadata: Metadata = {
-  title: 'Clossapp - Tu Armario Inteligente',
-  description: 'Digitaliza tu guardarropa, recibe recomendaciones personalizadas con IA y optimiza tu estilo personal cada día.',
+  // Las vistas previas al compartir necesitan URLs absolutas; el dominio sin www redirige aquí.
+  metadataBase: new URL('https://www.clossapp.com'),
+  title: TITULO,
+  description: DESCRIPCION,
+  openGraph: {
+    type: 'website',
+    locale: 'es_MX',
+    siteName: 'Clossapp',
+    url: '/',
+    title: TITULO,
+    description: DESCRIPCION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITULO,
+    description: DESCRIPCION,
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '16x16 32x32 48x48', type: 'image/x-icon' },

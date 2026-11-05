@@ -119,6 +119,14 @@ El flujo no cambia: ocasión + clima + prenda destacada → la IA propone 3 look
 - **Demo:** el botón ya no está bloqueado; muestra looks de ejemplo al instante sin gastar IA (lo que la guía ya prometía). Decisión mía; se revierte quitando `isGuest` del `disabled` en `outfit-form.tsx`.
 - Archivos: `simulador-view.tsx`, `outfit-form.tsx`, `outfit-card.tsx`.
 
+## 12. Vista previa al compartir el link (Open Graph)
+
+Pedido de Mauri: mejorar cómo se ve el link de Clossapp al compartirlo. Antes no había ningún metadato Open Graph (sin imagen ni descripción en WhatsApp, iMessage, X o Facebook).
+
+- `app/layout.tsx`: `metadataBase` en `https://www.clossapp.com` (el dominio sin www redirige ahí), título "Clossapp · Tu armario inteligente", descripción nueva, Open Graph (`es_MX`, sitio, URL) y tarjeta grande de X.
+- `app/opengraph-image.jpg` (1200×630, 87 KB) + `opengraph-image.alt.txt`: logo, "Tu armario, inteligente." en Fraunces, una línea de qué hace la app, el dominio y la foto del clóset del login. Next la detecta sola y agrega todas las etiquetas.
+- Se generó con `next/og` y se exportó a JPG porque el PNG pesaba 685 KB y WhatsApp no muestra miniaturas pesadas. Para cambiarla basta con reemplazar el archivo (misma medida).
+
 ## Pendientes
 
 - **Limitar por plan la subida de fotos y la creación de outfits** (pedido de Mauri, 2026-11-04). Hoy ya existe un límite para el plan gratis en `constants/planes.ts` (y su copia en la base, `supabase/05-perfiles.sql`): 50 prendas a la vez, 50 análisis de fotos con IA de por vida y 1 outfit con IA al día; premium no tiene límite. Falta definir con Mauri los números finales por plan (¿también premium?) y revisar que cada límite se aplique en servidor y se explique en la UI.
