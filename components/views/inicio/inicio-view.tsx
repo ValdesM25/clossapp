@@ -8,6 +8,7 @@ import { pageProps } from "@/constants/animation"
 import { useAuthContext } from "@/context/auth-context"
 import { usePrendasContext } from "@/context/prendas-context"
 import { navegarA } from "@/lib/navegar"
+import { esDePago } from "@/constants/planes"
 import { RecordatorioArmario } from "./recordatorio-armario"
 import { PrimerosPasos } from "./primeros-pasos"
 import { CompletarPerfil } from "./completar-perfil"
@@ -151,7 +152,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
           <div className="flex justify-between items-start mb-4 relative z-10">
             <div>
               <span className="text-[11px] uppercase tracking-widest px-2 py-0.5 bg-white/10 text-zinc-300">
-                {outfit && plan !== "premium" ? "Sugerencia de Hoy" : "Sugerencia IA de Hoy"}
+                {outfit && !esDePago(plan) ? "Sugerencia de Hoy" : "Sugerencia IA de Hoy"}
               </span>
               <h2 className="font-serif text-xl text-white mt-2">
                 {cargando ? "Preparando tu outfit…" : outfit?.titulo ?? "Look del día"}

@@ -7,6 +7,7 @@ import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { activarPush, pushActivo, pushDisponible } from "@/lib/push"
 import { navegarA } from "@/lib/navegar"
+import { NOMBRE_PLAN, esDePago } from "@/constants/planes"
 import { CenteredModal } from "@/components/shared/centered-modal"
 import { AvatarCropper } from "@/components/shared/avatar-cropper"
 import { Input } from "@/components/ui/input"
@@ -117,7 +118,7 @@ export function PerfilView() {
           <h1 className="font-serif text-3xl text-zinc-900 truncate">{userName || "Tu perfil"}</h1>
           <p className="text-sm text-zinc-500 truncate">{userEmail}</p>
           <span className="mt-1.5 inline-block text-[11px] uppercase tracking-widest px-1.5 py-0.5 border border-zinc-200 text-zinc-600">
-            {isGuest ? "Modo demo" : plan === "premium" ? "Premium" : "Plan gratis"}
+            {isGuest ? "Modo demo" : plan ? `Plan ${NOMBRE_PLAN[plan]}` : "Plan Esencial"}
           </span>
         </div>
       </header>
@@ -126,10 +127,10 @@ export function PerfilView() {
         <Fila icono={BarChart3} titulo="Mis estadísticas" dataTour="perfil-estadisticas"
           texto="Qué usas más, qué llevas meses sin ponerte y cuántos outfits has armado."
           onClick={() => navegarA("estadisticas")} />
-        {/* Con premium ya no hay planes que ofrecer: la misma pantalla muestra solo sus puntos. */}
-        {plan === "premium" ? (
-          <Fila icono={Gift} titulo="Mis puntos" dataTour="perfil-planes"
-            texto="Los puntos que ganas al donar ropa y cómo canjearlos por descuentos."
+        {/* Quien paga ya no tiene planes que comparar: ve sus puntos y desde ahí administra su suscripción. */}
+        {esDePago(plan) ? (
+          <Fila icono={Gift} titulo="Mis puntos y suscripción" dataTour="perfil-planes"
+            texto="Los puntos que ganas al donar ropa, el canje por descuentos y tu suscripción."
             onClick={() => navegarA("planes")} />
         ) : (
           <Fila icono={Crown} titulo="Planes y puntos" dataTour="perfil-planes"

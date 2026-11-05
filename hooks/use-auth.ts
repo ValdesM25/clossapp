@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useMemo } from "react"
 import { signIn, signUp, signInWithProvider, requestPasswordReset, displayNameFor, type ProveedorSocial } from "@/services/auth.service"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import type { UserMode } from "@/types"
-import type { Plan } from "@/constants/planes"
+import { normalizarPlan, type Plan } from "@/constants/planes"
 import type { EstiloPerfil, ModoOnboarding } from "@/constants/onboarding"
 import { entrarDemo, salirDemo, restaurarSiQuedoDemo, type TipoDemo } from "@/lib/demo"
 
@@ -70,7 +70,7 @@ export function useAuth() {
     if (data?.avatar_url) setUserAvatarUrl(data.avatar_url)
     if (!data) return
     setEsAdmin(!!data.es_admin)
-    setPlan(data.plan as Plan)
+    setPlan(normalizarPlan(data.plan))
     setEstilo((data.estilo as EstiloPerfil | null) ?? null)
     if (!data.onboarding_completado) setMostrarOnboarding("inicial")
   }, [supabase])
