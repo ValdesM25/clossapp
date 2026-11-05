@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono, Instrument_Serif } from 'next/font/google'
+import { Geist, Geist_Mono, Fraunces } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SerwistProvider } from '@serwist/turbopack/react'
 import './globals.css'
@@ -7,7 +7,8 @@ import './globals.css'
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 // Serif de los títulos: sin cargarla, cada teléfono dibujaba su serif del sistema.
-const instrumentSerif = Instrument_Serif({ subsets: ["latin"], weight: "400", variable: "--font-instrument-serif" });
+// Variable con tamaño óptico: se ajusta sola entre títulos chicos y grandes.
+const fraunces = Fraunces({ subsets: ["latin"], axes: ["opsz"], variable: "--font-titulos" });
 
 export const metadata: Metadata = {
   title: 'Clossapp - Tu Armario Inteligente',
@@ -50,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={instrumentSerif.variable}>
+    <html lang="es" className={fraunces.variable}>
       <body className="font-sans antialiased">
         <SerwistProvider swUrl="/serwist/sw.js">
           {children}
