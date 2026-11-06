@@ -159,8 +159,9 @@ export default function PlanesPage() {
             {error && <p role="alert" className="text-sm text-red-600 text-center">{error}</p>}
 
             <p className="text-xs text-zinc-500 text-center">
-              Precios en pesos mexicanos por mes, con tarjeta. Los precios y condiciones pueden cambiar sin previo aviso.
-              {" "}<Link href="/" className="underline underline-offset-2">Volver a la app</Link>
+              Precios en pesos mexicanos por mes, IVA incluido, con tarjeta. Los precios y condiciones pueden cambiar sin previo aviso.
+              {" "}<Link href="/politicas#planes" className="underline underline-offset-2">Pagos, cancelación y reembolsos</Link>
+              {" · "}<Link href="/" className="underline underline-offset-2">Volver a la app</Link>
             </p>
           </>
         )}

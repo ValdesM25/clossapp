@@ -9,7 +9,7 @@
 export const LEGAL_CONTACTO = "support@clossapp.com"
 
 /** Fecha de última actualización del aviso de privacidad y los términos. */
-export const LEGAL_VIGENCIA = "25 de julio de 2026"
+export const LEGAL_VIGENCIA = "5 de noviembre de 2026"
 
 export type RedSocial = { id: string; label: string; url: string }
 

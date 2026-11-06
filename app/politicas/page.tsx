@@ -1,29 +1,22 @@
 import Link from "next/link"
 import type { Metadata } from "next"
 import { LEGAL_CONTACTO, LEGAL_VIGENCIA } from "@/constants/legal"
+import { NOMBRE_PLAN, PLANES } from "@/constants/planes"
 
 export const metadata: Metadata = {
   title: "Políticas y Términos · Clossapp",
   description:
-    "Aviso de privacidad, términos de uso, reglas del marketplace y planes de Clossapp.",
+    "Aviso de privacidad, términos de uso, reglas del marketplace, planes, cancelación y reembolsos de Clossapp.",
 }
 
 const secciones = [
   { id: "privacidad", label: "Aviso de Privacidad" },
   { id: "terminos", label: "Términos de Uso" },
   { id: "marketplace", label: "Marketplace" },
-  { id: "planes", label: "Planes" },
+  { id: "planes", label: "Planes y pagos" },
+  { id: "reembolsos", label: "Cancelación y reembolsos" },
   { id: "contacto", label: "Contacto" },
 ]
-
-/** Dato legal que sólo puede llenarse cuando la sociedad esté constituida. */
-function Pendiente({ children }: { children: React.ReactNode }) {
-  return (
-    <mark className="bg-zinc-100 text-zinc-600 border border-dashed border-zinc-300 px-1.5 py-0.5 text-[13px]">
-      {children}
-    </mark>
-  )
-}
 
 function Seccion({ id, numero, titulo, children }: {
   id: string; numero: string; titulo: string; children: React.ReactNode
@@ -88,10 +81,8 @@ export default function PoliticasPage() {
 
           <Sub titulo="Responsable del tratamiento">
             <p>
-              El responsable de tus datos personales es{" "}
-              <Pendiente>[razón social pendiente de constitución]</Pendiente>, con domicilio en{" "}
-              <Pendiente>[domicilio fiscal]</Pendiente>, Saltillo, Coahuila de Zaragoza, México, y
-              RFC <Pendiente>[RFC]</Pendiente>. Puedes contactarnos en{" "}
+              El responsable de tus datos personales es Clossapp, con domicilio en Saltillo,
+              Coahuila de Zaragoza, México. Puedes contactarnos en{" "}
               <a href={`mailto:${LEGAL_CONTACTO}`} className="text-zinc-900 underline underline-offset-2">
                 {LEGAL_CONTACTO}
               </a>.
@@ -105,16 +96,19 @@ export default function PoliticasPage() {
               <li><strong className="font-medium text-zinc-900">Fotografías de tus prendas:</strong> las imágenes que subes a tu armario digital.</li>
               <li><strong className="font-medium text-zinc-900">Atributos de prenda:</strong> categoría, color, estilo, talla, estado de uso, precio y descripción — generados por análisis automatizado o capturados por ti.</li>
               <li><strong className="font-medium text-zinc-900">Actividad dentro de la app:</strong> frecuencia de uso de prendas, registros de reparación y publicaciones en el marketplace.</li>
+              <li><strong className="font-medium text-zinc-900">Datos de suscripción:</strong> tu plan, su estado y fecha de renovación, y los identificadores de cliente y suscripción que nos asigna Stripe.</li>
+              <li><strong className="font-medium text-zinc-900">Ubicación aproximada, opcional:</strong> si das permiso, la ubicación de tu dispositivo para consultar el clima del día. No la guardamos.</li>
+              <li><strong className="font-medium text-zinc-900">Notificaciones, opcional:</strong> si las activas, el identificador que tu navegador nos da para enviarte avisos.</li>
               <li><strong className="font-medium text-zinc-900">Datos técnicos:</strong> métricas anónimas de navegación y rendimiento.</li>
             </ul>
             <p className="text-[13px] text-zinc-500 border border-zinc-100 bg-zinc-50 px-3 py-2.5">
-              No solicitamos datos personales sensibles, ni datos financieros o bancarios.
-              Clossapp no procesa pagos.
+              No solicitamos datos personales sensibles. Los datos de tu tarjeta los captura y
+              procesa Stripe directamente: Clossapp nunca los ve ni los guarda.
             </p>
           </Sub>
 
           <Sub titulo="Finalidades del tratamiento">
-            <p><strong className="font-medium text-zinc-900">Primarias</strong>, necesarias para prestarte el servicio: crear y autenticar tu cuenta; almacenar y organizar tu armario digital; generar recomendaciones de outfits; habilitar la publicación de prendas en venta, renta o donación; y darte soporte.</p>
+            <p><strong className="font-medium text-zinc-900">Primarias</strong>, necesarias para prestarte el servicio: crear y autenticar tu cuenta; almacenar y organizar tu armario digital; generar recomendaciones de outfits; cobrar y administrar tu suscripción si eliges un plan de pago; habilitar la publicación de prendas en venta, renta o donación; y darte soporte.</p>
             <p><strong className="font-medium text-zinc-900">Secundarias</strong>, que puedes rechazar sin que se te niegue el servicio: mejorar la aplicación mediante análisis estadístico agregado, y enviarte comunicaciones sobre novedades del producto.</p>
             <p>Si no deseas que tus datos se usen para las finalidades secundarias, escríbenos a{" "}
               <a href={`mailto:${LEGAL_CONTACTO}`} className="text-zinc-900 underline underline-offset-2">{LEGAL_CONTACTO}</a>{" "}
@@ -146,6 +140,21 @@ export default function PoliticasPage() {
                 <p className="text-[14px] mt-1">
                   Provee la base de datos, el almacenamiento de tus fotografías y el sistema de
                   autenticación.
+                </p>
+              </div>
+              <div className="border-b border-zinc-200 px-4 py-3">
+                <p className="text-sm font-medium text-zinc-900">Stripe, Inc. y sus filiales (Estados Unidos)</p>
+                <p className="text-[14px] mt-1">
+                  Procesa los pagos de las suscripciones. Recibe tu correo, los datos de tu tarjeta y
+                  los de cada cobro, y los trata conforme a su propio{" "}
+                  <a href="https://stripe.com/mx/privacy" target="_blank" rel="noopener noreferrer" className="text-zinc-900 underline underline-offset-2">aviso de privacidad</a>.
+                </p>
+              </div>
+              <div className="border-b border-zinc-200 px-4 py-3">
+                <p className="text-sm font-medium text-zinc-900">Open-Meteo (Suiza)</p>
+                <p className="text-[14px] mt-1">
+                  Si permites tu ubicación, recibe las coordenadas aproximadas de tu dispositivo para
+                  devolver el clima del día. No recibe tu nombre ni tu correo.
                 </p>
               </div>
               <div className="px-4 py-3">
@@ -210,11 +219,9 @@ export default function PoliticasPage() {
         <Seccion id="terminos" numero="02" titulo="Términos de Uso">
           <Sub titulo="Acceso a la plataforma">
             <p>
-              Clossapp se encuentra en fase de desarrollo y prueba. El registro es{" "}
-              <strong className="font-medium text-zinc-900">por invitación</strong>: sólo pueden
-              crear cuenta las personas previamente autorizadas. Más adelante habilitaremos el
-              alta abierta mediante correo electrónico y proveedores de identidad como Google y
-              Facebook.
+              Puedes crear una cuenta con tu correo electrónico o con los proveedores de identidad
+              disponibles en la pantalla de entrada. Clossapp está en desarrollo activo, por lo que
+              sus funciones pueden cambiar.
             </p>
             <p>
               Existe además un modo invitado con datos de demostración, que no requiere cuenta y
@@ -275,8 +282,8 @@ export default function PoliticasPage() {
           <Sub titulo="Legislación aplicable">
             <p>
               Estos términos se rigen por las leyes de los Estados Unidos Mexicanos. Cualquier
-              controversia se someterá a los tribunales competentes de{" "}
-              <Pendiente>[ciudad]</Pendiente>, Coahuila de Zaragoza, renunciando a cualquier otro
+              controversia se someterá a los tribunales competentes de
+              Saltillo, Coahuila de Zaragoza, renunciando a cualquier otro
               fuero. En materia de protección al consumidor, la PROFECO es competente.
             </p>
           </Sub>
@@ -341,48 +348,90 @@ export default function PoliticasPage() {
           </Sub>
         </Seccion>
 
-        <Seccion id="planes" numero="04" titulo="Planes">
+        <Seccion id="planes" numero="04" titulo="Planes y pagos">
           <div className="border border-zinc-200">
-            <div className="border-b border-zinc-200 px-4 py-4">
-              <p className="text-xs text-zinc-500 uppercase tracking-widest">Invitado</p>
-              <p className="font-serif text-lg text-zinc-900 mt-0.5">Sin costo</p>
-              <p className="text-[14px] mt-2">
-                Acceso de demostración con datos de ejemplo. Permite recorrer la aplicación sin
-                crear cuenta. No guarda información ni habilita las funciones de inteligencia
-                artificial.
-              </p>
-            </div>
-            <div className="border-b border-zinc-200 px-4 py-4">
-              <p className="text-xs text-zinc-500 uppercase tracking-widest">Registrado</p>
-              <p className="font-serif text-lg text-zinc-900 mt-0.5">Sin costo durante la fase de prueba</p>
-              <p className="text-[14px] mt-2">
-                Armario digital completo, análisis automático de prendas, generación de outfits,
-                estadísticas de uso y acceso al marketplace para vender, rentar y donar.
-              </p>
-            </div>
-            <div className="px-4 py-4">
-              <p className="text-xs text-zinc-500 uppercase tracking-widest">Premium</p>
-              <p className="font-serif text-lg text-zinc-900 mt-0.5">
-                <Pendiente>[precio por definir]</Pendiente>
-              </p>
-              <p className="text-[14px] mt-2">
-                Plan de pago previsto para etapas posteriores. Sus funciones, límites y precio se
-                publicarán en esta página antes de su activación. Ninguna cuenta será cobrada sin
-                aviso ni consentimiento previo.
-              </p>
-            </div>
+            {PLANES.map((p, i) => (
+              <div key={p.id} className={i < PLANES.length - 1 ? "border-b border-zinc-200 px-4 py-4" : "px-4 py-4"}>
+                <p className="text-xs text-zinc-500 uppercase tracking-widest">{NOMBRE_PLAN[p.id]}</p>
+                <p className="font-serif text-lg text-zinc-900 mt-0.5">
+                  {p.precio ? `$${p.precio} MXN al mes, IVA incluido` : "Sin costo"}
+                </p>
+                <p className="text-[14px] mt-2">{p.incluye.join(" · ")}.</p>
+              </div>
+            ))}
           </div>
           <p className="text-[14px]">
-            Durante la fase de prueba no se realiza cobro alguno. Si en el futuro incorporamos
-            planes de pago, los cambios se comunicarán con anticipación y podrás cancelar en
-            cualquier momento.
+            También existe un modo de demostración con datos de ejemplo, sin cuenta y sin costo, que
+            no guarda información ni usa inteligencia artificial.
           </p>
+
+          <Sub titulo="Cómo se cobra">
+            <p>
+              Plus y Elite son suscripciones mensuales que se pagan por adelantado con tarjeta de
+              crédito o débito a través de Stripe. Al contratar, autorizas que el mismo cargo se haga
+              cada mes, en la misma fecha, hasta que canceles. Los precios están en pesos mexicanos e
+              incluyen IVA.
+            </p>
+          </Sub>
+
+          <Sub titulo="Cambios de plan">
+            <p>
+              Puedes pasar de Plus a Elite, o al revés, en cualquier momento. Al subir de plan se cobra
+              en ese momento la diferencia proporcional a los días que faltan del periodo. Al bajar, la
+              diferencia queda como saldo a tu favor y se descuenta de tus siguientes cobros.
+            </p>
+          </Sub>
+
+          <Sub titulo="Si un cobro no pasa">
+            <p>
+              Stripe reintenta el cobro durante algunos días y conservas tu plan mientras tanto. Si no se
+              logra cobrar, tu cuenta regresa al plan Esencial. Tus prendas se conservan, pero no podrás
+              agregar más mientras superes el tope de ese plan.
+            </p>
+          </Sub>
+
+          <Sub titulo="Cambios de precio">
+            <p>
+              Los precios publicados pueden cambiar. Si cambia el precio de tu plan, te avisaremos por
+              correo antes de tu siguiente renovación y el nuevo precio aplicará a partir de ella. Si no
+              estás de acuerdo, puedes cancelar antes de esa fecha.
+            </p>
+          </Sub>
         </Seccion>
 
-        <Seccion id="contacto" numero="05" titulo="Contacto">
+        <Seccion id="reembolsos" numero="05" titulo="Cancelación y reembolsos">
+          <Sub titulo="Cancelar">
+            <p>
+              Puedes cancelar cuando quieras, sin penalización, en{" "}
+              <Link href="/planes" className="text-zinc-900 underline underline-offset-2">www.clossapp.com/planes</Link>{" "}
+              → Administrar suscripción. Conservas tu plan hasta el final del periodo que ya pagaste; después tu cuenta
+              pasa al plan Esencial y no se hace ningún otro cargo.
+            </p>
+          </Sub>
+
+          <Sub titulo="Reembolsos">
+            <p>
+              Como puedes cancelar en cualquier momento y conservas el plan hasta el final del periodo
+              pagado, no hacemos reembolsos proporcionales por los días que no uses.
+            </p>
+            <p>
+              Sí reembolsamos completo cualquier cargo duplicado o hecho por error. Escríbenos a{" "}
+              <a href={`mailto:${LEGAL_CONTACTO}`} className="text-zinc-900 underline underline-offset-2">{LEGAL_CONTACTO}</a>{" "}
+              dentro de los 30 días siguientes al cargo, con el correo de tu cuenta y la fecha del cobro.
+              Los reembolsos aprobados se hacen a la misma tarjeta y pueden tardar de 5 a 10 días hábiles
+              en reflejarse, según tu banco.
+            </p>
+            <p className="text-[14px]">
+              Nada de lo anterior limita los derechos que te da la Ley Federal de Protección al
+              Consumidor.
+            </p>
+          </Sub>
+        </Seccion>
+
+        <Seccion id="contacto" numero="06" titulo="Contacto">
           <p>
-            Para dudas sobre estas políticas, solicitudes de derechos ARCO, reportes de contenido
-            o soporte general, escríbenos a{" "}
+            Para dudas sobre estas políticas, cobros o reembolsos, solicitudes de derechos ARCO,
+            reportes de contenido o soporte general, escríbenos a{" "}
             <a href={`mailto:${LEGAL_CONTACTO}`} className="text-zinc-900 underline underline-offset-2">
               {LEGAL_CONTACTO}
             </a>.
@@ -394,10 +443,6 @@ export default function PoliticasPage() {
         </Seccion>
 
         <footer className="border-t border-zinc-200 pt-6 flex flex-col gap-3">
-          <p className="text-xs text-zinc-500 leading-relaxed">
-            Clossapp es un proyecto en fase de desarrollo. Los datos legales marcados en gris se
-            completarán una vez constituida formalmente la sociedad.
-          </p>
           <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors w-fit">
             ← Volver a Clossapp
           </Link>
