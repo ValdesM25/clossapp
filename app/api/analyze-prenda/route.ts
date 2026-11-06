@@ -103,8 +103,9 @@ export async function POST(req: NextRequest) {
     const media = (mediaType ?? "image/jpeg") as MediaType
 
     const message = await client.messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: esVenta ? 1024 : 512,
+      model: "claude-sonnet-5-5",
+      max_tokens: 16000,
+      output_config: { effort: "medium" },
       system: esVenta ? SISTEMA_VENTA : SISTEMA_ALTA,
       messages: [
         {
@@ -125,7 +126,8 @@ export async function POST(req: NextRequest) {
       ],
     })
 
-    const raw = message.content[0].type === "text" ? message.content[0].text.trim() : ""
+    // Con razonamiento activo el primer bloque puede ser "thinking": se toma el de texto.
+    const raw = message.content.find((b) => b.type === "text")?.text.trim() ?? ""
     const clean = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "")
     const parsed = JSON.parse(clean)
 
