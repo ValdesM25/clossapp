@@ -18,15 +18,6 @@ const secciones = [
   { id: "contacto", label: "Contacto" },
 ]
 
-/** Dato legal que sólo puede llenarse cuando la sociedad esté constituida. */
-function Pendiente({ children }: { children: React.ReactNode }) {
-  return (
-    <mark className="bg-zinc-100 text-zinc-600 border border-dashed border-zinc-300 px-1.5 py-0.5 text-[13px]">
-      {children}
-    </mark>
-  )
-}
-
 function Seccion({ id, numero, titulo, children }: {
   id: string; numero: string; titulo: string; children: React.ReactNode
 }) {
@@ -90,10 +81,8 @@ export default function PoliticasPage() {
 
           <Sub titulo="Responsable del tratamiento">
             <p>
-              El responsable de tus datos personales es{" "}
-              <Pendiente>[razón social pendiente de constitución]</Pendiente>, con domicilio en{" "}
-              <Pendiente>[domicilio fiscal]</Pendiente>, Saltillo, Coahuila de Zaragoza, México, y
-              RFC <Pendiente>[RFC]</Pendiente>. Puedes contactarnos en{" "}
+              El responsable de tus datos personales es Clossapp, con domicilio en Saltillo,
+              Coahuila de Zaragoza, México. Puedes contactarnos en{" "}
               <a href={`mailto:${LEGAL_CONTACTO}`} className="text-zinc-900 underline underline-offset-2">
                 {LEGAL_CONTACTO}
               </a>.
@@ -293,8 +282,8 @@ export default function PoliticasPage() {
           <Sub titulo="Legislación aplicable">
             <p>
               Estos términos se rigen por las leyes de los Estados Unidos Mexicanos. Cualquier
-              controversia se someterá a los tribunales competentes de{" "}
-              <Pendiente>[ciudad]</Pendiente>, Coahuila de Zaragoza, renunciando a cualquier otro
+              controversia se someterá a los tribunales competentes de
+              Saltillo, Coahuila de Zaragoza, renunciando a cualquier otro
               fuero. En materia de protección al consumidor, la PROFECO es competente.
             </p>
           </Sub>
@@ -454,10 +443,6 @@ export default function PoliticasPage() {
         </Seccion>
 
         <footer className="border-t border-zinc-200 pt-6 flex flex-col gap-3">
-          <p className="text-xs text-zinc-500 leading-relaxed">
-            Clossapp es un proyecto en fase de desarrollo. Los datos legales marcados en gris se
-            completarán una vez constituida formalmente la sociedad.
-          </p>
           <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors w-fit">
             ← Volver a Clossapp
           </Link>
