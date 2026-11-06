@@ -50,8 +50,9 @@ export async function POST(req: NextRequest) {
     )
 
     const message = await client.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 1024,
+      model: "claude-haiku-5-5",
+      max_tokens: 16000,
+      output_config: { effort: "low" },
       system: `Eres un estilista de alta moda. Recibirás un contexto (clima/evento) y un inventario en JSON. Crea 3 opciones de outfits coherentes usando SOLO las prendas del inventario. Devuelve ÚNICAMENTE un objeto JSON con esta estructura: { "outfits": [ { "titulo": "Nombre del look", "descripcion": "Por qué funciona este conjunto", "prenda_ids": ["id1", "id2"] } ] }. No uses markdown.${perfil}`,
       messages: [
         {
@@ -61,7 +62,8 @@ export async function POST(req: NextRequest) {
       ],
     })
 
-    const raw = message.content[0].type === "text" ? message.content[0].text.trim() : ""
+    // Con razonamiento activo el primer bloque puede ser "thinking": se toma el de texto.
+    const raw = message.content.find((b) => b.type === "text")?.text.trim() ?? ""
     const clean = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "")
     const parsed = JSON.parse(clean)
 
