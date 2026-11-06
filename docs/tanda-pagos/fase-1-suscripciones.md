@@ -1,6 +1,6 @@
 # Fase 1: suscripciones con Stripe (rama `feat/suscripciones-stripe`)
 
-Estado: **programada, sin probar con Stripe real.** Falta que Mauri aplique el SQL, ponga las llaves y configure Stripe (ver "Para activarlo").
+Estado: **en producción con llaves reales de Stripe** (5 nov 2026). El flujo completo (pagar Plus, cambiar a Elite y cancelar) se probó en `www.clossapp.com` con el sandbox; con llaves reales falta confirmarlo con un pago real. Ver "Cómo quedó activado" y "Pendientes".
 
 ## Qué pidió Mauri
 
@@ -57,3 +57,27 @@ Cobrar Plus ($59) y Elite ($99) al mes con Stripe, con el pago fuera de cualquie
 - Limitar vender y rentar a planes de pago (fase 3).
 - Funciones exclusivas de Elite (fase 4). Mientras no existan, Elite y Plus solo se distinguen por el tope de prendas.
 - Shop con Stripe Connect y 5% (fase 5).
+
+## Cómo quedó activado (5 nov 2026)
+
+- `17-suscripciones.sql` se aplicó en producción **después** de desplegar el código (el PR #43 se mergeó antes). Mientras tanto `/api/stripe/checkout` y `/portal` respondían 500 sin cobrar a nadie. Las 6 cuentas `premium` pasaron a `elite`.
+- Primero se probó con el sandbox de la cuenta ClossApp (`acct_1UYa4Q4c5Iy6MkQW`) y llaves de prueba en producción. Ya no se usa: su webhook está desactivado y el único perfil de prueba volvió a `gratis` sin datos de Stripe.
+- **Cuenta real ClossApp** (`acct_1UYa3RG95iTnfeMV`), separada de la de Harbour:
+  - Productos separados "Clossapp Plus" (`prod_VZkCJAgXcWO9Ny`, `price_1UYai8G95iTnfeMVhARM45se`, $59) y "Clossapp Elite" (`prod_VZkCJIe8FVF2NV`, `price_1UYaiGG95iTnfeMV25kCQgsl`, $99), mensuales en MXN con **IVA incluido** (`tax_behavior: inclusive`). Tienen que ser productos distintos: el portal no deja cambiar entre dos precios mensuales del mismo producto.
+  - Webhook `we_1UYaxfG95iTnfeMVjBUV3kWN` hacia `https://www.clossapp.com/api/stripe/webhook`, con payload *Snapshot* y los 4 eventos más `customer.subscription.paused` (se ignora; la pausa llega también como `updated`).
+  - Portal por defecto `bpc_1UYaiMG95iTnfeMVhFubiv3H`: cambiar Plus↔Elite con prorrateo, cancelar al final del periodo, tarjeta, facturas y correo. Pausa desactivada.
+  - Llave **restringida** `rk_live_…` (`clossapp-vercel-prod`), solo en tu cuenta: Customers write, Checkout Sessions write, Customer portal write, Subscriptions read. Las fases 1b y 2 necesitarán ampliarla (Subscriptions write, Invoices read, Coupons/Promotion codes write).
+- Vercel Production: `STRIPE_SECRET_KEY` (la `rk_live_`), `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PLUS`, `STRIPE_PRICE_ELITE` y `SUPABASE_SERVICE_ROLE_KEY`. Esta última **no existía** en Vercel y hacía fallar el checkout ("No se pudo iniciar el pago"). En el proyecto de Supabase se llama "Secret key" (`sb_secret_…`); supabase-js la acepta igual que la service role.
+- `.env.local` y Preview siguen con el sandbox.
+- Los previews de Vercel tienen protección de acceso: Stripe no puede mandarles webhooks. Por eso se probó en producción.
+
+## Pendientes
+
+1. **Confirmar con un pago real**: pagar Plus con tarjeta propia, ver el plan en `/planes`, cancelar y reembolsar desde el dashboard. Confirmar también que la cuenta ClossApp esté activada para cobrar.
+2. **Guardar la cancelación programada.** Al cancelar, Stripe deja la suscripción `active` hasta fin de periodo con `cancel_at_period_end = true`. `sincronizarSuscripcion` no copia ese dato, así que la app no puede decir "tu plan termina el 6 dic". Falta una columna en `perfiles` (p. ej. `suscripcion_cancela boolean`) y escribirla en `lib/stripe.server.ts`.
+3. **Administrar la suscripción desde Clossapp (fase 1b, opción B).** Mauri no quiere mandar a la gente al portal de Stripe para lo común. Se acordó un modelo mixto:
+   - **En Clossapp (`/planes`):** cambiar Plus↔Elite mostrando antes el cobro prorrateado (`invoices.createPreview`), cancelar al final del periodo, reactivar si aún no vence, y mostrar estado y fecha ("Elite, termina el 6 dic"). Rutas nuevas del servidor que sacan al usuario de la sesión y llaman a `subscriptions.update`, como checkout y portal.
+   - **Se queda en el portal de Stripe:** cambiar la tarjeta y ver facturas. Hacerlo en la app obligaría a meter Stripe Elements (publishable key, 3D Secure) y no vale la pena todavía.
+   - Depende del pendiente 2.
+   - Se descartaron: todo en Clossapp (A), por lo delicado de los datos de tarjeta, y dejar solo el portal (C), porque saca a la gente de la app.
+4. **Rotar la `sk_test_` del sandbox** (opcional): salió en una captura, pero ya solo da acceso al sandbox.
