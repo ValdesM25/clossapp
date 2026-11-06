@@ -1,6 +1,6 @@
 # Fase 1: suscripciones con Stripe (rama `feat/suscripciones-stripe`)
 
-Estado: **programada, sin probar con Stripe real.** Falta que Mauri aplique el SQL, ponga las llaves y configure Stripe (ver "Para activarlo").
+Estado: **en producción con el sandbox de Stripe (llaves de prueba).** Probado el 5 nov 2026 en `www.clossapp.com`: pagar Plus, cambiar a Elite y cancelar. Ver "Cómo quedó activado" y "Pendientes".
 
 ## Qué pidió Mauri
 
@@ -57,3 +57,24 @@ Cobrar Plus ($59) y Elite ($99) al mes con Stripe, con el pago fuera de cualquie
 - Limitar vender y rentar a planes de pago (fase 3).
 - Funciones exclusivas de Elite (fase 4). Mientras no existan, Elite y Plus solo se distinguen por el tope de prendas.
 - Shop con Stripe Connect y 5% (fase 5).
+
+## Cómo quedó activado (5 nov 2026)
+
+- `17-suscripciones.sql` se aplicó en producción **después** de desplegar el código (el PR #43 se mergeó antes). Mientras tanto `/api/stripe/checkout` y `/portal` respondían 500 sin cobrar a nadie. Las 6 cuentas `premium` pasaron a `elite`.
+- Stripe: cuenta **ClossApp** (`acct_1UYa3RG95iTnfeMV`), sin activar aún para cobros reales, y su sandbox (`acct_1UYa4Q4c5Iy6MkQW`). En el sandbox:
+  - Productos separados "Clossapp Plus" (`price_1UYaLY4c5Iy6MkQWD27r2J5l`) y "Clossapp Elite" (`price_1UYaOX4c5Iy6MkQWit8j8lLY`). Tienen que ser productos distintos: el portal no deja cambiar entre dos precios mensuales del mismo producto.
+  - Webhook `we_1UYaOE4c5Iy6MkQWY9Ymzhm9` hacia `https://www.clossapp.com/api/stripe/webhook` con los 4 eventos.
+  - Portal por defecto `bpc_1UYaOX4c5Iy6MkQWsVFWNKFT`: cambiar Plus↔Elite con prorrateo, cancelar al final del periodo, tarjeta, facturas y correo.
+- Vercel Production: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PLUS`, `STRIPE_PRICE_ELITE` y `SUPABASE_SERVICE_ROLE_KEY`. Esta última **no existía** en Vercel y hacía fallar el checkout ("No se pudo iniciar el pago"). En el proyecto de Supabase se llama "Secret key" (`sb_secret_…`); supabase-js la acepta igual que la service role.
+- Los previews de Vercel tienen protección de acceso: Stripe no puede mandarles webhooks. Por eso se probó en producción.
+
+## Pendientes
+
+1. **Pasar a llaves reales.** Mientras producción tenga llaves del sandbox, cualquiera puede sacar Plus o Elite gratis con la tarjeta `4242`. Activar la cuenta ClossApp, repetir productos, webhook y portal en modo real, y cambiar las 4 variables `STRIPE_*` de Production.
+2. **Rotar la `sk_test_` del sandbox**: salió completa en una captura durante la configuración.
+3. **Guardar la cancelación programada.** Al cancelar, Stripe deja la suscripción `active` hasta fin de periodo con `cancel_at_period_end = true`. `sincronizarSuscripcion` no copia ese dato, así que la app no puede decir "tu plan termina el 6 dic". Falta una columna en `perfiles` (p. ej. `suscripcion_cancela boolean`) y escribirla en `lib/stripe.server.ts`.
+4. **Administrar la suscripción desde Clossapp (fase 1b, opción B).** Mauri no quiere mandar a la gente al portal de Stripe para lo común. Se acordó un modelo mixto:
+   - **En Clossapp (`/planes`):** cambiar Plus↔Elite mostrando antes el cobro prorrateado (`invoices.createPreview`), cancelar al final del periodo, reactivar si aún no vence, y mostrar estado y fecha ("Elite, termina el 6 dic"). Rutas nuevas del servidor que sacan al usuario de la sesión y llaman a `subscriptions.update`, como checkout y portal.
+   - **Se queda en el portal de Stripe:** cambiar la tarjeta y ver facturas. Hacerlo en la app obligaría a meter Stripe Elements (publishable key, 3D Secure) y no vale la pena todavía.
+   - Depende del pendiente 3.
+   - Se descartaron: todo en Clossapp (A), por lo delicado de los datos de tarjeta, y dejar solo el portal (C), porque saca a la gente de la app.

@@ -33,6 +33,7 @@ Por ahora el mercado es solo México. La app de tiendas, si llega, se hará apar
 | Fase | Rama | Qué hace | Detalle |
 |---|---|---|---|
 | 1 | `feat/suscripciones-stripe` | Planes gratis/plus/elite en `limites_plan`, pago con Stripe Checkout, portal y webhook, ruta `/planes` | [fase-1-suscripciones.md](fase-1-suscripciones.md) |
+| 1b | por definir | Administrar la suscripción desde Clossapp (opción B, decidida por Mauri) | [fase-1-suscripciones.md#pendientes](fase-1-suscripciones.md#pendientes) |
 | 2 | por definir | Canje de puntos como código de descuento de un solo uso en Stripe | pendiente |
 | 3 | por definir | Vender y rentar solo en planes de pago | pendiente |
 | 4 | por definir | Funciones exclusivas de Elite: modelos frontier y planificación de outfits | pendiente |
