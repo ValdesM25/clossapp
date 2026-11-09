@@ -99,26 +99,6 @@ export function LoginView() {
             </div>
 
             <div className="space-y-3">
-              {modo !== "recuperar" && (CON_GOOGLE || CON_FACEBOOK) && (
-                <>
-                  <div className={cn("grid gap-2", CON_GOOGLE && CON_FACEBOOK ? "grid-cols-2" : "grid-cols-1")}>
-                    {CON_GOOGLE && <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => social("google")} disabled={loading}
-                      className="h-11 border border-zinc-900 text-zinc-900 text-xs font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
-                      <GoogleIcon /> Google
-                    </motion.button>}
-                    {CON_FACEBOOK && <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => social("facebook")} disabled={loading}
-                      className="h-11 border border-zinc-900 text-zinc-900 text-xs font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
-                      <FacebookIcon /> Facebook
-                    </motion.button>}
-                  </div>
-                  <div className="flex items-center gap-3 py-1" aria-hidden="true">
-                    <span className="h-px flex-1 bg-zinc-200" />
-                    <span className="text-[11px] text-zinc-500 uppercase tracking-widest">o con tu correo</span>
-                    <span className="h-px flex-1 bg-zinc-200" />
-                  </div>
-                </>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-3">
                 <div>
                   <label htmlFor="login-email" className="text-xs text-zinc-500 uppercase tracking-widest">Correo electrónico</label>
@@ -147,6 +127,26 @@ export function LoginView() {
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : esperandoCaptcha ? "Verificando…" : TEXTO_BOTON[modo]}
                 </motion.button>
               </form>
+
+              {modo !== "recuperar" && (CON_GOOGLE || CON_FACEBOOK) && (
+                <>
+                  <div className="flex items-center gap-3 py-1" aria-hidden="true">
+                    <span className="h-px flex-1 bg-zinc-200" />
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-widest">o continúa con</span>
+                    <span className="h-px flex-1 bg-zinc-200" />
+                  </div>
+                  <div className={cn("grid gap-2", CON_GOOGLE && CON_FACEBOOK ? "grid-cols-2" : "grid-cols-1")}>
+                    {CON_GOOGLE && <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => social("google")} disabled={loading}
+                      className="h-11 border border-zinc-900 text-zinc-900 text-xs font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
+                      <GoogleIcon /> Google
+                    </motion.button>}
+                    {CON_FACEBOOK && <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => social("facebook")} disabled={loading}
+                      className="h-11 border border-zinc-900 text-zinc-900 text-xs font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
+                      <FacebookIcon /> Facebook
+                    </motion.button>}
+                  </div>
+                </>
+              )}
 
               <div className="flex justify-between text-[11px]">
                 {modo === "entrar" ? (
