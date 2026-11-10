@@ -27,6 +27,8 @@ export function useAuth() {
   const [estilo, setEstilo] = useState<EstiloPerfil | null>(null)
   // Solo muestra el acceso a /admin; los permisos reales los revisa la base.
   const [esAdmin, setEsAdmin] = useState(false)
+  // Cuenta de cobro de Stripe lista para recibir el dinero de ventas y rentas.
+  const [cobrosActivos, setCobrosActivos] = useState(false)
   // Qué parte del recorrido de estilo mostrar (cuenta nueva, preguntas pospuestas o desde el menú).
   const [mostrarOnboarding, setMostrarOnboarding] = useState<ModoOnboarding | false>(false)
   // Modo demo (reemplaza al invitado): datos simulados + recorrido guiado.
@@ -52,7 +54,7 @@ export function useAuth() {
   const aplicarSesion = useCallback(async (user: { id: string; email?: string | null }) => {
     const { data } = await supabase
       .from("perfiles")
-      .select("plan, estilo, onboarding_completado, rol, punto_acopio_nombre, es_admin, nombre, telefono, avatar_url")
+      .select("plan, estilo, onboarding_completado, rol, punto_acopio_nombre, es_admin, nombre, telefono, avatar_url, cobros_activos")
       .eq("user_id", user.id)
       .maybeSingle()
     setUserId(user.id)
@@ -70,6 +72,7 @@ export function useAuth() {
     if (data?.avatar_url) setUserAvatarUrl(data.avatar_url)
     if (!data) return
     setEsAdmin(!!data.es_admin)
+    setCobrosActivos(!!data.cobros_activos)
     setPlan(normalizarPlan(data.plan))
     setEstilo((data.estilo as EstiloPerfil | null) ?? null)
     if (!data.onboarding_completado) setMostrarOnboarding("inicial")
@@ -106,6 +109,7 @@ export function useAuth() {
         setPlan(null)
         setEstilo(null)
         setEsAdmin(false)
+        setCobrosActivos(false)
         setMostrarOnboarding(false)
         return
       }
@@ -211,6 +215,7 @@ export function useAuth() {
     setPlan(null)
     setEstilo(null)
     setEsAdmin(false)
+    setCobrosActivos(false)
     setMostrarOnboarding(false)
     // La sesion sobrevive al cierre: sin signOut volveria sola en la proxima apertura.
     try {
@@ -287,7 +292,7 @@ export function useAuth() {
 
   return {
     userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isRecoleccion, isAuthenticated, initializing, plan,
-    estilo, mostrarOnboarding, abrirOnboarding, terminarOnboarding, esAdmin,
+    estilo, mostrarOnboarding, abrirOnboarding, terminarOnboarding, esAdmin, cobrosActivos,
     demo, tourActivo, iniciarTour, cerrarTour, entrarModoDemo,
     login, register, loginWithProvider, resetPassword, clearError,
     logout, updateProfile, loading, error,

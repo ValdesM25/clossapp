@@ -120,7 +120,12 @@ function Contenido() {
 
 function AuthenticatedShell() {
   const { refresh } = usePrendasContext()
-  const [activeView, setActiveView] = useState<View>("inicio")
+  // Al volver de un pago o del alta de cobros en Stripe se abre el Shop, que muestra el resultado.
+  // Solo se dibuja en el navegador (después de restaurar la sesión), así que window existe.
+  const [activeView, setActiveView] = useState<View>(() => {
+    const p = new URLSearchParams(window.location.search)
+    return p.has("pedido") || p.has("cobros") ? "marketplace" : "inicio"
+  })
   const keyboardOpen = useKeyboard()
 
   useEffect(() => {

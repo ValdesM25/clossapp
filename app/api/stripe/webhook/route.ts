@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server"
 import type Stripe from "stripe"
 import { getStripe, sincronizarSuscripcion, supabaseAdmin } from "@/lib/stripe.server"
+import { confirmarPagoMarketplace } from "@/lib/marketplace.server"
 
 /**
  * Avisos de Stripe. Verifica la firma con el cuerpo crudo y escribe el plan en
- * perfiles. Si algo falla responde 500 y Stripe reintenta.
+ * perfiles o el pago de una compra del marketplace. Si algo falla responde 500 y Stripe reintenta.
  */
 export async function POST(req: NextRequest) {
   const secreto = process.env.STRIPE_WEBHOOK_SECRET
@@ -20,6 +21,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Compra del marketplace (pago único): no toca planes.
+    if (evento.type === "checkout.session.completed" && evento.data.object.metadata?.tipo === "marketplace") {
+      await confirmarPagoMarketplace(evento.data.object)
+      return NextResponse.json({ recibido: true })
+    }
     let suscripcionId: string | null = null
     if (evento.type === "checkout.session.completed" && evento.data.object.mode === "subscription") {
       const s = evento.data.object.subscription

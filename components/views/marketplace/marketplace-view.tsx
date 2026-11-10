@@ -14,6 +14,8 @@ import { useCartContext } from "@/context/cart-context"
 import { useMarketplace } from "@/hooks/use-marketplace"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { fetchUserEscrowOrders } from "@/services/escrow.service"
+import { abrirCuentaCobro } from "@/services/marketplace.service"
+import { CenteredModal } from "@/components/shared/centered-modal"
 import type { Prenda } from "@/types"
 import { MarketItemCard } from "./market-item-card"
 import { ItemDetailModal } from "./item-detail-modal"
@@ -28,11 +30,11 @@ interface MarketplaceViewProps {
 }
 
 export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
-  const { userId, userEmail, isGuest, plan } = useAuthContext()
+  const { userId, userEmail, isGuest, plan, cobrosActivos } = useAuthContext()
   // Esencial solo dona: comprar, vender y rentar es de Plus y Elite (la base también lo bloquea).
   const soloDonar = plan === "gratis"
   const { prendas } = usePrendasContext()
-  const { itemCount, setIsCartOpen, addToCart } = useCartContext()
+  const { itemCount, setIsCartOpen, addToCart, clearCart } = useCartContext()
   const supabase = createBrowserSupabaseClient()
 
   const {
@@ -47,6 +49,42 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false)
   const [showOrdersModal, setShowOrdersModal] = useState(false)
   const [escrowOrdersCount, setEscrowOrdersCount] = useState(0)
+  const [aviso, setAviso] = useState<string | null>(null)
+  const [pedirCobros, setPedirCobros] = useState(false)
+  const [abriendoCobros, setAbriendoCobros] = useState(false)
+
+  // Regreso de Stripe: del pago de una compra (?pedido) o del alta de la cuenta de cobro (?cobros).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const pedido = params.get("pedido"), cobros = params.get("cobros")
+    if (!pedido && !cobros) return
+    window.history.replaceState(null, "", window.location.pathname)
+    if (pedido === "ok") {
+      clearCart()
+      setShowOrdersModal(true)
+    }
+    setAviso(
+      pedido === "ok" ? "Listo, tu pago quedó en custodia. Recoge tus prendas con el QR de Mis Pedidos."
+        : pedido === "cancelado" ? "No se completó el pago. Tus prendas siguen en el carrito."
+          : cobros === "ok" ? "Tu cuenta de cobro está activa. Ya puedes publicar y recibir tu dinero."
+            : cobros === "pendiente" ? "Stripe todavía revisa tus datos. Vuelve a tocar Publicar en unos minutos."
+              : "No se pudo revisar tu cuenta de cobro. Intenta de nuevo.",
+    )
+  }, [clearCart])
+
+  async function conectarCobros() {
+    setAbriendoCobros(true)
+    try {
+      const r = await abrirCuentaCobro()
+      if (r.url) return window.location.assign(r.url)
+      // Stripe ya había terminado de verificar: se recarga para leer la cuenta activa.
+      window.location.reload()
+    } catch (err) {
+      setAviso(err instanceof Error ? err.message : "No se pudo abrir tu cuenta de cobro.")
+      setPedirCobros(false)
+      setAbriendoCobros(false)
+    }
+  }
 
   const loadEscrowOrdersCount = useCallback(async () => {
     try {
@@ -148,7 +186,12 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
           {!isGuest && !isDonar && (
             <motion.button
               whileTap={{ scale: 0.96 }}
-              onClick={() => { setShowSellForm(true); setSellMode("venta") }}
+              onClick={() => {
+                // Sin cuenta de cobro no hay a dónde mandarle el dinero de la venta.
+                if (!cobrosActivos) return setPedirCobros(true)
+                setShowSellForm(true)
+                setSellMode("venta")
+              }}
               className="border border-zinc-900 text-zinc-900 text-xs px-2.5 sm:px-3 py-1.5 flex items-center gap-1 tracking-wide rounded shrink-0"
             >
               <Tag className="w-3 h-3" /> <span className="hidden xs:inline">Publicar</span>
@@ -156,6 +199,28 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
           )}
         </div>
       </div>
+
+      {aviso && (
+        <p role="status" className="mx-4 border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-zinc-700">{aviso}</p>
+      )}
+
+      <CenteredModal open={pedirCobros} onClose={() => setPedirCobros(false)}>
+        <div className="p-6 pt-8 flex flex-col gap-3">
+          <h2 className="font-serif text-xl text-zinc-900 pr-10">Conecta tu cuenta de cobro</h2>
+          <p className="text-sm text-zinc-600 leading-relaxed">
+            Para vender o rentar necesitas una cuenta de cobro en Stripe, donde te llega tu dinero. Te pedirá una
+            identificación y tu CLABE; solo se hace una vez.
+          </p>
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            Recibes el 85% de cada venta o renta cuando la otra persona recoge la prenda en el centro de acopio. Clossapp
+            se queda con el 15%.
+          </p>
+          <button type="button" onClick={() => void conectarCobros()} disabled={abriendoCobros}
+            className="mt-2 h-11 bg-zinc-900 text-white text-sm font-medium disabled:opacity-50">
+            {abriendoCobros ? "Abriendo…" : "Conectar con Stripe"}
+          </button>
+        </div>
+      </CenteredModal>
 
       {soloDonar ? (
         <div className="mx-4 border border-zinc-200 bg-zinc-50 px-4 py-3 flex items-center justify-between gap-3">

@@ -2,11 +2,12 @@
 
 import { useState, useRef, useEffect, ChangeEvent } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { User, LogOut, Camera, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck, Crown, Gift, BarChart3, ChevronRight, type LucideIcon } from "lucide-react"
+import { User, LogOut, Camera, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck, Crown, Gift, BarChart3, ChevronRight, Wallet, type LucideIcon } from "lucide-react"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { activarPush, pushActivo, pushDisponible } from "@/lib/push"
 import { navegarA } from "@/lib/navegar"
+import { abrirCuentaCobro } from "@/services/marketplace.service"
 import { NOMBRE_PLAN, esDePago } from "@/constants/planes"
 import { CenteredModal } from "@/components/shared/centered-modal"
 import { AvatarCropper } from "@/components/shared/avatar-cropper"
@@ -15,7 +16,21 @@ import { pageProps } from "@/constants/animation"
 
 /** Pestaña Perfil: cuenta, estilo, estadísticas, planes y recordatorios, cada opción con lo que hace. */
 export function PerfilView() {
-  const { userName, userEmail, userPhone, userAvatarUrl, userMode, isGuest, plan, logout, updateProfile, abrirOnboarding, userId, esAdmin } = useAuthContext()
+  const { userName, userEmail, userPhone, userAvatarUrl, userMode, isGuest, plan, logout, updateProfile, abrirOnboarding, userId, esAdmin, cobrosActivos } = useAuthContext()
+  const [abriendoCobros, setAbriendoCobros] = useState(false)
+
+  // Alta de la cuenta de cobro o, si ya está activa, el panel de Stripe con sus depósitos.
+  async function irACobros() {
+    setAbriendoCobros(true)
+    try {
+      const r = await abrirCuentaCobro()
+      if (r.url) return window.location.assign(r.url)
+      window.location.reload()
+    } catch (err) {
+      setPushMsg(err instanceof Error ? err.message : "No se pudo abrir tu cuenta de cobro.")
+      setAbriendoCobros(false)
+    }
+  }
   const [pushOn, setPushOn] = useState(false)
   const [pushMsg, setPushMsg] = useState<string | null>(null)
   useEffect(() => { pushActivo().then(setPushOn).catch(() => setPushOn(false)) }, [])
@@ -136,6 +151,15 @@ export function PerfilView() {
           <Fila icono={Crown} titulo="Planes y puntos" dataTour="perfil-planes"
             texto="Tu plan, los puntos que ganas al donar ropa y cómo canjearlos por descuentos."
             onClick={() => navegarA("planes")} />
+        )}
+        {/* Vender y rentar es de planes de pago: ahí se cobra. */}
+        {userMode === "VIP" && esDePago(plan) && (
+          <Fila icono={Wallet} titulo={cobrosActivos ? "Mis cobros" : "Cobrar mis ventas"}
+            texto={cobrosActivos
+              ? "Tus depósitos en Stripe: recibes el 85% de cada venta o renta al entregarse la prenda."
+              : "Conecta tu cuenta de cobro en Stripe para vender y rentar. Te pide identificación y CLABE."}
+            estado={abriendoCobros ? "Abriendo…" : undefined}
+            onClick={abriendoCobros ? undefined : () => void irACobros()} />
         )}
       </Grupo>
 

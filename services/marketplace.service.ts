@@ -50,3 +50,11 @@ export async function publishForRent(
   if (!res.ok) throw new Error(data.error)
   return []
 }
+
+/** Cuenta de cobro en Stripe: devuelve a dónde ir (alta o panel de depósitos) o `listo` si ya quedó activa. */
+export async function abrirCuentaCobro(): Promise<{ url?: string; listo?: boolean }> {
+  const res = await fetch("/api/stripe/connect", { method: "POST" }).catch(() => null)
+  const json = await res?.json().catch(() => null)
+  if (!res?.ok || !json) throw new Error(json?.error ?? "No se pudo conectar. Revisa tu conexión e intenta de nuevo.")
+  return json
+}

@@ -47,14 +47,32 @@ function tokenDeQR(entrada: string): string {
   return t
 }
 
-async function avanzarOrden(supabase: SupabaseClient, qr: string, accion: "liberar" | "entregar_renta") {
-  const { data, error } = await supabase.rpc("escrow_avanzar", { p_token: tokenDeQR(qr), p_accion: accion })
-  if (error || !data) throw new Error(mensajeBase(error?.message, "No se pudo procesar la orden."))
-  return mapOrden(data)
+/** POST a una ruta propia; los errores de la base llegan como "CODIGO: mensaje". */
+async function llamarApi(ruta: string, body: unknown, fallback: string) {
+  const res = await fetch(ruta, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).catch(() => null)
+  const json = await res?.json().catch(() => null)
+  if (!res?.ok || !json) throw new Error(json?.error ? (mensajeBase(json.error, "") || json.error) : fallback)
+  return json
+}
+
+// Por el servidor: al liberar transfiere a los vendedores su parte del pago.
+async function avanzarOrden(_supabase: SupabaseClient, qr: string, accion: "liberar" | "entregar_renta") {
+  return mapOrden(await llamarApi("/api/escrow/avanzar", { token: tokenDeQR(qr), accion }, "No se pudo procesar la orden."))
 }
 
 /**
- * Crea una nueva Orden en Custodia (Escrow) reteniendo el dinero de la compra.
+ * Compra con pago real: el servidor arma la orden (aparta las prendas) y devuelve la página de pago de
+ * Stripe. El dinero queda en custodia hasta la entrega en el centro de acopio.
+ */
+export async function iniciarPagoMarketplace(items: CartItem[]): Promise<string> {
+  const { url } = await llamarApi("/api/marketplace/checkout", {
+    items: items.map((it) => ({ prenda_id: Number(it.prenda.id), tipo: it.tipo, fecha_renta: it.fechaRenta ?? null })),
+  }, "No se pudo abrir el pago. Revisa tu conexión e intenta de nuevo.")
+  return url
+}
+
+/**
+ * Orden de ejemplo del modo demo (sin pago real ni red). Con cuenta se usa iniciarPagoMarketplace.
  */
 export async function createEscrowOrder(
   supabase: SupabaseClient,
@@ -69,17 +87,6 @@ export async function createEscrowOrder(
     puntoAcopioNombre?: string
   }
 ): Promise<EscrowOrder> {
-  if (!esDemo()) {
-    // Solo se manda qué prendas y fechas; precio y total los calcula la base.
-    const { data, error } = await supabase.rpc("crear_orden_escrow", {
-      p_items: input.items.map((it) => ({ prenda_id: Number(it.prenda.id), tipo: it.tipo, fecha_renta: it.fechaRenta ?? null })),
-      p_metodo: input.metodoPago,
-      p_punto_id: input.puntoAcopioId ?? PUNTO_ENTREGA.id,
-      p_punto_nombre: input.puntoAcopioNombre ?? PUNTO_ENTREGA.nombre,
-    })
-    if (error || !data) throw new Error(mensajeBase(error?.message, "No se pudo crear la orden. Intenta de nuevo."))
-    return mapOrden(data)
-  }
   const codeNum = Math.floor(10000 + Math.random() * 90000)
   const orderCode = `ESC-${codeNum}`
   const qrToken = `ESC-QR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
@@ -214,9 +221,9 @@ export async function fetchUserEscrowOrders(
 }
 
 /**
- * Cancela un pedido mientras el pago sigue en custodia. Con cuenta real lo
+ * Cancela un pedido sin pagar o con el pago en custodia. Con cuenta real lo
  * decide la base (cancelar_orden_escrow: solo quien compró, el centro o
- * admin) y la prenda comprada vuelve a estar en venta. En demo, solo local.
+ * admin), la prenda comprada vuelve a estar en venta y se reembolsa el pago. En demo, solo local.
  */
 export async function cancelarOrdenEscrow(supabase: SupabaseClient, order: EscrowOrder): Promise<EscrowOrder> {
   if (esDemo()) {
@@ -225,9 +232,8 @@ export async function cancelarOrdenEscrow(supabase: SupabaseClient, order: Escro
     localStorage.setItem("clossapp_escrow_orders_v1", JSON.stringify(lista.map((o) => (o.id === order.id ? cancelada : o))))
     return cancelada
   }
-  const { data, error } = await supabase.rpc("cancelar_orden_escrow", { p_token: order.orderCode })
-  if (error || !data) throw new Error(mensajeBase(error?.message, "No se pudo cancelar el pedido."))
-  return mapOrden(data)
+  // Por el servidor: si ya se había pagado, reembolsa.
+  return mapOrden(await llamarApi("/api/escrow/cancelar", { token: order.orderCode }, "No se pudo cancelar el pedido."))
 }
 
 /**

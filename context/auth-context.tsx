@@ -28,6 +28,8 @@ type AuthContextValue = {
   mostrarOnboarding: ModoOnboarding | false
   /** Muestra el acceso al panel /admin (la base valida el permiso real). */
   esAdmin: boolean
+  /** Cuenta de cobro de Stripe lista: puede vender y rentar y recibir su dinero. */
+  cobrosActivos: boolean
   abrirOnboarding: (modo?: ModoOnboarding) => void
   terminarOnboarding: (estilo?: EstiloPerfil) => Promise<void>
   login: (email: string, password: string, captchaToken?: string) => Promise<void>
