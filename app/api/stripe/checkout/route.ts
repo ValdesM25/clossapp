@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getStripe, preciosStripe, supabaseAdmin } from "@/lib/stripe.server"
 import { esDePago, normalizarPlan } from "@/constants/planes"
+import { bloqueaNuevoPago } from "@/lib/plan-stripe"
 
 /** Abre el pago de Stripe para pasar a Plus o Elite. El usuario sale de la sesión, nunca del body. */
 export async function POST(req: NextRequest) {
@@ -35,6 +36,16 @@ export async function POST(req: NextRequest) {
       cliente = nuevo.id
       const { error: errGuardar } = await supabaseAdmin().from("perfiles").update({ stripe_customer_id: cliente }).eq("user_id", user.id)
       if (errGuardar) throw errGuardar
+    } else {
+      // El plan lo escribe el webhook segundos después de pagar: mientras tanto perfiles aún dice
+      // "gratis", así que se le pregunta a Stripe si ya hay una suscripción.
+      const subs = await stripe.subscriptions.list({ customer: cliente, status: "all", limit: 20 })
+      if (bloqueaNuevoPago(subs.data.map((s) => s.status))) {
+        return NextResponse.json({ error: "Ya tienes una suscripción. Si acabas de pagar, tu plan se activa en unos minutos." }, { status: 409 })
+      }
+      // Un pago abierto en otra pestaña también cobraría aparte: se cierra antes de abrir este.
+      const abiertas = await stripe.checkout.sessions.list({ customer: cliente, status: "open", limit: 20 })
+      await Promise.all(abiertas.data.map((s) => stripe.checkout.sessions.expire(s.id)))
     }
 
     const origen = req.nextUrl.origin

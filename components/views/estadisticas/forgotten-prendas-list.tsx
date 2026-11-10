@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion"
 import type { PrendaExt } from "@/types"
+import { useAuthContext } from "@/context/auth-context"
 
 interface ForgottenPrendasListProps {
   prendas: PrendaExt[]
@@ -9,6 +10,8 @@ interface ForgottenPrendasListProps {
 }
 
 export function ForgottenPrendasList({ prendas, isGuest, onSell, formatDate }: ForgottenPrendasListProps) {
+  // Esencial no vende: el botón lleva a la misma pantalla, que para ese plan es la de donar.
+  const { plan } = useAuthContext()
   return (
     <section className="px-4">
       <p className="text-xs text-zinc-500 uppercase tracking-widest mb-3">Prendas Olvidadas</p>
@@ -25,7 +28,7 @@ export function ForgottenPrendasList({ prendas, isGuest, onSell, formatDate }: F
               </div>
               <motion.button whileTap={{ scale: 0.96 }} onClick={() => onSell(item)}
                 className="shrink-0 text-xs border border-zinc-900 text-zinc-900 px-3 py-1.5 tracking-wide">
-                Vender
+                {plan === "gratis" ? "Donar" : "Vender"}
               </motion.button>
             </motion.div>
           ))}

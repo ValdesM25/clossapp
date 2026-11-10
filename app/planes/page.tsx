@@ -132,6 +132,9 @@ export default function PlanesPage() {
                       </Link>
                     ) : actual ? (
                       <p className="h-11 flex items-center justify-center border border-zinc-200 text-sm text-zinc-500">Tu plan actual</p>
+                    ) : volvioDelPago && !esDePago(plan) ? (
+                      // Recién pagó y el webhook aún no llega: otro botón de pago aquí cobraría dos veces.
+                      <p className="h-11 flex items-center justify-center text-xs text-zinc-500 text-center">Esperando la confirmación del pago</p>
                     ) : esDePago(p.id) && !esDePago(plan) ? (
                       <button type="button" onClick={() => ir("checkout", p.id)} disabled={!!enviando}
                         className={cn("h-11 text-sm font-medium tracking-wide flex items-center justify-center disabled:opacity-50",
