@@ -25,6 +25,7 @@ import { tomarVolverA } from "@/lib/volver-a"
 import { PASOS_DEMO_ACOPIO, PASOS_DEMO_USUARIO, PASO_INSTALAR_IOS } from "@/constants/tour"
 import { useInstalarApp } from "@/hooks/use-instalar-app"
 import { PantallaEntrada } from "@/components/shared/pantalla-entrada"
+import { VideoInstalarIos } from "@/components/shared/video-instalar-ios"
 import { EVENTO_NAVEGAR } from "@/lib/navegar"
 
 /** Pastilla fija del modo demo: recuerda que todo es de ejemplo y deja repetir la guía o salir. */
@@ -74,6 +75,7 @@ function AppShell() {
       <Contenido />
       {/* La sesión se comprueba debajo de la entrada: sin esto la app instalada mostraría el login un instante. */}
       <PantallaEntrada key={entradas} />
+      <VideoInstalarIos />
     </>
   )
 }
