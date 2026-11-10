@@ -9,6 +9,7 @@ import type { EstiloPerfil, ModoOnboarding } from "@/constants/onboarding"
 import { entrarDemo, salirDemo, restaurarSiQuedoDemo, type TipoDemo } from "@/lib/demo"
 
 const GUEST = { id: "guest", name: "Visita" } as const
+const AVATAR_DEMO = "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80"
 
 // Si supabase-js se queda esperando su lock (PWA con pestañas viejas), la UI no debe quedar congelada.
 function conTimeout<T>(p: Promise<T>, ms = 8000): Promise<T> {
@@ -21,7 +22,7 @@ export function useAuth() {
   const [userName, setUserName] = useState("Alex")
   const [userEmail, setUserEmail] = useState("alex@clossapp.com")
   const [userPhone, setUserPhone] = useState("+52 844 123 4567")
-  const [userAvatarUrl, setUserAvatarUrl] = useState("https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80")
+  const [userAvatarUrl, setUserAvatarUrl] = useState("")
   // null mientras no se sabe (o si la tabla perfiles aun no existe): no se bloquea nada.
   const [plan, setPlan] = useState<Plan | null>(null)
   const [estilo, setEstilo] = useState<EstiloPerfil | null>(null)
@@ -67,7 +68,8 @@ export function useAuth() {
     setUserName(data?.nombre || displayNameFor(user.email, GUEST.name))
     // Sin datos guardados no se muestran los de ejemplo del estado inicial.
     setUserPhone(data?.telefono ?? "")
-    if (data?.avatar_url) setUserAvatarUrl(data.avatar_url)
+    // Sin foto propia queda vacío (se muestra la inicial), nunca la de otra cuenta o la de ejemplo.
+    setUserAvatarUrl(data?.avatar_url ?? "")
     if (!data) return
     setEsAdmin(!!data.es_admin)
     setPlan(normalizarPlan(data.plan))
@@ -103,6 +105,7 @@ export function useAuth() {
         setUserId(GUEST.id)
         setUserName(GUEST.name)
         setUserEmail("")
+        setUserAvatarUrl("")
         setPlan(null)
         setEstilo(null)
         setEsAdmin(false)
@@ -187,6 +190,7 @@ export function useAuth() {
     setUserId(GUEST.id)
     setUserName("Alex (demo)")
     setUserEmail("alex@ejemplo.com")
+    setUserAvatarUrl(AVATAR_DEMO)
   }, [])
 
   const iniciarTour = useCallback(() => setTourActivo(true), [])
@@ -201,6 +205,7 @@ export function useAuth() {
       setUserId(GUEST.id)
       setUserName(GUEST.name)
       setUserEmail("")
+      setUserAvatarUrl("")
       return
     }
     // Primero se limpia la UI: si signOut se cuelga, el usuario igual ve el login.
@@ -208,6 +213,7 @@ export function useAuth() {
     setUserId(GUEST.id)
     setUserName(GUEST.name)
     setUserEmail("")
+    setUserAvatarUrl("")
     setPlan(null)
     setEstilo(null)
     setEsAdmin(false)
