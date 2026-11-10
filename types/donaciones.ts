@@ -57,14 +57,14 @@ export interface OpcionCanjeSuscripcion {
   puntosCoste: number
   descuentoPorcentaje: number
   mesesGratis?: number
-  codigo: string
 }
 
 export interface CanjeRealizado {
   id: string
   opcionId: string
   titulo: string
-  codigo: string
+  /** pendiente: espera el primer pago. aplicado: ya está en la suscripción. */
+  estado: "pendiente" | "aplicado"
   puntosUsados: number
   fecha: string
 }

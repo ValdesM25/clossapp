@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Check, Sparkles, Crown, Zap, ShieldCheck, Gift, Tag, Copy, CheckCircle2 } from "lucide-react"
+import { Check, Sparkles, Crown, Zap, ShieldCheck, Gift, Tag, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { pageProps } from "@/constants/animation"
 import { CenteredModal } from "@/components/shared/centered-modal"
@@ -26,7 +26,6 @@ export function PlanesView() {
   const [canjeModalOpen, setCanjeModalOpen] = useState(false)
   const [selectedCanje, setSelectedCanje] = useState<OpcionCanjeSuscripcion | null>(null)
   const [canjeExitoso, setCanjeExitoso] = useState<CanjeRealizado | null>(null)
-  const [copiedCode, setCopiedCode] = useState(false)
 
   // Saldo e historial de canjes salen de la base (puntos_historial); antes vivían en localStorage.
   useEffect(() => {
@@ -36,18 +35,21 @@ export function PlanesView() {
     fetchUserPuntos(supabase, userId).then((p) => { if (activo) setPuntos(p) })
     supabase.from("puntos_pendientes").select("puntos").is("acreditado_at", null).not("prenda_id", "is", null)
       .then(({ data }) => { if (activo) setPendientes((data ?? []).reduce((s, r) => s + r.puntos, 0)) })
-    supabase.from("puntos_historial").select("id, referencia_id, descripcion, puntos, created_at")
-      .eq("tipo", "canje_suscripcion").order("created_at", { ascending: false })
+    supabase.from("descuentos_canje").select("id, opcion, estado, created_at")
+      .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (!activo || !data) return
-        setCanjes(data.map((row) => ({
-          id: row.id,
-          opcionId: row.referencia_id ?? "",
-          titulo: OPCIONES_CANJE_SUSCRIPCION.find((o) => o.id === row.referencia_id)?.titulo ?? "Cupón ClossApp",
-          codigo: row.descripcion ?? "",
-          puntosUsados: Math.abs(row.puntos),
-          fecha: row.created_at,
-        })))
+        setCanjes(data.map((row) => {
+          const opcion = OPCIONES_CANJE_SUSCRIPCION.find((o) => o.id === row.opcion)
+          return {
+            id: row.id,
+            opcionId: row.opcion,
+            titulo: opcion?.titulo ?? "Descuento",
+            estado: row.estado,
+            puntosUsados: opcion?.puntosCoste ?? 0,
+            fecha: row.created_at,
+          }
+        }))
       })
     return () => { activo = false }
   }, [userId, isGuest])
@@ -68,37 +70,34 @@ export function PlanesView() {
     window.location.assign(`/planes?plan=${id}`)
   }
 
-  // La base valida el costo y el saldo y genera el código: el cliente no decide nada.
+  // El servidor valida costo y saldo y aplica el descuento en Stripe: el cliente no decide nada.
   async function handleConfirmCanje() {
     if (!selectedCanje || puntos < selectedCanje.puntosCoste || canjeando) return
     if (isGuest) { setErrorCanje("Crea una cuenta para canjear tus puntos."); return }
     setCanjeando(true)
     setErrorCanje(null)
-    const { data, error } = await createBrowserSupabaseClient().rpc("canjear_puntos", { p_opcion: selectedCanje.id })
+    const res = await fetch("/api/puntos/canjear", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ opcion: selectedCanje.id }),
+    }).catch(() => null)
+    const json = await res?.json().catch(() => null)
     setCanjeando(false)
-    if (error || !data) {
-      setErrorCanje(error?.message.includes("PUNTOS_INSUFICIENTES")
-        ? "No te alcanzan los puntos para este cupón."
-        : "No se pudo canjear. Intenta de nuevo.")
+    if (!res?.ok || !json) {
+      setErrorCanje(json?.error ?? "No se pudo canjear. Revisa tu conexión e intenta de nuevo.")
       return
     }
-    setPuntos(data.saldo)
+    setPuntos(json.saldo)
     const nuevoCanje: CanjeRealizado = {
       id: `canje_${Date.now()}`,
       opcionId: selectedCanje.id,
       titulo: selectedCanje.titulo,
-      codigo: data.codigo,
+      estado: json.aplicado ? "aplicado" : "pendiente",
       puntosUsados: selectedCanje.puntosCoste,
       fecha: new Date().toISOString(),
     }
     setCanjes((prev) => [nuevoCanje, ...prev])
     setCanjeExitoso(nuevoCanje)
-  }
-
-  function copyCode(code: string) {
-    navigator.clipboard.writeText(code)
-    setCopiedCode(true)
-    setTimeout(() => setCopiedCode(false), 2000)
   }
 
   return (
@@ -275,7 +274,7 @@ export function PlanesView() {
       {canjes.length > 0 && (
         <div className="border border-zinc-200 bg-white p-5 flex flex-col gap-3">
           <p className="text-xs uppercase tracking-widest text-zinc-500 font-semibold flex items-center gap-1.5">
-            <Tag className="w-4 h-4 text-zinc-700" /> Mis Códigos de Descuento Canjeados
+            <Tag className="w-4 h-4 text-zinc-700" /> Mis descuentos canjeados
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {canjes.map((c) => (
@@ -284,13 +283,9 @@ export function PlanesView() {
                   <p className="text-xs font-semibold text-zinc-900">{c.titulo}</p>
                   <p className="text-[10px] text-zinc-500 font-mono mt-0.5">Usó {c.puntosUsados} pts</p>
                 </div>
-                <button
-                  onClick={() => copyCode(c.codigo)}
-                  className="px-2.5 py-1 bg-zinc-900 text-white font-mono text-xs flex items-center gap-1 hover:bg-zinc-800"
-                >
-                  <Copy className="w-3 h-3 text-zinc-300" />
-                  {c.codigo}
-                </button>
+                <p className="text-[11px] text-zinc-600 text-right">
+                  {c.estado === "aplicado" ? "Aplicado a tu suscripción" : "Se aplica en tu primer pago"}
+                </p>
               </div>
             ))}
           </div>
@@ -336,7 +331,7 @@ export function PlanesView() {
 
                       {!alcanza && (
                         <p className="text-[10px] text-red-500 font-medium">
-                          Te faltan {opcion.puntosCoste - puntos} puntos para este cupón.
+                          Te faltan {opcion.puntosCoste - puntos} puntos para este descuento.
                         </p>
                       )}
                     </div>
@@ -358,7 +353,7 @@ export function PlanesView() {
                   onClick={handleConfirmCanje}
                   className="flex-1 py-3 bg-zinc-900 text-white text-xs font-medium tracking-wide disabled:opacity-40"
                 >
-                  Canjear Cupon
+                  Canjear
                 </motion.button>
               </div>
             </>
@@ -374,19 +369,11 @@ export function PlanesView() {
                 <strong className="text-zinc-900">{canjeExitoso.titulo}</strong>
               </p>
 
-              <div className="w-full bg-zinc-900 text-white p-4 flex flex-col items-center gap-2 border border-zinc-800">
-                <span className="text-[10px] uppercase font-mono text-zinc-300">Código de Descuento Generado</span>
-                <span className="font-mono text-lg font-bold text-zinc-200 tracking-wider">
-                  {canjeExitoso.codigo}
-                </span>
-                <button
-                  onClick={() => copyCode(canjeExitoso.codigo)}
-                  className="text-xs text-zinc-300 underline hover:text-white flex items-center gap-1 mt-1"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  {copiedCode ? "¡Copiado al portapapeles!" : "Copiar código"}
-                </button>
-              </div>
+              <p className="w-full bg-zinc-50 border border-zinc-200 p-4 text-xs text-zinc-700 leading-relaxed">
+                {canjeExitoso.estado === "aplicado"
+                  ? "Listo, se descontará solo en tu próximo cobro. No tienes que hacer nada más."
+                  : "Se aplicará solo cuando elijas Plus o Elite. No tienes que copiar ningún código."}
+              </p>
 
               <button
                 onClick={() => {

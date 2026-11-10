@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import type Stripe from "stripe"
-import { getStripe, sincronizarSuscripcion } from "@/lib/stripe.server"
+import { getStripe, sincronizarSuscripcion, supabaseAdmin } from "@/lib/stripe.server"
 
 /**
  * Avisos de Stripe. Verifica la firma con el cuerpo crudo y escribe el plan en
@@ -24,6 +24,14 @@ export async function POST(req: NextRequest) {
     if (evento.type === "checkout.session.completed" && evento.data.object.mode === "subscription") {
       const s = evento.data.object.subscription
       suscripcionId = typeof s === "string" ? s : s?.id ?? null
+      // El descuento canjeado con puntos ya se usó en este pago.
+      const descuentoId = evento.data.object.metadata?.descuento_id
+      if (descuentoId) {
+        const { error } = await supabaseAdmin().from("descuentos_canje")
+          .update({ estado: "aplicado", aplicado_en: suscripcionId, aplicado_at: new Date().toISOString() })
+          .eq("id", descuentoId).eq("estado", "pendiente")
+        if (error) throw error
+      }
     } else if (
       evento.type === "customer.subscription.created" ||
       evento.type === "customer.subscription.updated" ||
