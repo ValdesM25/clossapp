@@ -48,6 +48,10 @@ export async function POST(req: NextRequest) {
       await Promise.all(abiertas.data.map((s) => stripe.checkout.sessions.expire(s.id)))
     }
 
+    // Descuento canjeado con puntos antes de pagar: se aplica solo en este primer cobro.
+    const { data: descuento } = await supabase.from("descuentos_canje").select("id, opcion")
+      .eq("user_id", user.id).eq("estado", "pendiente").maybeSingle()
+
     const origen = req.nextUrl.origin
     const sesion = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -55,6 +59,7 @@ export async function POST(req: NextRequest) {
       client_reference_id: user.id,
       line_items: [{ price: preciosStripe().porPlan[plan as "plus" | "elite"], quantity: 1 }],
       subscription_data: { metadata: { user_id: user.id } },
+      ...(descuento ? { discounts: [{ coupon: `canje_${descuento.opcion}` }], metadata: { descuento_id: descuento.id } } : {}),
       locale: "es-419",
       success_url: `${origen}/planes?pago=ok`,
       cancel_url: `${origen}/planes?plan=${plan}`,
