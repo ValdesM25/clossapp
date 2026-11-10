@@ -11,11 +11,14 @@ export type PuntoAcopio = {
   horario: string
 }
 
+// Copia de la tabla puntos_acopio (supabase/20) por si la consulta falla. Si cambia allá, cambiarla aquí.
 export const PUNTOS_ACOPIO: PuntoAcopio[] = [
-  { id: "centro", nombre: "Punto de acopio Centro", zona: "Saltillo Centro", horario: "Lun a Vie · 9:00 a 18:00" },
-  { id: "norte", nombre: "Punto de acopio Norte", zona: "Zona Norte", horario: "Lun a Sáb · 10:00 a 17:00" },
-  { id: "republica", nombre: "Punto de acopio República", zona: "Fracc. República", horario: "Mar a Dom · 11:00 a 19:00" },
+  { id: "tecnm-saltillo", nombre: "TecNM ITS Saltillo", zona: "Col. Tecnológico", horario: "Lun a Vie · 9:00 a 18:00" },
+  { id: "alameda", nombre: "Alameda Zaragoza", zona: "Zona Centro", horario: "Lun a Vie · 9:00 a 18:00" },
 ]
+
+/** Donde se entregan las compras del marketplace mientras no se pueda elegir centro. */
+export const PUNTO_ENTREGA = PUNTOS_ACOPIO[0]
 
 export type ModoEntrega = "acopio" | "recoleccion"
 

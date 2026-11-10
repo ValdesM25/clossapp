@@ -8,6 +8,7 @@ import { useCartContext } from "@/context/cart-context"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { createEscrowOrder } from "@/services/escrow.service"
+import { PUNTO_ENTREGA } from "@/constants/donaciones"
 import type { EscrowOrder, MetodoPagoEscrow } from "@/types/escrow"
 
 interface EscrowCheckoutModalProps {
@@ -45,8 +46,8 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
         items: cart,
         subtotal: totalPrice,
         metodoPago,
-        puntoAcopioId: "norte",
-        puntoAcopioNombre: "Centro de Acopio Norte",
+        puntoAcopioId: PUNTO_ENTREGA.id,
+        puntoAcopioNombre: PUNTO_ENTREGA.nombre,
       })
 
       setCompletedOrder(order)
