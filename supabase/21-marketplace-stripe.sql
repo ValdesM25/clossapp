@@ -8,10 +8,18 @@
 -- Se aplica AL HACER DEPLOY de la rama feat/marketplace-stripe, no antes: la app actual crea las órdenes
 -- sin pago y con esto quedarían en 'pendiente_pago' hasta expirar.
 
--- Cuenta de cobro del vendedor. Solo el servidor las escribe (authenticated no tiene UPDATE en estas columnas).
+-- Cuenta de cobro del vendedor. Solo el servidor las escribe (authenticated no tiene UPDATE en estas columnas:
+-- 05-perfiles.sql le da UPDATE solo a una lista de columnas y estas no están en ella).
+-- cobros_estado: sin_cuenta (no ha empezado), en_revision (Stripe verifica sus datos), requiere_datos (Stripe
+-- pide algo más o la restringió), activa (puede cobrar; cobros_activos = true).
 alter table public.perfiles
   add column if not exists stripe_account_id text,
-  add column if not exists cobros_activos boolean not null default false;
+  add column if not exists cobros_activos boolean not null default false,
+  add column if not exists cobros_estado text not null default 'sin_cuenta'
+    check (cobros_estado in ('sin_cuenta', 'en_revision', 'requiere_datos', 'activa'));
+
+-- Cuándo se publicó para venta o renta (la pone prendas_marketplace_plan): para mostrar "lleva N días publicada".
+alter table public.prendas add column if not exists publicada_en timestamptz;
 
 alter table public.escrow_ordenes
   add column if not exists stripe_checkout_id text,
@@ -67,6 +75,7 @@ begin
     if not exists (select 1 from public.perfiles where user_id = new.user_id and cobros_activos) then
       raise exception 'SIN_CUENTA_COBRO: conecta tu cuenta de cobro para vender o rentar';
     end if;
+    new.publicada_en := now();
   end if;
   return new;
 end;
