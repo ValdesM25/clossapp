@@ -290,6 +290,10 @@ export default function PoliticasPage() {
         </Seccion>
 
         <Seccion id="marketplace" numero="03" titulo="Uso del Marketplace">
+          <p className="text-[14px]">
+            Comprar, vender y rentar prendas está disponible en los planes Plus y Elite. Con el plan
+            Esencial puedes donar ropa a los centros de acopio y ganar puntos.
+          </p>
           <Sub titulo="Nuestro rol">
             <p>
               Clossapp es un{" "}
@@ -371,6 +375,16 @@ export default function PoliticasPage() {
               crédito o débito a través de Stripe. Al contratar, autorizas que el mismo cargo se haga
               cada mes, en la misma fecha, hasta que canceles. Los precios están en pesos mexicanos e
               incluyen IVA.
+            </p>
+          </Sub>
+
+          <Sub titulo="Uso justo">
+            <p>
+              Los outfits y análisis con inteligencia artificial de Plus y Elite están pensados para el
+              uso personal de tu clóset y se rigen por una política de uso justo. Para que el servicio
+              funcione bien para todas las personas, podemos limitar cuántos se generan en un mismo día
+              cuando el uso supera por mucho lo normal. Si llegas a ese tope, la app te avisa y puedes
+              seguir al día siguiente; el resto de la app funciona igual.
             </p>
           </Sub>
 

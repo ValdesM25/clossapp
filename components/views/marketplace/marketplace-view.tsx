@@ -28,7 +28,9 @@ interface MarketplaceViewProps {
 }
 
 export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
-  const { userId, userEmail, isGuest } = useAuthContext()
+  const { userId, userEmail, isGuest, plan } = useAuthContext()
+  // Esencial solo dona: comprar, vender y rentar es de Plus y Elite (la base también lo bloquea).
+  const soloDonar = plan === "gratis"
   const { prendas } = usePrendasContext()
   const { itemCount, setIsCartOpen, addToCart } = useCartContext()
   const supabase = createBrowserSupabaseClient()
@@ -80,7 +82,7 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
   const currentItems = marketTab === "comprar" ? items : rentaItems
   const filtered = activeFilter === "Todos" ? currentItems : currentItems.filter((i) => i.category === activeFilter)
   const isRenta = marketTab === "rentar"
-  const isDonar = marketTab === "donar"
+  const isDonar = soloDonar || marketTab === "donar"
 
   async function handleApartar(fechaRenta?: string) {
     if (selectedItem) {
@@ -104,12 +106,12 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
     <motion.div {...pageProps} className="flex flex-col gap-6 pb-32 pt-8">
       <div className="px-4 flex items-center justify-between gap-2">
         <div>
-          <h1 className="font-serif text-2xl text-zinc-900">Marketplace</h1>
+          <h1 className="font-serif text-2xl text-zinc-900">{soloDonar ? "Donar" : "Marketplace"}</h1>
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Botón Mis Pedidos (para Comprar y Rentar) */}
-          {(marketTab === "comprar" || marketTab === "rentar") && (
+          {!isDonar && (
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={() => setShowOrdersModal(true)}
@@ -127,7 +129,7 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
           )}
 
           {/* Botón Carrito de Compras/Rentas (para Comprar y Rentar) */}
-          {(marketTab === "comprar" || marketTab === "rentar") && (
+          {!isDonar && (
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={() => setIsCartOpen(true)}
@@ -155,15 +157,23 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
         </div>
       </div>
 
-      <div data-tour="marketplace" className="px-4 flex border-b border-zinc-200">
-        {(["comprar", "rentar", "donar"] as const).map((tab) => (
-          <button key={tab} onClick={() => { setMarketTab(tab); setActiveFilter("Todos") }}
-            className={cn("flex-1 py-2.5 text-xs font-medium tracking-widest uppercase transition-colors border-b-2 -mb-px",
-              marketTab === tab ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-500")}>
-            {tab === "comprar" ? "Comprar" : tab === "rentar" ? "Rentar" : "Donar"}
-          </button>
-        ))}
-      </div>
+      {soloDonar ? (
+        <div className="mx-4 border border-zinc-200 bg-zinc-50 px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-xs text-zinc-600 leading-relaxed">Comprar, vender y rentar prendas es parte de Plus. Con tu plan puedes donar y ganar puntos.</p>
+          <button type="button" onClick={() => window.location.assign("/planes?plan=plus")}
+            className="shrink-0 h-10 px-3 border border-zinc-900 text-zinc-900 text-xs font-medium">Ver Plus</button>
+        </div>
+      ) : (
+        <div data-tour="marketplace" className="px-4 flex border-b border-zinc-200">
+          {(["comprar", "rentar", "donar"] as const).map((tab) => (
+            <button key={tab} onClick={() => { setMarketTab(tab); setActiveFilter("Todos") }}
+              className={cn("flex-1 py-2.5 text-xs font-medium tracking-widest uppercase transition-colors border-b-2 -mb-px",
+                marketTab === tab ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-500")}>
+              {tab === "comprar" ? "Comprar" : tab === "rentar" ? "Rentar" : "Donar"}
+            </button>
+          ))}
+        </div>
+      )}
 
       {isDonar ? (
         <DonacionPanel prendas={prendas} isGuest={isGuest} />
