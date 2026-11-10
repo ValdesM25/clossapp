@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getStripe, supabaseAdmin } from "@/lib/stripe.server"
-import { cuentaLista, enviarPagosPendientes } from "@/lib/marketplace.server"
+import { guardarEstadoCuenta, enviarPagosPendientes } from "@/lib/marketplace.server"
 
 /**
  * Cuenta de cobro del vendedor (Stripe Express). Sin cuenta: la crea y manda al alta de Stripe, que pide
@@ -24,11 +24,12 @@ export async function POST(req: NextRequest) {
 
     let cuenta: string | null = perfil?.stripe_account_id ?? null
     // Stripe puede terminar de verificar después del alta: si ya quedó, se activa sin pedir nada más.
-    if (cuenta && cuentaLista(await stripe.accounts.retrieve(cuenta))) {
-      const { error: errAct } = await supabaseAdmin().from("perfiles").update({ cobros_activos: true }).eq("user_id", user.id)
-      if (errAct) throw errAct
-      await enviarPagosPendientes(user.id)
-      return NextResponse.json({ listo: true })
+    if (cuenta) {
+      const { nuevo } = await guardarEstadoCuenta(user.id, await stripe.accounts.retrieve(cuenta))
+      if (nuevo === "activa") {
+        await enviarPagosPendientes(user.id)
+        return NextResponse.json({ listo: true })
+      }
     }
     if (!cuenta) {
       const nueva = await stripe.accounts.create({

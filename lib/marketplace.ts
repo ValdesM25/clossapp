@@ -17,3 +17,25 @@ export function repartoPorVendedor(items: { sellerId: string; precio: number }[]
     return { vendedorId, brutoCentavos, comisionCentavos, netoCentavos: brutoCentavos - comisionCentavos }
   })
 }
+
+export type EstadoCobros = "sin_cuenta" | "en_revision" | "requiere_datos" | "activa"
+
+type CuentaStripe = {
+  payouts_enabled?: boolean
+  details_submitted?: boolean
+  capabilities?: { transfers?: string } | null
+  requirements?: { disabled_reason?: string | null; currently_due?: string[] | null; past_due?: string[] | null } | null
+}
+
+/** Cuenta de cobro lista: Stripe ya verificó a la persona y puede recibir transferencias y depósitos. */
+export function cuentaLista(cuenta: CuentaStripe): boolean {
+  return !!cuenta.payouts_enabled && cuenta.capabilities?.transfers === "active"
+}
+
+/** En qué punto del alta está una cuenta de cobro, para decirle a la persona qué sigue. */
+export function estadoCuenta(cuenta: CuentaStripe): EstadoCobros {
+  if (cuentaLista(cuenta)) return "activa"
+  const r = cuenta.requirements
+  if (r?.disabled_reason || r?.currently_due?.length || r?.past_due?.length) return "requiere_datos"
+  return cuenta.details_submitted ? "en_revision" : "sin_cuenta"
+}

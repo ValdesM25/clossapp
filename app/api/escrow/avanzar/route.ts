@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createClient } from "@/utils/supabase/server"
-import { registrarPagosVendedores } from "@/lib/marketplace.server"
+import { avisarPagosOrden, registrarPagosVendedores } from "@/lib/marketplace.server"
 
 /** El centro de acopio entrega una renta o libera una orden; al liberar se paga a los vendedores. */
 export async function POST(req: NextRequest) {
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
   if (orden.status === "entregado_y_liberado") {
     try {
       await registrarPagosVendedores(orden.id)
+      await avisarPagosOrden(orden.id)
     } catch (err) {
       // La entrega ya quedó; el pago se reintenta en la próxima liberación o cuando el vendedor conecte su cuenta.
       console.error("[escrow/avanzar] pagos a vendedores", orden.id, err instanceof Error ? err.message : err)

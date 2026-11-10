@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createClient } from "@/utils/supabase/server"
-import { getStripe, supabaseAdmin } from "@/lib/stripe.server"
-import { cuentaLista, enviarPagosPendientes } from "@/lib/marketplace.server"
+import { getStripe } from "@/lib/stripe.server"
+import { guardarEstadoCuenta, enviarPagosPendientes } from "@/lib/marketplace.server"
 
 /** Regreso del alta de Stripe: revisa si la cuenta ya puede cobrar y manda los pagos que estaban esperando. */
 export async function GET(req: NextRequest) {
@@ -11,17 +11,15 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.redirect(`${origen}/`)
 
   const { data: perfil } = await supabase.from("perfiles").select("stripe_account_id").eq("user_id", user.id).maybeSingle()
-  if (!perfil?.stripe_account_id) return NextResponse.redirect(`${origen}/?cobros=pendiente`)
+  if (!perfil?.stripe_account_id) return NextResponse.redirect(`${origen}/?vender=revision`)
 
   try {
     const stripe = getStripe()
     const cuenta = await stripe.accounts.retrieve(perfil.stripe_account_id)
-    const lista = cuentaLista(cuenta)
-    const { error } = await supabaseAdmin().from("perfiles").update({ cobros_activos: lista }).eq("user_id", user.id)
-    if (error) throw error
-    if (lista) {
+    const { nuevo } = await guardarEstadoCuenta(user.id, cuenta)
+    if (nuevo === "activa") {
       await enviarPagosPendientes(user.id)
-      return NextResponse.redirect(`${origen}/?cobros=ok`)
+      return NextResponse.redirect(`${origen}/?vender=ok`)
     }
     // El enlace de alta caducó: se abre uno nuevo en lugar de dejar a la persona a medias.
     if (req.nextUrl.searchParams.has("reintentar")) {
@@ -31,10 +29,10 @@ export async function GET(req: NextRequest) {
       })
       return NextResponse.redirect(link.url)
     }
-    // Datos enviados pero Stripe aún verifica, o faltan datos: la app lo dice y deja volver a intentarlo.
-    return NextResponse.redirect(`${origen}/?cobros=pendiente`)
+    // Faltan datos, o ya se enviaron y Stripe aún verifica: la app lo dice y deja volver a intentarlo.
+    return NextResponse.redirect(`${origen}/?vender=${nuevo === "requiere_datos" ? "datos" : "revision"}`)
   } catch (err) {
     console.error("[stripe/connect/volver]", err instanceof Error ? err.message : err)
-    return NextResponse.redirect(`${origen}/?cobros=error`)
+    return NextResponse.redirect(`${origen}/?vender=error`)
   }
 }
