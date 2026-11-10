@@ -22,7 +22,7 @@ export function estadoVenta(
   switch (status) {
     case "pago_en_custodia": return { etiqueta: "Llévala al centro de acopio", tono: "accion" }
     case "listo_en_punto": return { etiqueta: "En el centro, esperando a quien compró", tono: "espera" }
-    case "en_renta_cliente": return { etiqueta: fechaRenta ? `Rentada hasta ${fechaLegible(fechaRenta)}` : "Rentada", tono: "espera" }
+    case "en_renta_cliente": return { etiqueta: fechaRenta ? `Rentada para el ${fechaLegible(fechaRenta)}` : "Rentada", tono: "espera" }
     case "entregado_y_liberado":
       if (pago?.estado === "enviado") return { etiqueta: "Depositado", tono: "listo" }
       return tieneCuentaActiva

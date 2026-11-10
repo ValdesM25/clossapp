@@ -196,9 +196,9 @@ export function VenderView({ onPublicar, onCerrar, aviso, bloqueada }: VenderVie
           <>
             <div className="grid grid-cols-3 gap-2">
               {([["Por cobrar", t.porCobrarCentavos], ["Cobrado este mes", t.cobradoMesCentavos], ["Cobrado en total", t.cobradoTotalCentavos]] as const).map(([etiqueta, centavos]) => (
-                <div key={etiqueta} className="border border-zinc-200 p-3">
+                <div key={etiqueta} className="border border-zinc-200 p-3 flex flex-col justify-between gap-1">
                   <p className="text-[10px] text-zinc-500 uppercase tracking-widest leading-tight">{etiqueta}</p>
-                  <p className="font-serif text-lg text-zinc-900 mt-1 break-words">{pesos(centavos)}</p>
+                  <p className="font-serif text-lg text-zinc-900 break-words">{pesos(centavos)}</p>
                 </div>
               ))}
             </div>
@@ -234,7 +234,7 @@ export function VenderView({ onPublicar, onCerrar, aviso, bloqueada }: VenderVie
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-zinc-900 truncate">{item.prenda.name}</p>
                         <p className="text-xs text-zinc-700">La tiene {compradora}</p>
-                        {item.fechaRenta && <p className="text-[11px] text-zinc-500">Regresa el {fechaLegible(item.fechaRenta)}</p>}
+                        {item.fechaRenta && <p className="text-[11px] text-zinc-500">Para el {fechaLegible(item.fechaRenta)}</p>}
                       </div>
                     </li>
                   ))}

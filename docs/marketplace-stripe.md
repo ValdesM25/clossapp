@@ -20,6 +20,7 @@
 - Se actualizaron las políticas (sección Marketplace): Clossapp sí cobra y guarda el pago; comisión del 15%; reembolsos y expiración.
 
 ## Archivos
+- La experiencia del vendedor (intro "Vende en Clossapp", espacio de vendedor y avisos push) está en `docs/marketplace-vender.md`.
 - `supabase/21-marketplace-stripe.sql`: columnas de Stripe en `perfiles` y `escrow_ordenes`, estado `pendiente_pago`, tabla `escrow_pagos_vendedor`, nuevas `crear_orden_escrow`, `cancelar_orden_escrow`, `escrow_avanzar`, `expirar_ordenes_sin_pago` (+ cron) y trigger de publicar.
 - Rutas nuevas: `app/api/marketplace/checkout`, `app/api/escrow/avanzar`, `app/api/escrow/cancelar`, `app/api/stripe/connect`, `app/api/stripe/connect/volver`. Webhook: `app/api/stripe/webhook/route.ts`.
 - `lib/marketplace.ts` (reparto 85/15, con tests) y `lib/marketplace.server.ts` (pagos a vendedores, confirmación del pago).
@@ -43,7 +44,12 @@ Los nombres de los botones pueden variar un poco en el panel.
 - [ ] Settings → Connect → **Branding**: nombre "Clossapp", logo (`public/icon-512.png`), color `#18181b`.
 - [ ] Settings → Connect → **Onboarding options**: país **México**; capacidades **Transfers** y **Card payments**.
 - [ ] **Payouts**: dejar el calendario automático.
-- No hacen falta llaves ni variables nuevas en Vercel.
+- [ ] Stripe → Developers → **Webhooks** → crear un destino de eventos nuevo:
+  - **Events from: Connected accounts** (no "Your account");
+  - URL: la misma del webhook actual, `https://<dominio>/api/stripe/webhook`;
+  - evento: `account.updated`.
+- [ ] Copiar el **secreto de firma** (`whsec_...`) de ese destino a Vercel como `STRIPE_CONNECT_WEBHOOK_SECRET` (Production) y hacer redeploy. Es un secreto distinto al `STRIPE_WEBHOOK_SECRET` que ya existe. Lo usa el aviso "cuenta lista" y "Stripe necesita más datos" (ver `docs/marketplace-vender.md`).
+- Las demás llaves y variables de Vercel no cambian.
 
 ### Paso 2. Deploy (lo hace Claude cuando Mauri avise)
 - [ ] Aplicar `supabase/21-marketplace-stripe.sql` y hacer merge de #52 **en el mismo momento**, no antes: la app actual crea órdenes sin pago y con la migración quedarían en "pago pendiente" hasta expirar.
@@ -56,6 +62,7 @@ Los nombres de los botones pueden variar un poco en el panel.
 - [ ] Un centro de acopio escanea el QR (si no hay cuenta de centro, crear una antes).
 - [ ] En Stripe: cobro de $10, transferencia de $8.50 a la cuenta A y $1.50 que se queda Clossapp (menos la comisión de Stripe).
 - [ ] Probar también cancelar un pedido pagado: debe llegar el reembolso.
+- [ ] Revisar los 4 push del vendedor (se vendió o rentó, entregada y pagada, Stripe necesita datos, cuenta lista) y el espacio de vendedor, con la cuenta A en Plus y en Elite.
 
 ### Paso 4. Después
 - [ ] Revisión legal de la sección Marketplace de `/politicas` (custodia, comisión del 15%, reembolsos).
