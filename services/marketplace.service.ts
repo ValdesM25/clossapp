@@ -27,12 +27,13 @@ export async function publishForSale(
   talla: string | null,
   estadoUso: string | null
 ): Promise<Prenda[]> {
-  await supabase.from("prendas").update({
+  const { error } = await supabase.from("prendas").update({
     en_venta: true,
     precio,
     talla: talla || null,
     estado_uso: estadoUso || null,
   }).eq("id", prendaId)
+  if (error) throw error
   return fetchVentaItems(supabase)
 }
 

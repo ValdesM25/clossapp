@@ -50,6 +50,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (err) {
+    // Los avisos del trigger de la base (plan o cuenta de cobro) llegan tal cual para que la app los explique.
+    const msg = (err as { message?: string } | null)?.message ?? ""
+    if (/SIN_CUENTA_COBRO|PLAN_SIN_MARKETPLACE/.test(msg)) return NextResponse.json({ error: msg }, { status: 403 })
     console.error("[/api/renta]", err)
     return NextResponse.json({ error: "Error al publicar para renta" }, { status: 500 })
   }

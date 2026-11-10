@@ -7,6 +7,7 @@ import type { Plan } from "@/constants/planes"
 import type { EstiloPerfil, ModoOnboarding } from "@/constants/onboarding"
 import type { ProveedorSocial } from "@/services/auth.service"
 import type { TipoDemo } from "@/lib/demo"
+import type { EstadoCobros } from "@/lib/marketplace"
 
 type AuthContextValue = {
   userMode: UserMode | null
@@ -30,6 +31,8 @@ type AuthContextValue = {
   esAdmin: boolean
   /** Cuenta de cobro de Stripe lista: puede vender y rentar y recibir su dinero. */
   cobrosActivos: boolean
+  /** Punto del alta de la cuenta de cobro: sin_cuenta, en_revision, requiere_datos o activa. */
+  cobrosEstado: EstadoCobros
   abrirOnboarding: (modo?: ModoOnboarding) => void
   terminarOnboarding: (estilo?: EstiloPerfil) => Promise<void>
   login: (email: string, password: string, captchaToken?: string) => Promise<void>

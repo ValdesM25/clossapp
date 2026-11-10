@@ -27,10 +27,12 @@ interface SellFormModalProps {
   setSellMode: (m: "venta" | "renta") => void
   selling: boolean
   rentaError: string | null
-  onPublish: (prenda: Prenda, precio: string, talla: string, estado: string) => void
+  onPublish: (prenda: Prenda, precio: string, talla: string, estado: string) => Promise<{ error?: string }>
+  /** Si viene, al abrir salta directo a los detalles de esta prenda (ej. desde Prendas olvidadas). */
+  prendaInicial?: Prenda | null
 }
 
-export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, selling, rentaError, onPublish }: SellFormModalProps) {
+export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, selling, rentaError, onPublish, prendaInicial }: SellFormModalProps) {
   const { userId } = useAuthContext()
   const [step, setStep] = useState<"select" | "details">("select")
   const [sellPrenda, setSellPrenda] = useState<Prenda | null>(null)
@@ -43,6 +45,16 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
   const [tasacion, setTasacion] = useState<PrendaVentaAnalysis | null>(null)
   const [tasacionError, setTasacionError] = useState<string | null>(null)
   const extraInputRef = useRef<HTMLInputElement>(null)
+  const [publicarError, setPublicarError] = useState<string | null>(null)
+  const [estabaAbierto, setEstabaAbierto] = useState(false)
+  if (open !== estabaAbierto) {
+    setEstabaAbierto(open)
+    if (open && prendaInicial) {
+      setSellPrenda(prendaInicial)
+      setForm({ precio: "", talla: prendaInicial.talla ?? "", estado_uso: prendaInicial.estado_uso ?? "" })
+      setStep("details")
+    }
+  }
 
   function limpiarFotos() {
     Object.values(ejeFotos).forEach((f) => f && URL.revokeObjectURL(f.url))
@@ -58,6 +70,7 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
     setStep("select")
     setSellPrenda(null)
     setForm({ precio: "", talla: "", estado_uso: "" })
+    setPublicarError(null)
     onClose()
   }
 
@@ -132,10 +145,12 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
     }
   }
 
-  function handlePublish() {
+  async function handlePublish() {
     if (!sellPrenda || !form.precio) return
-    onPublish(sellPrenda, form.precio, form.talla, form.estado_uso)
-    handleClose()
+    setPublicarError(null)
+    const { error } = await onPublish(sellPrenda, form.precio, form.talla, form.estado_uso)
+    if (error) setPublicarError(error)
+    else handleClose()
   }
 
   const available = prendas.filter((p) => !p.en_venta && !p.en_renta)
@@ -373,7 +388,9 @@ export function SellFormModal({ open, onClose, prendas, sellMode, setSellMode, s
                 placeholder="Ej. 350" type="number"
                 className="rounded-none border-zinc-300 focus-visible:ring-0 focus-visible:border-zinc-900" />
             </div>
-            {rentaError && <p className="text-xs text-zinc-500 border border-zinc-200 px-3 py-2">{rentaError}</p>}
+            {(publicarError ?? rentaError) && (
+              <p role="status" className="text-xs text-zinc-500 border border-zinc-200 px-3 py-2">{publicarError ?? rentaError}</p>
+            )}
             <motion.button whileTap={{ scale: 0.98 }} onClick={handlePublish} disabled={selling || !form.precio}
               className="w-full py-3 bg-zinc-900 text-white text-sm font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
               {selling ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
