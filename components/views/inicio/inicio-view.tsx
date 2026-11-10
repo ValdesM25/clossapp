@@ -91,7 +91,9 @@ export function InicioView({ onNavigate }: InicioViewProps) {
         </div>
         <button type="button" onClick={() => navegarA("perfil")} aria-label="Abrir tu perfil"
           className="w-11 h-11 rounded-full overflow-hidden border border-zinc-200 shrink-0">
-          <img src={userAvatarUrl} alt="" className="w-full h-full object-cover" />
+          {userAvatarUrl
+            ? <img src={userAvatarUrl} alt="" className="w-full h-full object-cover" />
+            : <span aria-hidden="true" className="w-full h-full flex items-center justify-center bg-zinc-100 text-zinc-700 font-serif">{userName.charAt(0).toUpperCase()}</span>}
         </button>
       </div>
 

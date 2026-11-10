@@ -36,12 +36,14 @@ export type TurnstileHandle = { reset: () => void }
  * Cada token sirve una sola vez: hay que llamar reset() después de cada envío.
  * Sin site key no renderiza nada (desarrollo local).
  */
-export const Turnstile = forwardRef<TurnstileHandle, { onToken: (token: string | null) => void }>(
-  function Turnstile({ onToken }, ref) {
+export const Turnstile = forwardRef<TurnstileHandle, { onToken: (token: string | null) => void; onFallo?: () => void }>(
+  function Turnstile({ onToken, onFallo }, ref) {
     const elRef = useRef<HTMLDivElement>(null)
     const idRef = useRef<string | null>(null)
     const onTokenRef = useRef(onToken)
     onTokenRef.current = onToken
+    const onFalloRef = useRef(onFallo)
+    onFalloRef.current = onFallo
 
     useImperativeHandle(ref, () => ({
       reset: () => {
@@ -65,10 +67,13 @@ export const Turnstile = forwardRef<TurnstileHandle, { onToken: (token: string |
             appearance: "interaction-only",
             callback: (t: string) => onTokenRef.current(t),
             "expired-callback": () => onTokenRef.current(null),
-            "error-callback": () => onTokenRef.current(null),
+            "error-callback": () => { onTokenRef.current(null); onFalloRef.current?.() },
           })
         })
-        .catch((err) => console.error("[turnstile]", err instanceof Error ? err.message : err))
+        .catch((err) => {
+          console.error("[turnstile]", err instanceof Error ? err.message : err)
+          onFalloRef.current?.()
+        })
       return () => {
         cancelado = true
         if (idRef.current) window.turnstile?.remove(idRef.current)

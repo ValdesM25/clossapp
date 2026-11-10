@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { Turnstile, TURNSTILE_SITE_KEY, type TurnstileHandle } from "@/components/shared/turnstile"
 import { useAuthContext } from "@/context/auth-context"
-import type { ProveedorSocial } from "@/services/auth.service"
+import { ERROR_CREDENCIALES, type ProveedorSocial } from "@/services/auth.service"
 import { guardarVolverA } from "@/lib/volver-a"
 
 type Modo = "entrar" | "crear" | "recuperar"
@@ -33,6 +33,7 @@ export function LoginView() {
   const [mostrarPassword, setMostrarPassword] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaFallo, setCaptchaFallo] = useState(false)
   const captchaRef = useRef<TurnstileHandle>(null)
   const esperandoCaptcha = !!TURNSTILE_SITE_KEY && !captchaToken
 
@@ -203,9 +204,23 @@ export function LoginView() {
                   </div>
                 )}
 
-                <Turnstile ref={captchaRef} onToken={setCaptchaToken} />
+                <Turnstile ref={captchaRef} onToken={(t) => { setCaptchaToken(t); if (t) setCaptchaFallo(false) }} onFallo={() => setCaptchaFallo(true)} />
+                {captchaFallo && !captchaToken && (
+                  <p role="alert" className="text-xs text-red-500 font-medium">
+                    No cargó la verificación anti-robots. Desactiva el bloqueador de anuncios o recarga la página.
+                  </p>
+                )}
 
                 {error && <p role="alert" className="text-xs text-red-500 font-medium">{error}</p>}
+                {/* Supabase no revela si el correo existe: ante credenciales que no coinciden se invita a registrarse. */}
+                {modo === "entrar" && error === ERROR_CREDENCIALES && (
+                  <p className="text-xs text-zinc-700 border border-zinc-200 rounded-xl px-4 py-3 bg-zinc-50">
+                    ¿Aún no tienes cuenta?{" "}
+                    <button type="button" onClick={() => cambiarModo("crear")} className="font-semibold underline underline-offset-2">Créala gratis</button>
+                    {" "}con este correo, o{" "}
+                    <button type="button" onClick={() => cambiarModo("recuperar")} className="font-semibold underline underline-offset-2">recupera tu contraseña</button>.
+                  </p>
+                )}
                 {aviso && <p role="status" className="text-xs text-zinc-700 border border-zinc-200 rounded-xl px-4 py-3 bg-zinc-50">{aviso}</p>}
 
                 {/* Botón principal (Iniciar sesión) */}

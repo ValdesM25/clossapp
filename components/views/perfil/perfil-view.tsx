@@ -7,6 +7,7 @@ import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { activarPush, pushActivo, pushDisponible } from "@/lib/push"
 import { navegarA } from "@/lib/navegar"
+import { validarPassword } from "@/services/auth.service"
 import { abrirCuentaCobro } from "@/services/marketplace.service"
 import { NOMBRE_PLAN, esDePago } from "@/constants/planes"
 import { CenteredModal } from "@/components/shared/centered-modal"
@@ -98,6 +99,11 @@ export function PerfilView() {
       setErrorMsg("Las contraseñas no coinciden")
       return
     }
+    const invalida = password ? validarPassword(password) : null
+    if (invalida) {
+      setErrorMsg(invalida)
+      return
+    }
 
     setLoading(true)
     try {
@@ -113,7 +119,9 @@ export function PerfilView() {
         setSuccessMsg(null)
       }, 1200)
     } catch (err) {
-      setErrorMsg("Error al actualizar la información")
+      setErrorMsg(err instanceof Error && /password/i.test(err.message)
+        ? "Se guardaron tus datos, pero no la contraseña. Prueba con otra distinta a la actual."
+        : "Error al actualizar la información")
     } finally {
       setLoading(false)
     }
@@ -128,7 +136,9 @@ export function PerfilView() {
         </p>
       )}
       <header className="flex items-center gap-4">
-        <img src={avatarPreview || userAvatarUrl} alt="" className="w-16 h-16 rounded-full object-cover border border-zinc-200 shrink-0" />
+        {avatarPreview || userAvatarUrl
+          ? <img src={avatarPreview || userAvatarUrl} alt="" className="w-16 h-16 rounded-full object-cover border border-zinc-200 shrink-0" />
+          : <span aria-hidden="true" className="w-16 h-16 rounded-full border border-zinc-200 shrink-0 text-2xl flex items-center justify-center bg-zinc-100 text-zinc-700 font-serif">{userName.charAt(0).toUpperCase()}</span>}
         <div className="min-w-0">
           <h1 className="font-serif text-3xl text-zinc-900 truncate">{userName || "Tu perfil"}</h1>
           <p className="text-sm text-zinc-500 truncate">{userEmail}</p>
@@ -216,7 +226,9 @@ export function PerfilView() {
           {/* Cambio de Foto */}
           <div className="flex flex-col items-center gap-2 py-2 border-y border-zinc-100">
             <div className="relative group w-20 h-20 rounded-full overflow-hidden border-2 border-zinc-900 shadow-md">
-              <img src={avatarPreview} alt="Vista previa avatar" className="w-full h-full object-cover" />
+              {avatarPreview
+                ? <img src={avatarPreview} alt="Vista previa avatar" className="w-full h-full object-cover" />
+                : <span aria-hidden="true" className="w-full h-full text-3xl flex items-center justify-center bg-zinc-100 text-zinc-700 font-serif">{userName.charAt(0).toUpperCase()}</span>}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
