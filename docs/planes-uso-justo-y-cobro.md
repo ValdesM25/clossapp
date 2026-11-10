@@ -14,7 +14,7 @@ Sale de la revisión del 10 de noviembre de 2026 (bugs 9, 11 y 12 del reporte).
 - `constants/planes.ts`: Plus dice "Comprar, vender y rentar en el Shop". Políticas: el marketplace se aclara como de Plus y Elite.
 - La demo (sin plan) sigue mostrando el marketplace completo, para enseñarlo.
 - `supabase/18-gratis-solo-dona.sql` (decisión mía: la app sola no basta, se puede llamar a la API directo): triggers que impiden publicar para venta o renta y crear órdenes de compra a cuentas sin Plus o Elite. Retirar una publicación siempre se puede, por si alguien baja de plan. Hoy ninguna cuenta gratis tiene publicaciones ni pedidos, así que no afecta a nadie.
-- **Falta aplicar el SQL en producción.** La prueba (dentro de una transacción que se deshace) quedó pendiente porque la herramienta pidió confirmación.
+- **Aplicado en producción el 10 de noviembre** (migración `gratis_solo_dona`), con OK de Mauri. Antes se probó dentro de una transacción que se deshizo: una cuenta gratis no puede crear ni pasar prendas a venta o renta ni comprar, pero sí guardar y editar prendas; una cuenta Elite puede todo.
 
 ## 3. Doble cobro
 - Antes: al volver de Stripe, si el webhook tardaba más de 20 s, `/planes` volvía a mostrar "Elegir Plus/Elite" y el servidor solo revisaba `perfiles.plan` (todavía "gratis"). Un segundo clic cobraba otra suscripción.
