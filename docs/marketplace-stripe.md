@@ -25,10 +25,46 @@
 - `lib/marketplace.ts` (reparto 85/15, con tests) y `lib/marketplace.server.ts` (pagos a vendedores, confirmación del pago).
 - App: `escrow-checkout-modal.tsx` (sin formulario falso), `escrow-orders-modal.tsx` (estado "Pago pendiente", cancelar con reembolso), `marketplace-view.tsx` (Publicar pide cuenta de cobro, avisos al volver de Stripe), `perfil-view.tsx` (fila de cobros), `services/escrow.service.ts`, `use-auth.ts`, `clossapp-dashboard.tsx`, `app/politicas/page.tsx`.
 
-## Antes del deploy (lo hace Mauri)
-1. **Activar Connect en Stripe:** Dashboard → Connect → completar el perfil de plataforma (tipo marketplace, cuentas Express) y la marca que ven los vendedores. Sin esto, crear cuentas de cobro falla.
-2. **Aplicar `supabase/21-marketplace-stripe.sql` al hacer deploy**, no antes: la app actual crea órdenes sin pago y con esto quedarían pendientes hasta expirar.
-3. Orden de merge: `fix/planes-uso-justo-y-cobro` → `feat/canje-descuento-automatico` → `feat/marketplace-stripe` (esta trae también los centros de acopio).
+## ⏳ PENDIENTE: activar Stripe Connect y hacer el deploy
+
+Estado al 10 de noviembre de 2026: #47, #48, #49, #50 y #51 ya están en producción; la migración 19 está aplicada. **Este PR (#52) sigue sin merge** y la migración 21 **no** está aplicada. Hasta entonces el marketplace sigue con el pago simulado de antes (ver "Qué pasa mientras tanto").
+
+### Paso 1. Activar Connect (lo hace Mauri, en modo Live, cuenta "ClossApp")
+Los nombres de los botones pueden variar un poco en el panel.
+- [ ] Abrir https://dashboard.stripe.com/connect y tocar **Empezar** (Get started).
+- [ ] Modelo: **Marketplace** (Clossapp cobra al comprador y le paga al vendedor). No elegir "Plataforma".
+- [ ] Tipo de cuenta de los vendedores: **Express**.
+- [ ] Perfil de plataforma:
+  - Qué se vende: ropa de segunda mano entre personas (compra, venta y renta).
+  - Quién paga las comisiones de Stripe: **la plataforma**.
+  - Quién responde por saldos negativos de vendedores (contracargos): **la plataforma**.
+  - El dinero se retiene hasta que la prenda se entrega en un centro de acopio y luego se transfiere al vendedor.
+  - Stripe puede tardar en revisarlo; mientras tanto los vendedores no pueden conectar su cuenta.
+- [ ] Settings → Connect → **Branding**: nombre "Clossapp", logo (`public/icon-512.png`), color `#18181b`.
+- [ ] Settings → Connect → **Onboarding options**: país **México**; capacidades **Transfers** y **Card payments**.
+- [ ] **Payouts**: dejar el calendario automático.
+- No hacen falta llaves ni variables nuevas en Vercel.
+
+### Paso 2. Deploy (lo hace Claude cuando Mauri avise)
+- [ ] Aplicar `supabase/21-marketplace-stripe.sql` y hacer merge de #52 **en el mismo momento**, no antes: la app actual crea órdenes sin pago y con la migración quedarían en "pago pendiente" hasta expirar.
+- [ ] Confirmar que el deploy de producción quedó en vivo.
+
+### Paso 3. Prueba real antes de anunciarlo (Mauri, con dos cuentas propias)
+- [ ] Cuenta A (Plus/Elite): Perfil → "Cobrar mis ventas" → alta en Stripe con datos reales → publicar una prenda de **$10 MXN**.
+- [ ] Cuenta B (Plus/Elite): comprarla con tarjeta real.
+- [ ] En "Mis pedidos" de B debe decir "En custodia".
+- [ ] Un centro de acopio escanea el QR (si no hay cuenta de centro, crear una antes).
+- [ ] En Stripe: cobro de $10, transferencia de $8.50 a la cuenta A y $1.50 que se queda Clossapp (menos la comisión de Stripe).
+- [ ] Probar también cancelar un pedido pagado: debe llegar el reembolso.
+
+### Paso 4. Después
+- [ ] Revisión legal de la sección Marketplace de `/politicas` (custodia, comisión del 15%, reembolsos).
+- [ ] Avisar a la persona con el pedido en custodia creado para "Centro de Acopio Norte" (no existe) dónde recoger.
+
+### Qué pasa mientras tanto (sin #52)
+Nada se rompe; la app sigue como estaba antes de este PR:
+- El marketplace usa el pago **simulado** de antes: no cobra nada y la orden queda "en custodia" sin dinero. Con testers no es un problema; **no anunciarlo a usuarios reales** hasta terminar el paso 3.
+- Lo ya publicado funciona igual: el plan gratis solo dona, el canje aplica descuentos reales en Stripe, los centros son TecNM y Alameda, y el video de instalación sale en iPhone.
 
 ## Cómo se probó
 - `node --test lib/marketplace.test.mjs lib/plan-stripe.test.mjs`: 9 de 9 (reparto exacto con centavos impares y varios vendedores).
