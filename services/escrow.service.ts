@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { CartItem, EscrowOrder, MetodoPagoEscrow, EscrowStatus } from "@/types/escrow"
 import type { AcopioRegistroDB } from "@/types/donaciones"
 import { esDemo } from "@/lib/demo"
+import { PUNTO_ENTREGA } from "@/constants/donaciones"
 
 // Con cuenta real, todo el escrow vive en la tabla escrow_ordenes y solo cambia
 // por las funciones crear_orden_escrow y escrow_avanzar (el precio lo pone la
@@ -21,8 +22,8 @@ function mapOrden(row: any): EscrowOrder {
     totalPagado: Number(row.total_pagado ?? 0),
     metodoPago: row.metodo_pago ?? "tarjeta",
     status: row.status ?? "pago_en_custodia",
-    puntoAcopioId: row.punto_acopio_id ?? "norte",
-    puntoAcopioNombre: row.punto_acopio_nombre ?? "Centro de Acopio Norte",
+    puntoAcopioId: row.punto_acopio_id ?? PUNTO_ENTREGA.id,
+    puntoAcopioNombre: row.punto_acopio_nombre ?? PUNTO_ENTREGA.nombre,
     createdAt: row.created_at,
     validatedAt: row.validated_at ?? undefined,
     validatedBy: row.validated_by ?? undefined,
@@ -73,8 +74,8 @@ export async function createEscrowOrder(
     const { data, error } = await supabase.rpc("crear_orden_escrow", {
       p_items: input.items.map((it) => ({ prenda_id: Number(it.prenda.id), tipo: it.tipo, fecha_renta: it.fechaRenta ?? null })),
       p_metodo: input.metodoPago,
-      p_punto_id: input.puntoAcopioId ?? "norte",
-      p_punto_nombre: input.puntoAcopioNombre ?? "Centro de Acopio Norte",
+      p_punto_id: input.puntoAcopioId ?? PUNTO_ENTREGA.id,
+      p_punto_nombre: input.puntoAcopioNombre ?? PUNTO_ENTREGA.nombre,
     })
     if (error || !data) throw new Error(mensajeBase(error?.message, "No se pudo crear la orden. Intenta de nuevo."))
     return mapOrden(data)
@@ -97,8 +98,8 @@ export async function createEscrowOrder(
     totalPagado: input.subtotal,
     metodoPago: input.metodoPago,
     status: "pago_en_custodia",
-    puntoAcopioId: input.puntoAcopioId || "norte",
-    puntoAcopioNombre: input.puntoAcopioNombre || "Centro de Acopio Norte",
+    puntoAcopioId: input.puntoAcopioId || PUNTO_ENTREGA.id,
+    puntoAcopioNombre: input.puntoAcopioNombre || PUNTO_ENTREGA.nombre,
     createdAt: new Date().toISOString(),
   }
 
@@ -359,8 +360,8 @@ export async function liberarFondosEscrow(
               totalPagado: Number(match.total_pagado || 0),
               metodoPago: match.metodo_pago || "tarjeta",
               status: match.status || "pago_en_custodia",
-              puntoAcopioId: match.punto_acopio_id || "norte",
-              puntoAcopioNombre: match.punto_acopio_nombre || "Centro de Acopio Norte",
+              puntoAcopioId: match.punto_acopio_id || PUNTO_ENTREGA.id,
+              puntoAcopioNombre: match.punto_acopio_nombre || PUNTO_ENTREGA.nombre,
               createdAt: match.created_at,
               validatedAt: match.validated_at,
               validatedBy: match.validated_by,
@@ -380,7 +381,7 @@ export async function liberarFondosEscrow(
       }
     }
 
-    const cNombre = centroNombre || "Centro de Acopio Norte"
+    const cNombre = centroNombre || PUNTO_ENTREGA.nombre
     const validatedTime = new Date().toISOString()
     const totalLiberado = target.totalPagado
 
@@ -587,8 +588,8 @@ export async function confirmarEntregaRentaCliente(
               totalPagado: Number(match.total_pagado || 0),
               metodoPago: match.metodo_pago || "tarjeta",
               status: match.status || "pago_en_custodia",
-              puntoAcopioId: match.punto_acopio_id || "norte",
-              puntoAcopioNombre: match.punto_acopio_nombre || "Centro de Acopio Norte",
+              puntoAcopioId: match.punto_acopio_id || PUNTO_ENTREGA.id,
+              puntoAcopioNombre: match.punto_acopio_nombre || PUNTO_ENTREGA.nombre,
               createdAt: match.created_at,
               validatedAt: match.validated_at,
               validatedBy: match.validated_by,
