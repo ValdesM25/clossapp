@@ -47,6 +47,15 @@ export function grupoDe(categoria: string): Grupo {
   return GRUPO_POR_PALABRA[c.split(/\s+/)[0]] ?? "otro"
 }
 
+/**
+ * Categoría con la que se arma el outfit. El análisis a veces guarda un vestido como "Top";
+ * si el nombre empieza con "Vestido", cuenta como vestido (si no, la revisión lo rechaza
+ * por no llevar parte de abajo).
+ */
+export function categoriaDe(p: { category: string | null; name?: string | null }): string {
+  return /^\s*vestido/i.test(p.name ?? "") ? "Vestido" : p.category ?? ""
+}
+
 const MS_DIA = 86_400_000
 const aUtc = (f: string) => new Date(`${f}T00:00:00Z`)
 export const sumarDias = (f: string, n: number) => new Date(aUtc(f).getTime() + n * MS_DIA).toISOString().slice(0, 10)
@@ -232,7 +241,7 @@ const GRUPOS_MALETA: [string, Grupo][] = [
 ]
 
 /** Prendas únicas de los outfits listos, agrupadas para empacar. Salta las borradas. */
-export function maletaDe<P extends { id: string; category: string }>(
+export function maletaDe<P extends { id: string; category: string; name?: string | null }>(
   plan: Pick<PlanOutfit, "momentos" | "empacadas">, prendas: P[]
 ): { grupos: { titulo: string; prendas: (P & { empacada: boolean })[] }[]; total: number; empacadas: number } {
   const porId = new Map(prendas.map((p) => [p.id, p]))
@@ -248,7 +257,7 @@ export function maletaDe<P extends { id: string; category: string }>(
   const grupos = GRUPOS_MALETA
     .map(([titulo, g]) => ({
       titulo,
-      prendas: enMaleta.filter((p) => grupoDe(p.category) === g).map((p) => ({ ...p, empacada: plan.empacadas.includes(p.id) })),
+      prendas: enMaleta.filter((p) => grupoDe(categoriaDe(p)) === g).map((p) => ({ ...p, empacada: plan.empacadas.includes(p.id) })),
     }))
     .filter((g) => g.prendas.length)
   return { grupos, total: enMaleta.length, empacadas: enMaleta.filter((p) => plan.empacadas.includes(p.id)).length }
