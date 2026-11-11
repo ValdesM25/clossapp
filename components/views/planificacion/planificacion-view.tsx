@@ -21,6 +21,9 @@ import { PlanDetalle } from "./plan-detalle"
 interface PlanificacionViewProps {
   onNavigate?: (view: View) => void
   onBack?: () => void
+  /** Plan que abrir al entrar (Inicio, avisos); se avisa con onPlanAbierto para no repetirlo. Si no existe, queda la lista. */
+  planInicial?: string | null
+  onPlanAbierto?: () => void
 }
 
 type Pantalla = { tipo: "lista" } | { tipo: "crear"; inicial: TipoPlan | null } | { tipo: "detalle"; id: string }
@@ -29,7 +32,7 @@ type Pantalla = { tipo: "lista" } | { tipo: "crear"; inicial: TipoPlan | null } 
  * Planificación de outfits (Elite). Invitado y demo ven el ejemplo; sin Elite y sin planes,
  * el ejemplo bloqueado; sin Elite pero con planes (dejó Elite), sus planes en solo lectura.
  */
-export function PlanificacionView({ onNavigate, onBack }: PlanificacionViewProps) {
+export function PlanificacionView({ onNavigate, onBack, planInicial, onPlanAbierto }: PlanificacionViewProps) {
   const { userId, plan, demo, isGuest } = useAuthContext()
   const { prendas: crudas } = usePrendasContext()
   // prendas.id es bigint y llega como número; los planes guardan los ids como texto.
@@ -38,6 +41,11 @@ export function PlanificacionView({ onNavigate, onBack }: PlanificacionViewProps
   const supabase = useMemo(() => createBrowserSupabaseClient(), [])
   const hoy = hoyMexico()
   const [pantalla, setPantalla] = useState<Pantalla>({ tipo: "lista" })
+  useEffect(() => {
+    if (!planInicial) return
+    setPantalla({ tipo: "detalle", id: planInicial })
+    onPlanAbierto?.()
+  }, [planInicial, onPlanAbierto])
   const [errorLocal, setErrorLocal] = useState<string | null>(null)
 
   const previa = isGuest || !!demo

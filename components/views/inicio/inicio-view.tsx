@@ -14,6 +14,9 @@ import { PrimerosPasos } from "./primeros-pasos"
 import { CompletarPerfil } from "./completar-perfil"
 import { faltanPreguntasDespues } from "@/constants/onboarding"
 import { useOutfitDelDia } from "@/hooks/use-outfit-del-dia"
+import { usePlanesInicio } from "@/hooks/use-planificacion"
+import { hoyMexico, momentosDeHoy } from "@/lib/planificacion"
+import { OutfitPlaneado, TarjetaPlanificacion } from "./planificacion-inicio"
 import { registrarUso, incrementarOutfits } from "@/services/outfits.service"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { InstalarBanner } from "@/components/shared/instalar-banner"
@@ -36,7 +39,12 @@ export function InicioView({ onNavigate }: InicioViewProps) {
   const { userName, userAvatarUrl, isGuest, userId, plan, estilo, abrirOnboarding } = useAuthContext()
   const { prendas, loading } = usePrendasContext()
   const [wornToday, setWornToday] = useState(false)
-  const { clima, outfit, cargando } = useOutfitDelDia(prendas, userId, plan, !isGuest)
+  // Si hay un outfit planeado para hoy, ese ocupa el lugar del outfit del día y no se gasta IA.
+  const planes = usePlanesInicio()
+  const deHoy = momentosDeHoy(planes.planes, hoyMexico())
+  const hayPlaneado = deHoy.length > 0
+  const { clima, outfit, cargando: generando } = useOutfitDelDia(prendas, userId, plan, !isGuest && planes.listo && !hayPlaneado)
+  const cargando = generando || (!isGuest && !planes.listo)
 
   // Todo sale de las prendas reales (o de las de la demo): nada de relleno en cuentas nuevas.
   const sinOutfit = prendas.length < MIN_PRENDAS_OUTFIT
@@ -136,6 +144,8 @@ export function InicioView({ onNavigate }: InicioViewProps) {
 
         {loading ? (
           <div className="bg-zinc-100 h-72 animate-pulse" aria-label="Cargando outfit del día" />
+        ) : hayPlaneado ? (
+          <OutfitPlaneado deHoy={deHoy} prendas={prendas} supabase={planes.supabase} onCambio={planes.recargar} />
         ) : sinOutfit && !isGuest ? (
           <div className="border border-zinc-200 p-6 flex flex-col items-start gap-4">
             <div>
@@ -197,6 +207,10 @@ export function InicioView({ onNavigate }: InicioViewProps) {
         </div>
         )}
       </section>
+
+      {planes.listo && (
+        <TarjetaPlanificacion planes={planes.planes} plan={plan} previa={isGuest} hoy={hoyMexico()} />
+      )}
 
       {/* SECCIÓN 2: PRENDAS QUE NO SE HAN UTILIZADO EN UN TIEMPO */}
       {olvidadasPrendas.length > 0 && (

@@ -35,7 +35,7 @@ export const PLANES: { id: Plan; precio: number; resumen: string; incluye: strin
     id: "elite",
     precio: 159,
     resumen: "Para planear cada look.",
-    incluye: ["Hasta 500 prendas", "Todo lo de Plus", "Modelos de IA frontier", "Planificación de outfits"],
+    incluye: ["Hasta 500 prendas", "Todo lo de Plus", "Modelos de IA frontier", "Planifica tu semana, fechas importantes y viajes"],
   },
 ]
 

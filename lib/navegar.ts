@@ -4,10 +4,10 @@ import type { View } from "@/types"
 // sin pasar callbacks por toda la app. Lo escucha AuthenticatedShell.
 export const EVENTO_NAVEGAR = "clossapp:navegar"
 
-/** Lo que viaja en el evento: la vista y, si se quiere, vender o ver una prenda concreta al llegar al Shop. */
-export type DestinoNavegar = { vista: View; venderPrendaId?: string; verPrendaId?: string }
+/** Lo que viaja en el evento: la vista y, si se quiere, vender o ver una prenda en el Shop o abrir un plan. */
+export type DestinoNavegar = { vista: View; venderPrendaId?: string; verPrendaId?: string; planId?: string }
 
-export function navegarA(vista: View, opciones?: { venderPrendaId?: string; verPrendaId?: string }): void {
+export function navegarA(vista: View, opciones?: { venderPrendaId?: string; verPrendaId?: string; planId?: string }): void {
   window.dispatchEvent(new CustomEvent<DestinoNavegar>(EVENTO_NAVEGAR, { detail: { vista, ...opciones } }))
 }
 

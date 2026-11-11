@@ -131,6 +131,8 @@ function AuthenticatedShell() {
   const [activeView, setActiveView] = useState<View>(() =>
     peticionVender || new URLSearchParams(window.location.search).has("pedido") ? "marketplace" : "inicio")
   const keyboardOpen = useKeyboard()
+  // Plan que abrir al entrar a Planificación (Inicio, avisos push).
+  const [planInicial, setPlanInicial] = useState<string | null>(null)
 
   useEffect(() => {
     if (peticionVenderDeUrl(window.location.search)) window.history.replaceState(null, "", window.location.pathname)
@@ -138,7 +140,8 @@ function AuthenticatedShell() {
 
   useEffect(() => {
     const ir = (e: Event) => {
-      const { vista, venderPrendaId, verPrendaId } = (e as CustomEvent<DestinoNavegar>).detail
+      const { vista, venderPrendaId, verPrendaId, planId } = (e as CustomEvent<DestinoNavegar>).detail
+      if (planId) setPlanInicial(planId)
       if (venderPrendaId) setPeticionVender({ prendaId: venderPrendaId })
       else if (verPrendaId) setPeticionVender({ verPrendaId })
       setActiveView(vista)
@@ -157,7 +160,7 @@ function AuthenticatedShell() {
     planes: <PlanesView />,
     perfil: <PerfilView />,
     punto_recoleccion: <PuntoRecoleccionView />,
-    planificacion: <PlanificacionView onNavigate={(view) => setActiveView(view)} onBack={() => setActiveView("inicio")} />,
+    planificacion: <PlanificacionView planInicial={planInicial} onPlanAbierto={() => setPlanInicial(null)} onNavigate={(view) => setActiveView(view)} onBack={() => setActiveView("inicio")} />,
   }
 
   return (

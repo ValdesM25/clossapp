@@ -133,3 +133,30 @@ export function usePlanificacion() {
     recargar, crear, armar, otroOutfit, borrar, empacar, meLoPuse,
   }
 }
+
+/**
+ * Planes para Inicio: solo lectura, sin cuota. `listo` es false hasta terminar la consulta
+ * del usuario actual; mientras tanto Inicio no genera el outfit del día (podría haber uno planeado).
+ */
+export function usePlanesInicio() {
+  const { userId, isGuest, demo } = useAuthContext()
+  const supabase = useMemo(() => createBrowserSupabaseClient(), [])
+  const activa = !isGuest && !demo && !!userId
+  const [planes, setPlanes] = useState<PlanOutfit[]>([])
+  const [cargadoPara, setCargadoPara] = useState<string | null>(null)
+
+  const recargar = useCallback(async () => {
+    if (!activa) return
+    try {
+      setPlanes(await fetchPlanes(supabase))
+    } catch (e) {
+      console.error("[planificacion] inicio", e)
+    } finally {
+      setCargadoPara(userId)
+    }
+  }, [activa, supabase, userId])
+
+  useEffect(() => { recargar() }, [recargar])
+
+  return { planes, listo: !activa || cargadoPara === userId, recargar, supabase }
+}
