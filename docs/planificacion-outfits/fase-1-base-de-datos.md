@@ -1,6 +1,6 @@
 # Fase 1: base de datos
 
-Estado: **sin empezar.**
+Estado: **hecha e integrada en `integracion/elite` el 11 nov 2026. Migración 24 aplicada en producción con el OK de Mauri.**
 Rama: `feat/planificacion-base`. Archivo nuevo: `supabase/24-planificacion.sql`.
 
 ## Objetivo
@@ -343,10 +343,10 @@ $do$;
 
 ## Criterios de aceptación
 
-- [ ] `supabase/24-planificacion.sql` existe y corre sin error dentro de una transacción.
-- [ ] Todas las pruebas del paso 2 dan lo esperado.
-- [ ] Mauri dio el OK y la migración está aplicada en producción.
-- [ ] `get_advisors` no muestra avisos nuevos de estas tablas o funciones.
+- [x] `supabase/24-planificacion.sql` existe y corre sin error dentro de una transacción.
+- [x] Todas las pruebas del paso 2 dan lo esperado.
+- [x] Mauri dio el OK y la migración está aplicada en producción.
+- [x] `get_advisors` no muestra avisos nuevos de estas tablas o funciones, salvo los que exige el diseño (ver "Hecho").
 
 ## Qué NO hacer
 
@@ -356,4 +356,31 @@ $do$;
 
 ## Hecho
 
-(Lo llena quien ejecute la fase.)
+**Qué se hizo (11 nov 2026)**
+
+- `supabase/24-planificacion.sql` con el SQL del paso 1, más un cambio decidido por Mauri (abajo).
+- Prueba en el bloque `do` que termina en `raise exception`, dos veces (antes y después del cambio). Todo dio lo esperado y no quedó nada en la base:
+  - Crear: semana de 7 días → uuid y 7 momentos; viaje con lugar → 3 momentos.
+  - Validaciones: `FALTAN_DIAS`, `FECHA_PASADA`, 31 días viola `planes_outfit_rango`, viaje sin lugar viola `planes_outfit_viaje_con_lugar`, `LUGAR_INVALIDO`, `MOMENTO_FUERA_DE_FECHAS`, `MOMENTOS_INVALIDOS`, el plan 11 da `DEMASIADOS_PLANES`, sin sesión `sin_sesion`.
+  - No Elite: `SOLO_ELITE` al crear, `solo_elite` en la cuota; no borra ni empaca planes ajenos.
+  - Cuota: 7 + 7 `ok`, el tercero `plan_dia`, `p_dias = 8` da error de rango; devolver 5 deja 9; con 25 días del mes, 7 más da `plan_mes` y 5 más `ok`.
+  - Maleta: `'abc'` da `PRENDA_INVALIDA`, agregar no duplica, quitar funciona, en un plan que no es viaje no hace nada.
+  - "Me lo puse": `false` si está pendiente, `true` la primera vez que está listo, `false` la segunda y `false` en fecha futura.
+  - Borrar propio borra también los momentos.
+- Aplicada con `apply_migration` (nombre `planificacion`). Después, fuera del bloque de prueba, se revisaron los permisos reales: `anon` no ejecuta ninguna función ni toca ninguna tabla; `authenticated` solo tiene `select` en `planes_outfit` y `plan_momentos`, nada en `uso_ia_registro`, y no ejecuta `devolver_dias_plan` (solo `service_role`).
+
+**Cambio respecto al SQL del paso 1 (decisión de Mauri)**
+
+- `uso_ia_registro` lleva una política explícita `uso_ia_registro_nadie` (`for select to authenticated using (false)`). No cambia el acceso; solo quita el aviso 0008 de "RLS sin políticas". El archivo `.sql` es la fuente de verdad; el bloque del paso 1 no la incluye.
+
+**Avisos de seguridad (`get_advisors`) antes y después**
+
+- Sin cambios en los avisos de `anon` (0026: 15, 0028: 6) ni en 0008 (sigue con `uso_ia_dia` y `prendas_respaldo_sin_foto`, que ya estaban).
+- Nuevos y esperados, no se corrigen porque romperían la función:
+  - 0029 (`authenticated` ejecuta `security definer`): `usar_dias_plan`, `crear_plan_outfit`, `borrar_plan_outfit`, `marcar_empacada`, `marcar_momento_usado`. Así es el diseño, igual que `usar_ia`.
+  - 0027 (visible en GraphQL para `authenticated`): `planes_outfit` y `plan_momentos`. La app necesita leerlas; otras 16 tablas tienen el mismo aviso.
+
+**Decidido por el agente**
+
+- Se agregaron casos a la prueba que el paso 2 no pedía: tope mensual, límite de 10 planes, sin sesión, borrar y empacar planes ajenos, `p_dias` fuera de rango, momento en fecha futura y maleta en un plan que no es viaje.
+- No se probó la concurrencia de dos llamadas a la cuota al mismo tiempo; la cubre el `for update` sobre `perfiles`.
