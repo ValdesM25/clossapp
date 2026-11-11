@@ -73,6 +73,10 @@ create table if not exists public.uso_ia_registro (
   created_at timestamptz not null default now()
 );
 alter table public.uso_ia_registro enable row level security;
+-- Solo la escribe y lee el servidor; la política explícita deja claro que nadie más la ve.
+drop policy if exists "uso_ia_registro_nadie" on public.uso_ia_registro;
+create policy "uso_ia_registro_nadie" on public.uso_ia_registro
+  for select to authenticated using (false);
 revoke all on public.uso_ia_registro from anon, authenticated;
 
 -- 5. Cuota: descuenta p_dias días planeados del usuario de la sesión.
