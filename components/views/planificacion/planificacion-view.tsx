@@ -26,7 +26,6 @@ import {
 import { cn } from "@/lib/utils"
 import { pageProps } from "@/constants/animation"
 import type { View } from "@/types"
-import { useCart } from "@/context/cart-context"
 
 interface PlanificacionViewProps {
   onNavigate?: (v: View) => void
@@ -191,8 +190,6 @@ const EQUIPAJE_INICIAL: CategoriaEquipaje[] = [
 ]
 
 export function PlanificacionView({ onNavigate, onBack }: PlanificacionViewProps) {
-  const { addItem } = useCart()
-
   // Estado del viaje editable
   const [destino, setDestino] = useState("París, a tu manera.")
   const [ciudad, setCiudad] = useState("París, Francia")
@@ -273,13 +270,7 @@ export function PlanificacionView({ onNavigate, onBack }: PlanificacionViewProps
   }
 
   // Agregar producto al carrito
-  function handleComprarProducto(prodId: string, nombre: string, precio: number, img: string) {
-    addItem({
-      id: prodId,
-      name: nombre,
-      price: precio,
-      image_url: img,
-    })
+  function handleComprarProducto(_prodId: string, nombre: string, _precio: number, _img: string) {
     setProductoAgregado(nombre)
     setTimeout(() => setProductoAgregado(null), 3000)
   }
