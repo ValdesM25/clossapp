@@ -26,7 +26,7 @@ import { RepairList } from "./repair-list"
 export function ArmarioView() {
   const { userId, isGuest, plan } = useAuthContext()
   // Del contexto: entrar a Armario no vuelve a pedir ni a mostrar el esqueleto.
-  const { prendas, loading, refresh: refreshPrendas } = usePrendasContext()
+  const { prendas, loading, refresh: refreshPrendas, deletePrenda } = usePrendasContext()
   const { reparaciones, loading: loadingRep, add: addRep, complete: completeRep } = useReparaciones(userId, isGuest)
   const {
     preview, previewForm, analyzing, analyzeError, uploading, clientIdRef,
@@ -150,6 +150,20 @@ export function ArmarioView() {
     await completeRep(id)
   }
 
+  async function handleDeletePrenda(id: string) {
+    setSelectedPrenda(null)
+    setAviso(null)
+    try {
+      await deletePrenda(id)
+    } catch (err) {
+      const msg = err instanceof Object && "message" in err ? String(err.message) : ""
+      // El trigger prendas_pedido_activo (migración 22) no deja borrar una prenda que alguien ya compró o rentó.
+      setAviso(msg.includes("PRENDA_EN_PEDIDO")
+        ? "Esta prenda está en un pedido en curso. Podrás eliminarla cuando se entregue o se cancele."
+        : "No se pudo eliminar la prenda. Revisa tu conexión y vuelve a intentarlo.")
+    }
+  }
+
   return (
     <motion.div {...pageProps} className="flex flex-col gap-8 pb-40 pt-8">
       <div className="px-4 flex items-center justify-between">
@@ -249,7 +263,10 @@ export function ArmarioView() {
       </section>
 
       <CenteredModal open={!!selectedPrenda} onClose={() => setSelectedPrenda(null)}>
-        {selectedPrenda && <PrendaDetailModal prenda={selectedPrenda} />}
+        {selectedPrenda && (
+          <PrendaDetailModal prenda={selectedPrenda}
+            onDelete={isGuest ? undefined : () => handleDeletePrenda(selectedPrenda.id)} />
+        )}
       </CenteredModal>
 
       <section className="px-4">
