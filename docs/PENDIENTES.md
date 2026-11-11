@@ -1,10 +1,9 @@
 # Pendientes
 
-Actualizado el 10 de noviembre de 2026. Lo que ya se hizo de la revisión está en `docs/revision-app-2026-11-10.md` (en `main`).
+Actualizado el 11 de noviembre de 2026. Lo que ya se hizo de la revisión está en `docs/revision-app-2026-11-10.md` (en `main`).
 
 ## ⏳ En curso
-- **Marketplace con pago real en Stripe (PR #52):** falta activar Stripe Connect, hacer el deploy junto con la migración 21 y una compra real de prueba. La UX de vendedor (intro, espacio de vendedor y push) va en la misma entrega, en la rama `feat/vender-ux`; detalle en `docs/marketplace-vender.md`. Paso a paso en `docs/marketplace-stripe.md`, sección "PENDIENTE".
-- [ ] **Mauri:** configurar el webhook de Stripe Connect (destino "Connected accounts", evento `account.updated`, misma URL) y poner su secreto en Vercel como `STRIPE_CONNECT_WEBHOOK_SECRET`. Sin esto no llegan los push de cuenta de cobro.
+- **Marketplace con pago real en Stripe:** en producción desde el 11 de noviembre de 2026 (#52, con la UX de vendedor). Connect, el webhook de cuentas conectadas y la migración 21 ya están. Falta la compra real de prueba de $10 y la revisión legal de `/politicas`. Detalle en `docs/marketplace-stripe.md` (sección PENDIENTE) y `docs/marketplace-vender.md`.
 
 ## Por decidir o hacer (del reporte de bugs)
 - [ ] Plus promete "Estadísticas avanzadas", que no existen (no hay estadísticas distintas por plan).

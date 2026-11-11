@@ -72,6 +72,6 @@ Los manda el servidor a todos los dispositivos de la persona. Si el push falla, 
 - Prueba visual a 390×844 (celular) con `next dev` y Chromium: los 6 casos del paso 3 del intro, el espacio de vendedor vacío en Plus y en Elite, y con datos simulados (se interceptaron las respuestas de Supabase en el navegador, sin tocar la base): montos al 85%, estados, totales y las pestañas Publicadas y Rentas. Se corrigió la alineación de los totales y el texto de las rentas, que son por día ("Rentada para el…", no "hasta").
 
 ## Pendiente
-- [ ] Mauri: crear en Stripe el destino de webhook de cuentas conectadas y poner `STRIPE_CONNECT_WEBHOOK_SECRET` en Vercel. Pasos en `docs/marketplace-stripe.md`, Paso 1. Sin esto no llegan los push de "cuenta lista" ni "Stripe necesita más datos" (el regreso de Stripe sí actualiza el estado).
-- [ ] Prueba real con dos cuentas (Paso 3 de `docs/marketplace-stripe.md`): revisar los 4 push y el espacio de vendedor en Plus y en Elite.
-- [ ] Se aplica y se hace merge junto con #52 (migración 21).
+- [x] Webhook de cuentas conectadas y `STRIPE_CONNECT_WEBHOOK_SECRET` en Vercel (Mauri, 10 de noviembre de 2026).
+- [x] En producción junto con #52 y la migración 21 (11 de noviembre de 2026).
+- [ ] Prueba real con dos cuentas (`docs/marketplace-stripe.md`, sección PENDIENTE): revisar los 4 push y el espacio de vendedor en Plus y en Elite.
