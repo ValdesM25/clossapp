@@ -1,6 +1,6 @@
 # Fase 1: base de datos
 
-Estado: **sin empezar.**
+Estado: **probada sin dejar rastro (11 nov 2026), esperando el OK de Mauri para aplicar en producción.**
 Rama: `feat/planificacion-base`. Archivo nuevo: `supabase/24-planificacion.sql`.
 
 ## Objetivo
@@ -343,8 +343,8 @@ $do$;
 
 ## Criterios de aceptación
 
-- [ ] `supabase/24-planificacion.sql` existe y corre sin error dentro de una transacción.
-- [ ] Todas las pruebas del paso 2 dan lo esperado.
+- [x] `supabase/24-planificacion.sql` existe y corre sin error dentro de una transacción.
+- [x] Todas las pruebas del paso 2 dan lo esperado.
 - [ ] Mauri dio el OK y la migración está aplicada en producción.
 - [ ] `get_advisors` no muestra avisos nuevos de estas tablas o funciones.
 
