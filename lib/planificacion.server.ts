@@ -73,12 +73,18 @@ function inventarioPrompt(prendas: PrendaPlan[]) {
   }))
 }
 
+export type UsoIA = { modelo: string; uso: Anthropic.Beta.BetaUsage }
+
 async function llamar(
   system: string, inventario: string, datos: string, timeout: number
-): Promise<{ outfits: unknown; uso: Anthropic.Usage }> {
-  const msg = await client.messages.create(
+): Promise<{ outfits: unknown; uso: UsoIA }> {
+  const msg = await client.beta.messages.create(
     {
       model: MODELO_PLAN,
+      // Si Sonnet 5.5 rechaza por ciberseguridad o modelos de IA, la API reintenta en
+      // Sonnet 5 (mismo precio). El SDK 0.104.1 solo tipa la forma con lista de modelos.
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default" as unknown as Anthropic.Beta.Messages.BetaFallbackParam[],
       max_tokens: 16000,
       // Sin `thinking`: Sonnet 5.5 usa thinking adaptativo por defecto y "disabled" da 400.
       output_config: { effort: "medium", format: { type: "json_schema", schema: ESQUEMA } },
@@ -97,10 +103,11 @@ async function llamar(
   if (msg.stop_reason === "refusal" || msg.stop_reason === "max_tokens") {
     throw new ErrorPlanIA(`La IA no terminó: ${msg.stop_reason}`)
   }
-  // Puede haber bloques "thinking" antes del texto.
-  const texto = msg.content.find((b) => b.type === "text")?.text
+  // Puede haber bloques "thinking" antes y, si entró el respaldo, texto del modelo que
+  // rechazó antes del bloque "fallback": la respuesta buena es el último texto.
+  const texto = msg.content.filter((b) => b.type === "text").at(-1)?.text
   if (!texto) throw new ErrorPlanIA("La IA no devolvió texto")
-  return { outfits: (JSON.parse(texto) as { outfits?: unknown }).outfits, uso: msg.usage }
+  return { outfits: (JSON.parse(texto) as { outfits?: unknown }).outfits, uso: { modelo: msg.model, uso: msg.usage } }
 }
 
 /**
@@ -115,7 +122,7 @@ export async function generarOutfitsPlan(datos: {
   yaPlaneados: YaPlaneado[]
   previos: string[][]
   estilo: EstiloPerfil | null
-}): Promise<{ propuestas: unknown; usos: Anthropic.Usage[] }> {
+}): Promise<{ propuestas: unknown; usos: UsoIA[] }> {
   const fin = Date.now() + PLAZO_MS
   const system = SISTEMA + bloquePerfilPrompt(datos.estilo)
   const inventario = JSON.stringify(inventarioPrompt(datos.prendas))

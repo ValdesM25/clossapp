@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import type Anthropic from "@anthropic-ai/sdk"
 import { createClient } from "@/utils/supabase/server"
 import { supabaseAdmin } from "@/lib/stripe.server"
 import { leerEstilo } from "@/lib/cuota.server"
@@ -9,7 +8,7 @@ import {
   cuotaRestante, diasDe, hoyMexico, siguienteBloque, validarOutfits,
   MAX_DIAS_BLOQUE, MIN_PRENDAS_PLAN, type MomentoPlan, type PlanOutfit,
 } from "@/lib/planificacion"
-import { generarOutfitsPlan, MODELO_PLAN, type PrendaPlan } from "@/lib/planificacion.server"
+import { generarOutfitsPlan, type PrendaPlan, type UsoIA } from "@/lib/planificacion.server"
 
 export const maxDuration = 120
 
@@ -17,12 +16,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const error = (msg: string, status: number) => NextResponse.json({ error: msg }, { status })
 const limite = (m: MotivoLimite, status: number) => NextResponse.json({ error: MENSAJES_LIMITE[m], limite: m }, { status })
 
-async function registrarUsos(userId: string, usos: Anthropic.Usage[]) {
+async function registrarUsos(userId: string, usos: UsoIA[]) {
   try {
-    const { error: e } = await supabaseAdmin().from("uso_ia_registro").insert(usos.map((u) => ({
+    const { error: e } = await supabaseAdmin().from("uso_ia_registro").insert(usos.map(({ modelo, uso: u }) => ({
       user_id: userId,
       ruta: "planificacion/generar",
-      modelo: MODELO_PLAN,
+      modelo, // el que respondió: con respaldo puede no ser Sonnet 5.5
       entrada: u.input_tokens,
       salida: u.output_tokens,
       cache_lectura: u.cache_read_input_tokens ?? 0,
