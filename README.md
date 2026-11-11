@@ -98,12 +98,12 @@ block-beta
     e2["Marketplace básico"]
     e3["Sin IA"]
   end
-  block:plus["⭐ Plus\n$59 MXN/mes"]:1
+  block:plus["⭐ Plus\n$89 MXN/mes"]:1
     p1["Prendas ilimitadas"]
     p2["IA ilimitada"]
     p3["Estadísticas avanzadas"]
   end
-  block:elite["💎 Elite\n$89 MXN/mes"]:1
+  block:elite["💎 Elite\n$159 MXN/mes"]:1
     el1["Todo lo de Plus"]
     el2["Reportes de tendencias"]
     el3["Soporte prioritario"]
