@@ -17,10 +17,12 @@ Por ahora el mercado es solo México. La app de tiendas, si llega, se hará apar
 
 | | Esencial | Plus | Elite |
 |---|---|---|---|
-| Precio | $0 | $59 MXN al mes | $99 MXN al mes |
+| Precio | $0 | $89 MXN al mes | $159 MXN al mes |
 | Prendas | hasta 50 | hasta 200 | hasta 500 |
-| Análisis IA al subir prenda | 50 de por vida | sin límite | sin límite |
-| Outfits con IA | 1 al día | sin límite | sin límite |
+| Análisis IA al subir prenda | 60 de por vida (10 al día) | uso justo: 10 al día | uso justo: 10 al día |
+| Outfits con IA | 1 al día | uso justo: 8 al día | uso justo: 8 al día |
+
+- Precios vigentes desde el 11 nov 2026 (decisión de Mauri); antes eran $59 y $99. Los topes de uso justo se aplicaron ese mismo día (`supabase/23-topes-uso-justo.sql`).
 | Vender y rentar en el Shop | no (solo donar) | sí | sí |
 | Modelos de IA frontier y planificación de outfits | no | no | sí |
 

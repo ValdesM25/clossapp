@@ -6,6 +6,8 @@ Estado: **en producción con llaves reales de Stripe** (5 nov 2026). El flujo co
 
 Cobrar Plus ($59) y Elite ($99) al mes con Stripe, con el pago fuera de cualquier tienda de apps, en `www.clossapp.com`. Las cuentas `premium` que ya existen pasan a `elite`.
 
+> **11 nov 2026:** los precios cambian a Plus $89 y Elite $159 (decisión de Mauri). Este documento conserva los de la fase original; los precios nuevos de Stripe se anotan en "Cómo quedó activado".
+
 ## Lo que había antes
 
 - La tanda de límites (`docs/tanda-planes`, PR #41) dejó `limites_plan` con los topes de `gratis` y `premium`, y `usar_ia` y `prendas_limite_plan` ya leen de esa tabla.
