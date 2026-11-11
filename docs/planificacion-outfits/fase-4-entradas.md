@@ -50,7 +50,7 @@ Debajo de `OutfitForm`, un botón secundario con el ícono `Luggage`: "Planear v
 
 - En la tarjeta de Elite, cambiar `"Planificación de outfits"` por `"Planifica tu semana, fechas importantes y viajes"`.
 - Buscar el texto viejo en todo el repo (`rg -n "Planificación de outfits"`, también en la landing) y cambiarlo igual.
-- **No tocar** "Modelos de IA frontier": es la pendiente P2 del README.
+- "Modelos de IA frontier" **se queda** (P2 resuelta: Mauri decidió que se cumple con Sonnet 5.5 en la planificación).
 
 ## 6. Barra inferior: preguntar antes (pendiente P1)
 

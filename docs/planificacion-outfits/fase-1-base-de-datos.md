@@ -1,7 +1,7 @@
 # Fase 1: base de datos
 
 Estado: **sin empezar.**
-Rama: `feat/planificacion-base`. Archivo nuevo: `supabase/23-planificacion.sql`.
+Rama: `feat/planificacion-base`. Archivo nuevo: `supabase/24-planificacion.sql`.
 
 ## Objetivo
 
@@ -21,10 +21,10 @@ Guardar planes y sus momentos, llevar la cuota de días planeados (D11), dejar a
 
 ## Pasos
 
-1. Crear `supabase/23-planificacion.sql` con este contenido (comentarios en español, como el resto de migraciones):
+1. Crear `supabase/24-planificacion.sql` con este contenido (comentarios en español, como el resto de migraciones):
 
 ```sql
--- 23: Planificación de outfits, exclusiva de Elite (docs/planificacion-outfits/).
+-- 24: Planificación de outfits, exclusiva de Elite (docs/planificacion-outfits/).
 -- Decisiones de Mauri del 11 nov 2026: cuota en días planeados, 14 al día y 30 al mes;
 -- si deja Elite, sus planes quedan en solo lectura.
 
@@ -308,7 +308,7 @@ declare
   h date := (now() at time zone 'America/Mexico_City')::date;
   v_elite uuid;
 begin
-  execute $migr$ (pegar aquí el contenido completo de 23-planificacion.sql) $migr$;
+  execute $migr$ (pegar aquí el contenido completo de 24-planificacion.sql) $migr$;
   select user_id into v_elite from public.perfiles where plan = 'elite' limit 1;
   -- Hace que auth.uid() devuelva ese usuario dentro del bloque.
   perform set_config('request.jwt.claims', json_build_object('sub', v_elite, 'role', 'authenticated')::text, true);
@@ -343,7 +343,7 @@ $do$;
 
 ## Criterios de aceptación
 
-- [ ] `supabase/23-planificacion.sql` existe y corre sin error dentro de una transacción.
+- [ ] `supabase/24-planificacion.sql` existe y corre sin error dentro de una transacción.
 - [ ] Todas las pruebas del paso 2 dan lo esperado.
 - [ ] Mauri dio el OK y la migración está aplicada en producción.
 - [ ] `get_advisors` no muestra avisos nuevos de estas tablas o funciones.

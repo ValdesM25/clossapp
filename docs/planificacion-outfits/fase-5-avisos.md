@@ -1,7 +1,7 @@
 # Fase 5: avisos push
 
 Estado: **sin empezar.**
-Rama: `feat/planificacion-avisos`. Depende de la fase 4 (usa `planId` en la navegación). Archivo nuevo: `supabase/24-avisos-planificacion.sql`.
+Rama: `feat/planificacion-avisos`. Depende de la fase 4 (usa `planId` en la navegación). Archivo nuevo: `supabase/25-avisos-planificacion.sql`.
 
 ## Objetivo
 
@@ -11,7 +11,7 @@ Dos avisos diarios a las **21:00 de Ciudad de México** (D8), solo para Elite (e
 
 Se disparan con pg_cron, igual que el recordatorio que ya existe (`supabase/08-cron.sql`; Mauri decidió pg_cron y no Vercel Cron).
 
-## 1. Migración `24-avisos-planificacion.sql`
+## 1. Migración `25-avisos-planificacion.sql`
 
 **Función que arma los avisos.** Solo la puede llamar `service_role`. Copiar el estilo de `pendientes_recordatorio` (buscarla en `supabase/` para ver cómo está escrita).
 

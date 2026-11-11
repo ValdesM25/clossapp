@@ -39,37 +39,52 @@ Este documento explica qué se construye, por qué y con qué reglas. Cada fase 
 
 ## Fases
 
-Cada fase es una rama y un PR. Se ejecutan en orden: cada una depende de la anterior, salvo la 0.
+Cada fase es una rama y un PR hacia la rama de integración (ver "Cómo se integra"). Se ejecutan en orden: cada una depende de la anterior, salvo la 0.
 
 | Fase | Rama | Qué hace | Detalle |
 |---|---|---|---|
 | 0 | `fix/quitar-viaje-falso` | Quita lo falso que ya está en producción: la tarjeta de París en Inicio y la sección "Completa tu maleta" de la maqueta | [fase-0-quitar-lo-falso.md](fase-0-quitar-lo-falso.md) |
-| 1 | `feat/planificacion-base` | Migración 23: tablas, funciones, cuota y registro de tokens | [fase-1-base-de-datos.md](fase-1-base-de-datos.md) |
+| 1 | `feat/planificacion-base` | Migración 24: tablas, funciones, cuota y registro de tokens | [fase-1-base-de-datos.md](fase-1-base-de-datos.md) |
 | 2 | `feat/planificacion-ia` | Lógica pura con tests, clima del lugar y la ruta que genera outfits con Sonnet | [fase-2-ia-y-clima.md](fase-2-ia-y-clima.md) |
 | 3 | `feat/planificacion-pantalla` | La pantalla real: lista, crear, detalle, maleta, Shop, vista previa y solo lectura | [fase-3-pantalla.md](fase-3-pantalla.md) |
 | 4 | `feat/planificacion-entradas` | Inicio (outfit de hoy y tarjeta), Perfil, Simulador y /planes | [fase-4-entradas.md](fase-4-entradas.md) |
 | 5 | `feat/planificacion-avisos` | Push la noche anterior y aviso para empacar, con pg_cron | [fase-5-avisos.md](fase-5-avisos.md) |
 | 6 | `docs/planificacion-cierre` | Prueba real con cuentas, revisión de costos y documentación final | [fase-6-prueba-y-cierre.md](fase-6-prueba-y-cierre.md) |
 
-## Pendientes de decidir (no bloquean las fases 0 a 3)
+## Pendientes y decisiones posteriores
 
-- **P1. Barra inferior.** El commit `5c04812` (klesnuck) agregó Planificación como sexto botón. El comentario anterior decía "Máximo 5" y Outfit dejó de estar al centro. Mauri decide si se queda, se quita o reemplaza a otro. Está en la fase 4.
-- **P2. Texto "Modelos de IA frontier".** La decisión 4 de `docs/modelo-de-negocio.md` dice que Elite deja de prometerlo. Esta tanda solo cambia la línea de planificación; esa otra la decide Mauri.
-- **P3. Precios.** Mauri evalúa subir a Plus $89 y Elite $159. No cambia nada de esta tanda.
-- **P4. Topes de la decisión 2** de `docs/modelo-de-negocio.md` (10 análisis y 8 outfits al día). Siguen sin aplicarse y el cálculo del peor caso de Elite depende de ellos.
-- **P5. Coordinar con klesnuck.** Está subiendo cambios directo a main en esta misma pantalla. Antes de la fase 0 y de la fase 3, hacer `git fetch` y revisar si hubo cambios nuevos en `components/views/planificacion/`, `constants/navigation.ts` e `inicio-view.tsx`.
+- **P1. Barra inferior: pendiente.** El commit `5c04812` (klesnuck) agregó Planificación como sexto botón. El comentario anterior decía "Máximo 5" y Outfit dejó de estar al centro. Mauri lo está hablando con su colega. Está en la fase 4; no tocarlo sin su respuesta.
+- **P2. "Modelos de IA frontier": resuelto (11 nov).** Se queda en la tarjeta de Elite. Mauri decidió que se cumple con Sonnet 5.5 en la planificación (Haiku en el resto de la app) y que no contradice nada.
+- **P3. Precios: resuelto (11 nov).** Plus $89 y Elite $159. Cambiados en la app (`feat/precios-89-159`) y en la landing (`clossapp-landing`, `feat/precios-89-159`). Lo que se cobra cambia en Stripe el día del merge (ver "Día del merge").
+- **P4. Topes de la decisión 2: aplicados (11 nov).** Plus y Elite quedan en 10 análisis y 8 outfits al día (`supabase/23-topes-uso-justo.sql`, ya en producción).
+
+## Cómo se integra (decisión de Mauri, 11 nov)
+
+- Todo el trabajo va a la rama **`integracion/elite`**, creada desde `origin/main`. Ahí entran las ramas que ya existen (`fix/login-restaurar`, `docs/plan-planificacion`, `fix/topes-uso-justo`, `feat/precios-89-159`) y cada fase de esta tanda.
+- Cada fase sale de `integracion/elite` y vuelve a ella con su commit o su PR, según corresponda.
+- Al final, **un solo PR de `integracion/elite` a `main`**. Mauri aprueba el merge.
+- **Antes de ese merge,** revisar lo que klesnuck haya subido a main mientras tanto (`git log integracion/elite..origin/main`), traerlo a la integración (`git merge origin/main`), resolver conflictos, volver a probar y contarle a Mauri qué cambió. Klesnuck sube directo a main en esta misma pantalla, así que antes de las fases 0, 3 y 4 conviene revisar `components/views/planificacion/`, `constants/navigation.ts` e `inicio-view.tsx`.
+- La landing es otro repo: su PR se mergea el mismo día que el PR final.
+
+## Día del merge
+
+1. Crear en Stripe (modo real) dos precios nuevos, mensuales, en MXN y con IVA incluido, sobre los productos que ya existen: Plus $89 (`prod_VZkCJAgXcWO9Ny`) y Elite $159 (`prod_VZkCJIe8FVF2NV`). Hoy nadie tiene una suscripción en Stripe, así que nadie queda con el precio viejo.
+2. En Vercel (producción), cambiar `STRIPE_PRICE_PLUS` y `STRIPE_PRICE_ELITE` por los ids nuevos. **Ojo:** un precio que no esté en esas variables se trata como plan `gratis` (`lib/stripe.server.ts`), así que el cambio y el deploy van juntos.
+3. Mergear el PR final y el de la landing. Esperar el deploy.
+4. Revisar `/planes` ($89 y $159) y abrir un Checkout de cada plan sin pagar, para ver que Stripe muestra el precio nuevo.
+5. Archivar los precios viejos en Stripe y anotar los ids nuevos en `docs/tanda-pagos/fase-1-suscripciones.md`.
 
 ## Reglas para quien ejecute una fase
 
 Son reglas de Mauri para este repo. No son opcionales.
 
-1. **Rama y worktree propios.** Otras sesiones cambian de rama en `/home/mauri/Projects/clossapp`. Crear un worktree aparte desde `origin/main` actualizado:
-   `git fetch origin && git worktree add -b <rama> <ruta> origin/main`
+1. **Rama y worktree propios.** Otras sesiones cambian de rama en `/home/mauri/Projects/clossapp`. Crear un worktree aparte desde la rama de integración actualizada:
+   `git fetch origin && git worktree add -b <rama> <ruta> origin/integracion/elite`
    Para correr `tsc`, `eslint` o los tests en el worktree, enlazar `node_modules` del checkout principal (`ln -s /home/mauri/Projects/clossapp/node_modules node_modules`) y borrar el enlace antes de commitear.
 2. **Sin push ni PR sin el OK de Mauri.** Al terminar, avisar y esperar.
 3. **Cero atribución.** Ni `Co-Authored-By` ni "Generated with…" en commits, PRs ni comentarios.
 4. **Commits en español, concretos,** con viñetas de qué se hizo y por qué.
-5. **Migraciones:** el archivo va en `supabase/NN-nombre.sql`. Antes de aplicarlo en producción, probarlo dentro de una transacción que se deshace (`begin; … rollback;`) con el MCP de Supabase. Aplicarlo en producción **solo con el OK de Mauri**. La migración se aplica **antes** de mergear el código que la usa (en la fase 1 de pagos pasó al revés y hubo 500 en producción).
+5. **Migraciones:** el archivo va en `supabase/NN-nombre.sql`. Antes de aplicarlo en producción, probarlo con el MCP de Supabase dentro de un bloque que se deshace solo (ver el paso 2 de la fase 1). Aplicarlo en producción **solo con el OK de Mauri**. La migración se aplica **antes** de mergear el código que la usa (en la fase 1 de pagos pasó al revés y hubo 500 en producción).
 6. **No correr `npm run build` si hay un `next dev` corriendo:** corrompe `.next`. Verificar con `npx tsc --noEmit`, `node --test lib/*.test.mjs` y `npx eslint <archivos tocados>`.
 7. **Prueba visual en celular:** 390×844 en Chromium con el MCP `chromium-devtools` y `next dev`. No pedirle a Mauri que instale Chrome.
 8. **No agregar dependencias.** Todo se hace con lo que ya hay.
@@ -103,4 +118,4 @@ Son reglas de Mauri para este repo. No son opcionales.
 - `prendas.id` es `bigint`; en el cliente se maneja como `string` (`types/prenda.ts`).
 - Las prendas donadas siguen en la tabla con `metadata.donada = true` (`supabase/06-puntos-seguros.sql`). **No deben entrar a un plan.**
 - `perfiles` solo deja al usuario actualizar columnas concretas (`supabase/05-perfiles.sql`, `12-perfil-datos.sql`). Los contadores nuevos se cambian solo con funciones `security definer`.
-- La última migración es `22-seguridad-prelanzamiento.sql`. Esta tanda usa la **23** y la **24**.
+- La 23 (`23-topes-uso-justo.sql`) ya se usó para los topes de uso justo. Esta tanda usa la **24** y la **25**.

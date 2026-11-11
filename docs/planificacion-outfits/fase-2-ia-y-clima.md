@@ -1,7 +1,7 @@
 # Fase 2: lógica, clima e IA
 
 Estado: **sin empezar.**
-Rama: `feat/planificacion-ia`. Depende de la fase 1 (migración 23 aplicada en producción).
+Rama: `feat/planificacion-ia`. Depende de la fase 1 (migración 24 aplicada en producción).
 
 ## Objetivo
 

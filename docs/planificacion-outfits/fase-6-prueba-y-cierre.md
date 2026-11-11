@@ -43,15 +43,16 @@ Comparar con lo estimado (~$1.2 MXN por bloque de 7 días, ~$0.17 por día). Si 
 ## 3. Cosas que hace Mauri (fuera del código)
 
 - [ ] Poner un límite de gasto mensual en la consola de Anthropic.
-- [ ] Decidir las pendientes P1 a P4 del README si siguen abiertas.
+- [ ] Seguir el "Día del merge" del README (precios nuevos en Stripe y Vercel).
+- [ ] Decidir la pendiente P1 (barra inferior) si sigue abierta.
 
 ## 4. Documentación
 
 - [ ] `docs/planificacion-outfits/README.md`: estado "en producción", fecha y costo real.
 - [ ] `docs/PENDIENTES.md`: marcar la línea de Elite / planificación.
-- [ ] `docs/revision-app-2026-11-10.md`: problema 10, anotar que la planificación ya existe (y si "modelos frontier" sigue pendiente).
+- [ ] `docs/revision-app-2026-11-10.md`: problema 10, anotar que la planificación ya existe (y que "modelos frontier" se cumple con Sonnet 5.5 en la planificación).
 - [ ] `docs/tanda-pagos/README.md`: fase 4, apuntar a esta tanda.
-- [ ] `docs/modelo-de-negocio.md`: agregar la fila de costo de planificación en "Variables por uso de IA".
+- [ ] `docs/modelo-de-negocio.md` (archivo local de Mauri, no está en git): agregar la fila de costo de planificación en "Variables por uso de IA".
 
 ## Hecho
 
