@@ -61,7 +61,7 @@ export function MarketplaceView({ onApartar, peticion, onAtendida }: Marketplace
   // formulario; con "?vender=1" (push) al espacio del vendedor. Sin poder vender, al intro.
   const [inicio] = useState(() => {
     const ninguno = { capa: null, prenda: null, form: false }
-    if (!peticion) return ninguno
+    if (!peticion || peticion.verPrendaId) return ninguno
     if (peticion.retorno || !puedeVender) return { ...ninguno, capa: "intro" as const }
     if (peticion.prendaId) return { ...ninguno, prenda: prendas.find((p) => p.id === peticion.prendaId) ?? null, form: true }
     return { ...ninguno, capa: "vender" as const }
@@ -80,6 +80,15 @@ export function MarketplaceView({ onApartar, peticion, onAtendida }: Marketplace
   const [verFiltros, setVerFiltros] = useState(false)
 
   useEffect(() => { if (peticion) onAtendida?.() }, [peticion, onAtendida])
+
+  // Prenda publicada que se pidió ver (sugerencias de Planificación): se abre al llegar los items.
+  const [verPrendaId, setVerPrendaId] = useState(peticion?.verPrendaId)
+  useEffect(() => {
+    if (!verPrendaId || loading) return
+    const item = items.find((i) => i.id === verPrendaId)
+    if (item) setSelectedItem(item)
+    setVerPrendaId(undefined)
+  }, [verPrendaId, loading, items])
 
   // Regreso de Stripe del pago de una compra (?pedido). El alta de cobros (?vender) la lee el dashboard.
   useEffect(() => {

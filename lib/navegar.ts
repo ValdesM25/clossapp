@@ -4,15 +4,18 @@ import type { View } from "@/types"
 // sin pasar callbacks por toda la app. Lo escucha AuthenticatedShell.
 export const EVENTO_NAVEGAR = "clossapp:navegar"
 
-/** Lo que viaja en el evento: la vista y, si se quiere, vender una prenda concreta al llegar al Shop. */
-export type DestinoNavegar = { vista: View; venderPrendaId?: string }
+/** Lo que viaja en el evento: la vista y, si se quiere, vender o ver una prenda concreta al llegar al Shop. */
+export type DestinoNavegar = { vista: View; venderPrendaId?: string; verPrendaId?: string }
 
-export function navegarA(vista: View, opciones?: { venderPrendaId?: string }): void {
+export function navegarA(vista: View, opciones?: { venderPrendaId?: string; verPrendaId?: string }): void {
   window.dispatchEvent(new CustomEvent<DestinoNavegar>(EVENTO_NAVEGAR, { detail: { vista, ...opciones } }))
 }
 
-/** Qué abrir en el Shop al llegar: regreso de Stripe, push del vendedor ("?vender=1") o una prenda concreta. */
-export type PeticionVender = { retorno?: "ok" | "revision" | "datos" | "error"; prendaId?: string }
+/**
+ * Qué abrir en el Shop al llegar: regreso de Stripe, push del vendedor ("?vender=1"), una prenda
+ * propia para vender (prendaId) o el detalle de una prenda publicada (verPrendaId, desde Planificación).
+ */
+export type PeticionVender = { retorno?: "ok" | "revision" | "datos" | "error"; prendaId?: string; verPrendaId?: string }
 
 export function peticionVenderDeUrl(search: string): PeticionVender | null {
   const v = new URLSearchParams(search).get("vender")

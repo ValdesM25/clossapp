@@ -28,10 +28,14 @@ export const TEMP_ABRIGO = 12 // °C mínimos con los que el outfit debe llevar 
 // Mismo "hoy" que usar_dias_plan en la base: el día cambia a medianoche de México.
 export const hoyMexico = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City" }).format(new Date())
 
+// Singular y plural: las prendas de ejemplo (GUEST_PRENDAS) vienen en plural.
 const GRUPO_POR_PALABRA: Record<string, Grupo> = {
-  top: "arriba", tops: "arriba", blusa: "arriba", camisa: "arriba", playera: "arriba", sueter: "arriba",
-  bottom: "abajo", pantalon: "abajo", falda: "abajo", short: "abajo", jeans: "abajo",
-  outerwear: "abrigo", abrigo: "abrigo", chamarra: "abrigo", chaqueta: "abrigo",
+  top: "arriba", tops: "arriba", blusa: "arriba", blusas: "arriba", camisa: "arriba", camisas: "arriba",
+  playera: "arriba", playeras: "arriba", sueter: "arriba", sueteres: "arriba",
+  bottom: "abajo", pantalon: "abajo", pantalones: "abajo", falda: "abajo", faldas: "abajo",
+  short: "abajo", shorts: "abajo", jeans: "abajo",
+  outerwear: "abrigo", abrigo: "abrigo", abrigos: "abrigo", chamarra: "abrigo", chamarras: "abrigo",
+  chaqueta: "abrigo", chaquetas: "abrigo",
   calzado: "calzado", zapatos: "calzado",
   accesorio: "accesorio", accesorios: "accesorio",
 }
@@ -45,7 +49,7 @@ export function grupoDe(categoria: string): Grupo {
 
 const MS_DIA = 86_400_000
 const aUtc = (f: string) => new Date(`${f}T00:00:00Z`)
-const sumarDias = (f: string, n: number) => new Date(aUtc(f).getTime() + n * MS_DIA).toISOString().slice(0, 10)
+export const sumarDias = (f: string, n: number) => new Date(aUtc(f).getTime() + n * MS_DIA).toISOString().slice(0, 10)
 
 /** Todas las fechas del rango, incluidas las dos puntas. */
 export function diasEntre(inicio: string, fin: string): string[] {
@@ -66,7 +70,32 @@ export function prellenar(tipo: TipoPlan, hoy: string): { inicio: string; fin: s
   return { inicio, fin: sumarDias(inicio, 6), nombre: `Mi semana del ${d.getUTCDate()} de ${MESES[d.getUTCMonth()]}` }
 }
 
-const ordenMomento = (a: MomentoPlan, b: MomentoPlan) =>
+const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+const DIAS_CORTOS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"]
+
+/** "lun 16 nov" */
+export function fechaCorta(f: string): string {
+  const d = aUtc(f)
+  return `${DIAS_CORTOS[d.getUTCDay()]} ${d.getUTCDate()} ${MESES_CORTOS[d.getUTCMonth()]}`
+}
+
+/** "16 al 22 nov", "30 nov al 2 dic" o "16 nov" si es un solo día. */
+export function rangoFechas(inicio: string, fin: string): string {
+  const a = aUtc(inicio), b = aUtc(fin)
+  const mesB = MESES_CORTOS[b.getUTCMonth()]
+  if (inicio === fin) return `${b.getUTCDate()} ${mesB}`
+  const mismoMes = a.getUTCMonth() === b.getUTCMonth() && a.getUTCFullYear() === b.getUTCFullYear()
+  return `${a.getUTCDate()}${mismoMes ? "" : ` ${MESES_CORTOS[a.getUTCMonth()]}`} al ${b.getUTCDate()} ${mesB}`
+}
+
+/** En curso si hoy cae en el rango, próximo si empieza después, terminado si ya pasó. */
+export function estadoPlan(plan: Pick<PlanOutfit, "fecha_inicio" | "fecha_fin">, hoy: string): "en_curso" | "proximo" | "terminado" {
+  if (plan.fecha_fin < hoy) return "terminado"
+  return plan.fecha_inicio > hoy ? "proximo" : "en_curso"
+}
+
+/** Por fecha y, en el mismo día, el de día antes que el de noche. */
+export const ordenMomento = (a: MomentoPlan, b: MomentoPlan) =>
   a.fecha.localeCompare(b.fecha) || (a.momento === b.momento ? 0 : a.momento === "dia" ? -1 : 1)
 
 /** Ids de los momentos sin outfit listo que caen en las primeras `maxDias` fechas, en orden. */
