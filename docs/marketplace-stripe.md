@@ -26,52 +26,30 @@
 - `lib/marketplace.ts` (reparto 85/15, con tests) y `lib/marketplace.server.ts` (pagos a vendedores, confirmación del pago).
 - App: `escrow-checkout-modal.tsx` (sin formulario falso), `escrow-orders-modal.tsx` (estado "Pago pendiente", cancelar con reembolso), `marketplace-view.tsx` (Publicar pide cuenta de cobro, avisos al volver de Stripe), `perfil-view.tsx` (fila de cobros), `services/escrow.service.ts`, `use-auth.ts`, `clossapp-dashboard.tsx`, `app/politicas/page.tsx`.
 
-## ⏳ PENDIENTE: activar Stripe Connect y hacer el deploy
+## En producción desde el 11 de noviembre de 2026
 
-Estado al 10 de noviembre de 2026: #47, #48, #49, #50 y #51 ya están en producción; la migración 19 está aplicada. **Este PR (#52) sigue sin merge** y la migración 21 **no** está aplicada. Hasta entonces el marketplace sigue con el pago simulado de antes (ver "Qué pasa mientras tanto").
+- **Connect activado** por Mauri, en modo Live. Quedó así: Clossapp cobra y paga a cada vendedor ("You collect payments and pay recipients"), el alta la hospeda Stripe, los vendedores usan el Express Dashboard y Clossapp responde por reembolsos y contracargos.
+- **Webhook de cuentas conectadas** creado ("Connected accounts", evento `account.updated`, misma URL `https://www.clossapp.com/api/stripe/webhook`). Su secreto está en Vercel como `STRIPE_CONNECT_WEBHOOK_SECRET`. El webhook de suscripciones (`clossapp-suscripciones`) sigue igual.
+- **Permisos de la llave de Stripe:** la app usa una llave restringida (`rk_live_...9WgW`) que solo tenía permisos de suscripciones, y "Conectar con Stripe" fallaba con *Permission denied* (lo mostraron los logs de Vercel). Mauri le agregó Connect → Accounts (Write), Transfers (Write), Refunds (Write) y PaymentIntents (Read). Si se crea otra llave, necesita esos permisos además de los de suscripciones.
+- **Primera vendedora conectada** (11 de noviembre de 2026): cuenta Express activa, con cobros, transferencias y depósitos habilitados.
+- **Arreglo de pantallas (#54):** el intro de Vender, el detalle de prenda, Mis Pedidos y el carrito salían abajo en el celular, y había scroll lateral en el Shop. Se corrigió en `constants/animation.ts` (la animación ya no deja `transform`), con portales a `body` y con la cabecera del Shop en `flex-wrap`.
+- **Migración 21 aplicada** (`marketplace_stripe`), justo antes del merge.
+- **#52 en `main`** (merge commit `7fce07d`, 11 de noviembre de 2026, 00:32 UTC), con la UX de vendedor incluida (`docs/marketplace-vender.md`). El deploy de producción quedó en vivo. Sin sesión, las rutas nuevas responden como se espera: conectar cobros da 401, el webhook sin firma o con firma falsa da 400 y el regreso de Stripe redirige al inicio.
+- **Orden de ejemplo cancelada:** `ESC-UYC1YU` era una renta del "Vestido Midi Floral" en el "Centro de Acopio Norte" (no existe), creada en septiembre con el pago simulado y sin cobro real. Mauri confirmó que eran datos de ejemplo. Se marcó `cancelado` (`validated_by = cancelado:datos-de-ejemplo-pago-simulado`); no se borró. Ya no hay órdenes "en custodia" sin cobro de Stripe.
 
-### Paso 1. Activar Connect (lo hace Mauri, en modo Live, cuenta "ClossApp")
-Los nombres de los botones pueden variar un poco en el panel.
-- [ ] Abrir https://dashboard.stripe.com/connect y tocar **Empezar** (Get started).
-- [ ] Modelo: **Marketplace** (Clossapp cobra al comprador y le paga al vendedor). No elegir "Plataforma".
-- [ ] Tipo de cuenta de los vendedores: **Express**.
-- [ ] Perfil de plataforma:
-  - Qué se vende: ropa de segunda mano entre personas (compra, venta y renta).
-  - Quién paga las comisiones de Stripe: **la plataforma**.
-  - Quién responde por saldos negativos de vendedores (contracargos): **la plataforma**.
-  - El dinero se retiene hasta que la prenda se entrega en un centro de acopio y luego se transfiere al vendedor.
-  - Stripe puede tardar en revisarlo; mientras tanto los vendedores no pueden conectar su cuenta.
-- [ ] Settings → Connect → **Branding**: nombre "Clossapp", logo (`public/icon-512.png`), color `#18181b`.
-- [ ] Settings → Connect → **Onboarding options**: país **México**; capacidades **Transfers** y **Card payments**.
-- [ ] **Payouts**: dejar el calendario automático.
-- [ ] Stripe → Developers → **Webhooks** → crear un destino de eventos nuevo:
-  - **Events from: Connected accounts** (no "Your account");
-  - URL: la misma del webhook actual, `https://<dominio>/api/stripe/webhook`;
-  - evento: `account.updated`.
-- [ ] Copiar el **secreto de firma** (`whsec_...`) de ese destino a Vercel como `STRIPE_CONNECT_WEBHOOK_SECRET` (Production) y hacer redeploy. Es un secreto distinto al `STRIPE_WEBHOOK_SECRET` que ya existe. Lo usa el aviso "cuenta lista" y "Stripe necesita más datos" (ver `docs/marketplace-vender.md`).
-- Las demás llaves y variables de Vercel no cambian.
+## ⏳ PENDIENTE
 
-### Paso 2. Deploy (lo hace Claude cuando Mauri avise)
-- [ ] Aplicar `supabase/21-marketplace-stripe.sql` y hacer merge de #52 **en el mismo momento**, no antes: la app actual crea órdenes sin pago y con la migración quedarían en "pago pendiente" hasta expirar.
-- [ ] Confirmar que el deploy de producción quedó en vivo.
-
-### Paso 3. Prueba real antes de anunciarlo (Mauri, con dos cuentas propias)
-- [ ] Cuenta A (Plus/Elite): Perfil → "Cobrar mis ventas" → alta en Stripe con datos reales → publicar una prenda de **$10 MXN**.
-- [ ] Cuenta B (Plus/Elite): comprarla con tarjeta real.
+### Prueba real antes de anunciarlo (Mauri, con dos cuentas propias)
+- [ ] Cuenta A (Plus/Elite): Shop → **Vender** → seguir el intro → "Conectar con Stripe" → alta con datos reales → publicar una prenda de **$10 MXN**.
+- [ ] Cuenta B (Plus/Elite): comprarla con tarjeta real. A recibe el push "¡Vendiste…!".
 - [ ] En "Mis pedidos" de B debe decir "En custodia".
-- [ ] Un centro de acopio escanea el QR (si no hay cuenta de centro, crear una antes).
+- [ ] Un centro de acopio escanea el QR (si no hay cuenta de centro, crear una antes). A recibe el push "Te depositamos $8.50".
 - [ ] En Stripe: cobro de $10, transferencia de $8.50 a la cuenta A y $1.50 que se queda Clossapp (menos la comisión de Stripe).
 - [ ] Probar también cancelar un pedido pagado: debe llegar el reembolso.
-- [ ] Revisar los 4 push del vendedor (se vendió o rentó, entregada y pagada, Stripe necesita datos, cuenta lista) y el espacio de vendedor, con la cuenta A en Plus y en Elite.
+- [ ] Revisar el espacio de vendedor de la cuenta A en Plus y en Elite, y los push de "cuenta lista" y "Stripe necesita más datos" si aparecen durante el alta.
 
-### Paso 4. Después
+### Después
 - [ ] Revisión legal de la sección Marketplace de `/politicas` (custodia, comisión del 15%, reembolsos).
-- [ ] Avisar a la persona con el pedido en custodia creado para "Centro de Acopio Norte" (no existe) dónde recoger.
-
-### Qué pasa mientras tanto (sin #52)
-Nada se rompe; la app sigue como estaba antes de este PR:
-- El marketplace usa el pago **simulado** de antes: no cobra nada y la orden queda "en custodia" sin dinero. Con testers no es un problema; **no anunciarlo a usuarios reales** hasta terminar el paso 3.
-- Lo ya publicado funciona igual: el plan gratis solo dona, el canje aplica descuentos reales en Stripe, los centros son TecNM y Alameda, y el video de instalación sale en iPhone.
 
 ## Cómo se probó
 - `node --test lib/marketplace.test.mjs lib/plan-stripe.test.mjs`: 9 de 9 (reparto exacto con centavos impares y varios vendedores).
