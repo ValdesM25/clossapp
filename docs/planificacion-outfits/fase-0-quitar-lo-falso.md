@@ -1,6 +1,6 @@
 # Fase 0: quitar lo falso que ya está en producción
 
-Estado: **sin empezar.**
+Estado: **hecha el 11 nov 2026, en la rama `fix/quitar-viaje-falso` sin integrar todavía (falta el OK de Mauri).**
 Rama: `fix/quitar-viaje-falso`. No depende de otra fase. Es corta y conviene hacerla primero.
 
 ## Objetivo
@@ -23,11 +23,11 @@ Hoy cualquier usuario real ve en Inicio un viaje a París que no existe, y en la
 
 ## Criterios de aceptación
 
-- [ ] Inicio no muestra ninguna tarjeta de viaje.
-- [ ] La maqueta no tiene productos del Shop ni el botón "Comprar".
-- [ ] `rg -n "useCart\b" --glob '*.ts*'` no encuentra nada.
-- [ ] `npx tsc --noEmit` sin errores; `npx eslint` de los archivos tocados sin errores nuevos.
-- [ ] Revisado a 390×844: Inicio se ve bien sin el hueco de la tarjeta.
+- [x] Inicio no muestra ninguna tarjeta de viaje.
+- [x] La maqueta no tiene productos del Shop ni el botón "Comprar".
+- [x] `rg -n "useCart\b" --glob '*.ts*'` no encuentra nada.
+- [x] `npx tsc --noEmit` sin errores; `npx eslint` de los archivos tocados sin errores nuevos.
+- [x] Revisado a 390×844: Inicio se ve bien sin el hueco de la tarjeta.
 
 ## Commit sugerido
 
@@ -42,4 +42,24 @@ fix: quita el viaje falso de Inicio y los productos inventados de la maqueta
 
 ## Hecho
 
-(Lo llena quien ejecute la fase.)
+**Punto de partida.** `origin/main` no tenía cambios en `components/views/planificacion`, `components/views/inicio` ni `constants/navigation.ts` después de `5c04812`, y `integracion/elite` ya estaba al día con main. Se partió de `integracion/elite` (`e7e4af6`).
+
+**Qué se cambió:**
+
+| Archivo | Cambio |
+|---|---|
+| `components/views/inicio/inicio-view.tsx` | Se borró la sección `SECCIÓN PLANIFICACIÓN DE VIAJE` (tarjeta "París, a tu manera") y `Luggage` del import. |
+| `components/views/planificacion/planificacion-view.tsx` | Se borró la sección 4 ("Completa tu maleta, no la llenes": bufanda y paraguas con precio), `handleComprarProducto`, el estado `productoAgregado` y su aviso. Se quitaron los íconos que eslint marcaba sin uso: `ShoppingBag` y `CheckCircle2` (por este cambio) y `Cloud`, `Compass` y `SlidersHorizontal` (ya estaban sin uso antes). |
+| `context/cart-context.tsx` | Se borró `export const useCart = useCartContext`. |
+
+**Cómo se verificó:**
+- `npx tsc --noEmit`: sin errores.
+- `npx eslint` de los 3 archivos: 0 errores. Se comparó contra la base: ningún aviso nuevo, y la maqueta bajó de 11 a 4 avisos (se fueron dos `<img>`, los parámetros `_img` y `_precio` y los tres íconos sin uso). Quedan `setTagTemporada` y tres `<img>`, que son de la maqueta y se van en la fase 3.
+- `rg -n "useCart\b" --glob '*.ts*'`: sin resultados.
+- `next dev` en el worktree y Chromium a 390×844 con la demo de usuario: Inicio pasa de "Outfit del día" a "Prendas olvidadas" sin hueco; la maqueta abre y ya no tiene la sección del Shop.
+
+**Decisiones del agente:**
+- El botón de los productos decía "Ver producto", no "Comprar"; era el mismo botón falso (llamaba a `handleComprarProducto`) y se borró con su sección.
+- `Cloud`, `Compass` y `SlidersHorizontal` ya estaban importados sin uso antes de esta fase. Se quitaron también, porque el paso 2 pide quitar los íconos que eslint marque.
+- No se tocó la barra inferior ni la fila de Perfil (P1 y fase 4).
+- Nota para quien siga: Turbopack no arranca con `node_modules` como enlace simbólico ("Symlink node_modules is invalid, it points out of the filesystem root"). Para `next dev` en un worktree funcionó una copia con enlaces duros: `cp -al /home/mauri/Projects/clossapp/node_modules node_modules` (y borrarla antes de commitear). Para `tsc` y `eslint` el enlace simbólico sí sirve.
