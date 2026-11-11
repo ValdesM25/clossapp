@@ -16,7 +16,7 @@ export function VistaPrevia({ hoy, conPago }: { hoy: string; conPago: boolean })
   const precio = PLANES.find((p) => p.id === "elite")!.precio
   return (
     <div className="flex flex-col gap-6">
-      <div className="sticky top-4 z-10 bg-white border border-zinc-900 p-5 flex flex-col gap-3 shadow-sm">
+      <div className="bg-white border border-zinc-900 p-5 flex flex-col gap-3">
         <p className="text-xs uppercase tracking-widest text-zinc-500 font-semibold flex items-center gap-1.5">
           <Lock className="w-3.5 h-3.5" aria-hidden="true" />
           {conPago ? "Elite" : "Así se ve con Elite"}

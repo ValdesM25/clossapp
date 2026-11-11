@@ -238,10 +238,10 @@ export function CrearPlan({ hoy, tipoInicial, cuota, onCancelar, onCrear }: {
               const { actividad, noche } = fila(f)
               return (
                 <div key={f} className="flex flex-col gap-2 border-b border-zinc-100 pb-5">
-                  <label htmlFor={`act-${f}`} className="text-sm font-medium text-zinc-900 capitalize">{fechaCorta(f)}</label>
+                  <label htmlFor={`act-${f}`} className="text-sm font-medium text-zinc-900 first-letter:uppercase">{fechaCorta(f)}</label>
                   <input id={`act-${f}`} value={actividad} maxLength={120} placeholder={EJEMPLO[tipo]} className={input}
                     onChange={(e) => cambiar(f, { actividad: e.target.value })} />
-                  <div className="flex gap-1.5 overflow-x-auto -mx-4 px-4 pb-1">
+                  <div className="flex gap-1.5 overflow-x-auto -mx-4 px-4 pb-1 [scrollbar-width:none] overscroll-x-contain">
                     {ATAJOS.map((a) => (
                       <button key={a} type="button" onClick={() => cambiar(f, { actividad: a })}
                         className={cn("shrink-0 h-10 px-3 border text-xs transition-colors",

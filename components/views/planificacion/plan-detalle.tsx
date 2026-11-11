@@ -109,7 +109,7 @@ export function PlanDetalle({
           <h3 id={`dias-${plan.id}`} className="font-serif text-2xl text-zinc-900 font-normal">Tus outfits, día a día</h3>
 
           {/* Selector de días */}
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 snap-x">
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 snap-x [scrollbar-width:none] overscroll-x-contain">
             {fechas.map((f) => {
               const delDia = plan.momentos.filter((m) => m.fecha === f)
               const punto = delDia.some((m) => m.estado === "error") ? "bg-red-500"
