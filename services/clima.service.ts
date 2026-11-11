@@ -1,18 +1,9 @@
+import { describir } from "@/lib/clima"
+
 export interface Clima {
   temp: number
   texto: string
   lluvia: boolean
-}
-
-// Códigos WMO de Open-Meteo agrupados; el detalle fino no aporta a elegir ropa.
-function describir(codigo: number): { texto: string; lluvia: boolean } {
-  if (codigo === 0) return { texto: "Despejado", lluvia: false }
-  if (codigo <= 3) return { texto: "Nublado", lluvia: false }
-  if (codigo === 45 || codigo === 48) return { texto: "Niebla", lluvia: false }
-  if (codigo >= 71 && codigo <= 77) return { texto: "Nieve", lluvia: true }
-  if (codigo >= 95) return { texto: "Tormenta", lluvia: true }
-  if (codigo >= 51) return { texto: "Lluvia", lluvia: true }
-  return { texto: "Nublado", lluvia: false }
 }
 
 function posicion(): Promise<GeolocationPosition> {

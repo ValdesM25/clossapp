@@ -39,8 +39,10 @@ export const PLANES: { id: Plan; precio: number; resumen: string; incluye: strin
   },
 ]
 
-/** Motivos que devuelve `usar_ia` cuando niega la IA. */
-export type MotivoLimite = "sin_sesion" | "outfit_dia" | "analisis_dia" | "analisis_total" | "global"
+/** Motivos que devuelven `usar_ia` y `usar_dias_plan` cuando niegan la IA. */
+export type MotivoLimite =
+  | "sin_sesion" | "outfit_dia" | "analisis_dia" | "analisis_total" | "global"
+  | "solo_elite" | "plan_dia" | "plan_mes"
 
 // Sin "cambia de plan": los planes de pago también ven estos avisos.
 export const MENSAJES_LIMITE: Record<MotivoLimite, string> = {
@@ -49,6 +51,9 @@ export const MENSAJES_LIMITE: Record<MotivoLimite, string> = {
   analisis_dia: "Llegaste al tope de análisis con IA de hoy. Puedes llenar los datos a mano o volver mañana.",
   analisis_total: "Usaste todos los análisis con IA de tu plan. Puedes llenar los datos a mano.",
   global: "La IA gratis llegó a su tope de hoy. Vuelve mañana.",
+  solo_elite: "La planificación es parte de Elite.",
+  plan_dia: "Ya usaste los días de planificación de hoy. Mañana puedes completar el resto.",
+  plan_mes: "Ya usaste los días de planificación de este mes.",
 }
 
 export const mensajeTopePrendas = (plan: Plan) =>
