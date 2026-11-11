@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { Turnstile, TURNSTILE_SITE_KEY, type TurnstileHandle } from "@/components/shared/turnstile"
@@ -20,7 +20,7 @@ const CON_GOOGLE = PROVEEDORES.includes("google")
 const CON_FACEBOOK = PROVEEDORES.includes("facebook")
 
 const TEXTO_BOTON: Record<Modo, string> = {
-  entrar: "Iniciar sesión",
+  entrar: "Entrar con correo electrónico",
   crear: "Crear cuenta",
   recuperar: "Enviar enlace para recuperar",
 }
@@ -30,7 +30,6 @@ export function LoginView() {
   const [modo, setModo] = useState<Modo>("entrar")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [mostrarPassword, setMostrarPassword] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [captchaFallo, setCaptchaFallo] = useState(false)
@@ -85,118 +84,37 @@ export function LoginView() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="min-h-dvh bg-zinc-50/60 sm:py-8 sm:px-4 flex flex-col justify-center items-center">
-      {/* Tarjeta principal estilo app / referencia: en móvil ancho completo, en PC contenedor centrado */}
-      <div className="w-full sm:max-w-md bg-white min-h-dvh sm:min-h-0 sm:rounded-3xl sm:shadow-[0_8px_30px_rgb(0,0,0,0.06)] sm:border sm:border-zinc-200/80 overflow-hidden flex flex-col">
-        {/* Imagen en la parte de arriba con degradado suave hacia el blanco */}
-        <div className="relative h-60 sm:h-64 w-full overflow-hidden shrink-0 bg-zinc-100">
-          <img
-            src="/img_login_1mitad.jpg"
-            alt="Imagen de bienvenida"
-            className="h-full w-full object-cover object-center"
-          />
-          {/* Degradado que desvanece la foto hacia blanco exactamente como la referencia */}
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
+      className="min-h-dvh bg-white">
+      {/* La columna del formulario crece y hace scroll: con CAPTCHA y demo no cabe en una pantalla de teléfono. */}
+      <div className="flex min-h-dvh w-full">
+        <div className="hidden lg:block sticky top-0 h-dvh w-[50%]">
+          <img src="/img_login_1mitad.jpg" alt="Imagen de bienvenida" className="h-full w-full object-cover" />
         </div>
 
-        {/* Contenido / Formulario */}
-        <div className="px-6 pb-10 pt-0 sm:px-8 flex-1 flex flex-col">
-          {/* Logo en medio, posicionado con la transición del degradado */}
-          <div className="mb-6 text-center -mt-12 relative z-10">
-            <img src="/logo.svg" alt="Clossapp" className="mx-auto h-12 w-auto mb-2 drop-shadow-xs" />
-            <p className="text-xs text-zinc-500 uppercase tracking-widest font-medium">Tu armario digital</p>
-          </div>
-
-            {/* Pestañas de modo (Iniciar sesión / Crear cuenta) al estilo del diseño de referencia */}
-            <div className="flex items-center gap-6 border-b border-zinc-200 mb-6">
-              <button
-                type="button"
-                onClick={() => cambiarModo("entrar")}
-                className={cn(
-                  "pb-2.5 text-sm font-semibold transition-colors relative",
-                  modo === "entrar"
-                    ? "text-zinc-900 border-b-2 border-zinc-900 -mb-px"
-                    : "text-zinc-400 hover:text-zinc-600"
-                )}
-              >
-                Iniciar sesión
-              </button>
-              <button
-                type="button"
-                onClick={() => cambiarModo("crear")}
-                className={cn(
-                  "pb-2.5 text-sm font-semibold transition-colors relative",
-                  modo === "crear"
-                    ? "text-zinc-900 border-b-2 border-zinc-900 -mb-px"
-                    : "text-zinc-400 hover:text-zinc-600"
-                )}
-              >
-                Crear cuenta
-              </button>
-              {modo === "recuperar" && (
-                <span className="pb-2.5 text-sm font-semibold text-zinc-900 border-b-2 border-zinc-900 -mb-px">
-                  Recuperar contraseña
-                </span>
-              )}
+        <div className="flex w-full lg:w-[49%] flex-col justify-center bg-white px-6 py-10 sm:px-10 sm:py-12 lg:px-16">
+          <div className="w-full max-w-md mx-auto">
+            {/* El aviso legal va una sola vez, al final (antes estaba repetido arriba). */}
+            <div className="mb-8 text-center">
+              <img src="/logo.svg" alt="Clossapp" className="mx-auto h-12 sm:h-14 w-auto mb-4" />
+              <p className="text-sm text-zinc-500"><b>Tu armario digital</b></p>
             </div>
 
-            <div className="space-y-4">
-              <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-3">
+              <form onSubmit={handleSubmit} className="space-y-3">
                 <div>
-                  <label htmlFor="login-email" className="block text-xs font-medium text-zinc-700 mb-1.5">
-                    Correo electrónico
-                  </label>
-                  <Input
-                    id="login-email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="nombre@ejemplo.com"
-                    type="email"
-                    autoComplete="email"
-                    className="h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:border-zinc-900 focus-visible:ring-1 focus-visible:ring-zinc-900"
-                  />
+                  <label htmlFor="login-email" className="text-xs text-zinc-500 uppercase tracking-widest">Correo electrónico</label>
+                  <Input id="login-email" value={email} onChange={(e) => setEmail(e.target.value)}
+                    placeholder="tu@correo.com" type="email" autoComplete="email"
+                    className="mt-2 h-11 w-full rounded-none border border-zinc-900 text-sm text-zinc-900 focus-visible:ring-0 focus-visible:border-zinc-900" />
                 </div>
 
                 {modo !== "recuperar" && (
                   <div>
-                    <label htmlFor="login-password" className="block text-xs font-medium text-zinc-700 mb-1.5">
-                      Contraseña
-                    </label>
-                    <div className="relative">
-                      <Input
-                        id="login-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        type={mostrarPassword ? "text" : "password"}
-                        autoComplete={modo === "crear" ? "new-password" : "current-password"}
-                        className="h-12 w-full rounded-xl border border-zinc-300 bg-white pr-11 pl-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:border-zinc-900 focus-visible:ring-1 focus-visible:ring-zinc-900"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setMostrarPassword((prev) => !prev)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 transition-colors p-1"
-                        aria-label={mostrarPassword ? "Ocultar contraseña" : "Ver contraseña"}
-                      >
-                        {mostrarPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                    {modo === "crear" && (
-                      <p className="mt-1.5 text-xs text-zinc-500">Mínimo 8 caracteres, con letras y números.</p>
-                    )}
-                  </div>
-                )}
-
-                {/* Enlace de ¿Olvidaste tu contraseña? centrado justo debajo de contraseña como en la referencia */}
-                {modo === "entrar" && (
-                  <div className="text-center pt-0.5">
-                    <button
-                      type="button"
-                      onClick={() => cambiarModo("recuperar")}
-                      className="text-xs font-medium text-zinc-600 hover:text-zinc-900 transition-colors"
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </button>
+                    <label htmlFor="login-password" className="text-xs text-zinc-500 uppercase tracking-widest">Contraseña</label>
+                    <Input id="login-password" value={password} onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••" type="password" autoComplete={modo === "crear" ? "new-password" : "current-password"}
+                      className="mt-2 h-11 w-full rounded-none border border-zinc-900 text-sm text-zinc-900 focus-visible:ring-0 focus-visible:border-zinc-900" />
+                    {modo === "crear" && <p className="mt-1.5 text-xs text-zinc-500">Mínimo 8 caracteres, con letras y números.</p>}
                   </div>
                 )}
 
@@ -207,111 +125,78 @@ export function LoginView() {
                   </p>
                 )}
 
-                {error && <p role="alert" className="text-xs text-red-500 font-medium">{error}</p>}
+                {error && <p role="alert" className="text-xs text-red-500">{error}</p>}
                 {/* Supabase no revela si el correo existe: ante credenciales que no coinciden se invita a registrarse. */}
                 {modo === "entrar" && error === ERROR_CREDENCIALES && (
-                  <p className="text-xs text-zinc-700 border border-zinc-200 rounded-xl px-4 py-3 bg-zinc-50">
+                  <p className="text-xs text-zinc-700 border border-zinc-200 px-4 py-3 bg-zinc-50">
                     ¿Aún no tienes cuenta?{" "}
                     <button type="button" onClick={() => cambiarModo("crear")} className="font-semibold underline underline-offset-2">Créala gratis</button>
                     {" "}con este correo, o{" "}
                     <button type="button" onClick={() => cambiarModo("recuperar")} className="font-semibold underline underline-offset-2">recupera tu contraseña</button>.
                   </p>
                 )}
-                {aviso && <p role="status" className="text-xs text-zinc-700 border border-zinc-200 rounded-xl px-4 py-3 bg-zinc-50">{aviso}</p>}
+                {aviso && <p role="status" className="text-xs text-zinc-700 border border-zinc-200 px-4 py-3">{aviso}</p>}
 
-                {/* Botón principal (Iniciar sesión) */}
-                <motion.button
-                  type="submit"
-                  whileTap={{ scale: 0.98 }}
-                  disabled={loading || esperandoCaptcha}
-                  className="w-full h-12 rounded-xl bg-zinc-900 text-white text-sm font-medium tracking-wide disabled:opacity-50 flex items-center justify-center hover:bg-zinc-800 transition-colors shadow-sm"
-                >
+                <motion.button type="submit" whileTap={{ scale: 0.98 }} disabled={loading || esperandoCaptcha}
+                  className="w-full h-11 bg-zinc-900 text-white text-sm font-medium tracking-wide disabled:opacity-50 flex items-center justify-center">
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : esperandoCaptcha ? "Verificando…" : TEXTO_BOTON[modo]}
                 </motion.button>
               </form>
 
-              {/* Volver a iniciar sesión si está en modo recuperar */}
-              {modo === "recuperar" && (
-                <div className="text-center pt-1">
-                  <button
-                    type="button"
-                    onClick={() => cambiarModo("entrar")}
-                    className="text-xs font-medium text-zinc-600 hover:text-zinc-900 underline underline-offset-2"
-                  >
-                    Volver a iniciar sesión
-                  </button>
-                </div>
-              )}
-
-              {/* Separador y Google como en la referencia */}
               {modo !== "recuperar" && (CON_GOOGLE || CON_FACEBOOK) && (
                 <>
                   <div className="flex items-center gap-3 py-1" aria-hidden="true">
                     <span className="h-px flex-1 bg-zinc-200" />
-                    <span className="text-xs text-zinc-400 font-normal">O continúa con</span>
+                    <span className="text-[11px] text-zinc-500 uppercase tracking-widest">o continúa con</span>
                     <span className="h-px flex-1 bg-zinc-200" />
                   </div>
                   <div className={cn("grid gap-2", CON_GOOGLE && CON_FACEBOOK ? "grid-cols-2" : "grid-cols-1")}>
-                    {CON_GOOGLE && (
-                      <motion.button
-                        type="button"
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => social("google")}
-                        disabled={loading}
-                        className="h-12 rounded-xl border border-zinc-300 hover:bg-zinc-50 text-zinc-800 text-xs font-medium tracking-wide flex items-center justify-center gap-2.5 transition-colors disabled:opacity-50 shadow-sm"
-                      >
-                        <GoogleIcon /> Continuar con Google
-                      </motion.button>
-                    )}
-                    {CON_FACEBOOK && (
-                      <motion.button
-                        type="button"
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => social("facebook")}
-                        disabled={loading}
-                        className="h-12 rounded-xl border border-zinc-300 hover:bg-zinc-50 text-zinc-800 text-xs font-medium tracking-wide flex items-center justify-center gap-2.5 transition-colors disabled:opacity-50 shadow-sm"
-                      >
-                        <FacebookIcon /> Continuar con Facebook
-                      </motion.button>
-                    )}
+                    {CON_GOOGLE && <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => social("google")} disabled={loading}
+                      className="h-11 border border-zinc-900 text-zinc-900 text-xs font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
+                      <GoogleIcon /> Google
+                    </motion.button>}
+                    {CON_FACEBOOK && <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => social("facebook")} disabled={loading}
+                      className="h-11 border border-zinc-900 text-zinc-900 text-xs font-medium tracking-wide flex items-center justify-center gap-2 disabled:opacity-50">
+                      <FacebookIcon /> Facebook
+                    </motion.button>}
                   </div>
                 </>
               )}
 
-              {/* Modo demo: datos de ejemplo y recorrido guiado */}
-              <div className="!mt-7 rounded-2xl border border-zinc-200 p-4 space-y-3 bg-zinc-50/50">
-                <p className="text-xs text-zinc-500 uppercase tracking-widest text-center font-medium">¿Solo quieres conocer Clossapp?</p>
+              <div className="flex justify-between text-[11px]">
+                {modo === "entrar" ? (
+                  <>
+                    <button type="button" onClick={() => cambiarModo("crear")} className="text-zinc-600 underline underline-offset-2 hover:text-zinc-900">Crear cuenta</button>
+                    <button type="button" onClick={() => cambiarModo("recuperar")} className="text-zinc-500 hover:text-zinc-900">Olvidé mi contraseña</button>
+                  </>
+                ) : (
+                  <button type="button" onClick={() => cambiarModo("entrar")} className="text-zinc-600 underline underline-offset-2 hover:text-zinc-900">Ya tengo cuenta, entrar</button>
+                )}
+              </div>
+
+              {/* Modo demo: datos de ejemplo y recorrido guiado; no toca cuentas reales. */}
+              <div className="!mt-6 border border-zinc-200 p-3 space-y-2">
+                <p className="text-xs text-zinc-500 uppercase tracking-widest text-center">¿Solo quieres conocer Clossapp?</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => entrarModoDemo("usuario")}
-                    className="w-full h-10 rounded-lg border border-zinc-300 bg-white text-zinc-700 text-xs font-medium hover:border-zinc-900 transition-colors"
-                  >
+                  <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => entrarModoDemo("usuario")}
+                    className="w-full h-11 border border-zinc-300 text-zinc-700 text-xs font-medium tracking-wide hover:border-zinc-900 transition-colors">
                     Demo de usuario
                   </motion.button>
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => entrarModoDemo("acopio")}
-                    className="w-full h-10 rounded-lg border border-zinc-900 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition-colors"
-                  >
+                  <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => entrarModoDemo("acopio")}
+                    className="w-full h-11 border border-zinc-900 bg-zinc-50 hover:bg-zinc-100 text-zinc-900 text-xs font-medium tracking-wide transition-colors">
                     Demo de centro de acopio
                   </motion.button>
                 </div>
-                <p className="text-[11px] text-zinc-400 text-center">Datos de ejemplo y una guía paso a paso. Nada se guarda.</p>
+                <p className="text-xs text-zinc-500 text-center">Datos de ejemplo y una guía paso a paso. Nada se guarda.</p>
               </div>
 
-              {/* Enlace para centros de acopio */}
-              <p className="text-xs text-zinc-500 text-center pt-1">
+              {/* El portal de recolección ya no tiene botón público: se entra con la cuenta del centro (perfiles.rol = 'acopio'). */}
+              <p className="text-xs text-zinc-500 text-center">
                 ¿Eres un punto de recolección? Entra con el correo de tu centro.{" "}
-                <Link href="/centros" className="underline underline-offset-2 text-zinc-700 hover:text-zinc-900 font-medium">
-                  Quiero ser centro de acopio
-                </Link>
+                <Link href="/centros" className="underline underline-offset-2 text-zinc-600 hover:text-zinc-900">Quiero ser centro de acopio</Link>
               </p>
 
-              {/* Aviso legal */}
-              <p className="text-xs leading-relaxed text-zinc-400 text-center">
+              <p className="text-xs leading-relaxed text-zinc-500 text-center">
                 Al continuar aceptas nuestros{" "}
                 <Link href="/politicas#terminos" className="text-zinc-600 underline underline-offset-2 hover:text-zinc-900 transition-colors">
                   términos y condiciones
@@ -325,6 +210,7 @@ export function LoginView() {
             </div>
           </div>
         </div>
+      </div>
     </motion.div>
   )
 }
