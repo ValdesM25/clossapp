@@ -21,11 +21,14 @@ function callbackUrl(next?: string): string {
   return url.toString()
 }
 
+/** Supabase no dice si el correo existe; con este mensaje el login invita a crear cuenta. */
+export const ERROR_CREDENCIALES = "Correo o contraseña incorrectos."
+
 /** Traduce los errores de Supabase Auth a mensajes para la usuaria. */
 function mensajeAuth(message: string | undefined, fallback: string): string {
   const m = (message ?? "").toLowerCase()
   if (m.includes("email not confirmed")) return "Confirma tu correo antes de entrar. Revisa tu bandeja de entrada."
-  if (m.includes("invalid login credentials")) return "Correo o contraseña incorrectos."
+  if (m.includes("invalid login credentials")) return ERROR_CREDENCIALES
   if (m.includes("already registered")) return "Ese correo ya tiene cuenta. Entra o recupera tu contraseña."
   if (m.includes("captcha")) return "No pudimos verificar que no eres un robot. Intenta de nuevo."
   if (m.includes("rate limit") || m.includes("too many")) return "Demasiados intentos. Espera unos minutos."
@@ -41,11 +44,11 @@ export async function signIn(
 ): Promise<{ uuid: string; displayName: string }> {
   const { data, error } = await supabase.auth.signInWithPassword({
     email: email.trim(),
-    password: password.trim(),
+    password,
     options: { captchaToken },
   })
   if (error || !data.user) {
-    throw new Error(mensajeAuth(error?.message, "Correo o contraseña incorrectos."))
+    throw new Error(mensajeAuth(error?.message, ERROR_CREDENCIALES))
   }
   const uuid = data.user.id
   const displayName = displayNameFor(data.user.email, email.trim())

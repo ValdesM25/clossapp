@@ -7,7 +7,8 @@ import { QRCodeSVG } from "qrcode.react"
 import { useCartContext } from "@/context/cart-context"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
-import { createEscrowOrder } from "@/services/escrow.service"
+import { createEscrowOrder, iniciarPagoMarketplace } from "@/services/escrow.service"
+import { PUNTO_ENTREGA } from "@/constants/donaciones"
 import type { EscrowOrder, MetodoPagoEscrow } from "@/types/escrow"
 
 interface EscrowCheckoutModalProps {
@@ -18,7 +19,7 @@ interface EscrowCheckoutModalProps {
 
 export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowCheckoutModalProps) {
   const { cart, totalPrice, clearCart } = useCartContext()
-  const { userId, userEmail, userName } = useAuthContext()
+  const { userId, userEmail, userName, isGuest } = useAuthContext()
   const supabase = createBrowserSupabaseClient()
 
   const [metodoPago, setMetodoPago] = useState<MetodoPagoEscrow>("tarjeta")
@@ -38,6 +39,11 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
     setErrorPago(null)
 
     try {
+      // Con cuenta: pago real en Stripe. El carrito se vacía al volver con el pago hecho.
+      if (!isGuest) {
+        window.location.assign(await iniciarPagoMarketplace(cart))
+        return
+      }
       const order = await createEscrowOrder(supabase, {
         buyerUserId: userId || "guest",
         buyerName: nombreTarjeta || userName || "Comprador ClossApp",
@@ -45,8 +51,8 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
         items: cart,
         subtotal: totalPrice,
         metodoPago,
-        puntoAcopioId: "norte",
-        puntoAcopioNombre: "Centro de Acopio Norte",
+        puntoAcopioId: PUNTO_ENTREGA.id,
+        puntoAcopioNombre: PUNTO_ENTREGA.nombre,
       })
 
       setCompletedOrder(order)
@@ -171,6 +177,14 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
               <span className="font-mono text-base sm:text-lg font-bold text-zinc-900">${totalPrice} MXN</span>
             </div>
 
+            {!isGuest && (
+              <p className="text-[11px] sm:text-xs text-zinc-600 flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5 shrink-0" /> Pagas con tarjeta en la página segura de Stripe.
+              </p>
+            )}
+
+            {/* Demo: método y tarjeta de ejemplo, nada se cobra. */}
+            {isGuest && (<>
             {/* Metodo de Pago Selector */}
             <div className="space-y-1.5">
               <label className="text-[11px] sm:text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
@@ -247,6 +261,7 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
                 </div>
               </div>
             )}
+            </>)}
 
             {errorPago && (
               <p role="alert" className="text-xs text-red-600 border border-red-200 bg-red-50 px-3 py-2">{errorPago}</p>
@@ -268,11 +283,11 @@ export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowChe
                 className="flex-1 bg-zinc-900 text-white text-xs font-medium py-2.5 rounded hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {processing ? (
-                  <span>Reteniendo fondos en custodia...</span>
+                  <span>{isGuest ? "Reteniendo fondos en custodia..." : "Abriendo el pago..."}</span>
                 ) : (
                   <>
                     <ShieldCheck className="w-4 h-4 text-zinc-300" />
-                    <span>Pagar y Retener ${totalPrice} MXN</span>
+                    <span>{isGuest ? `Pagar y Retener $${totalPrice} MXN` : `Pagar $${totalPrice} MXN`}</span>
                   </>
                 )}
               </motion.button>

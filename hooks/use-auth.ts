@@ -5,10 +5,12 @@ import { signIn, signUp, signInWithProvider, requestPasswordReset, displayNameFo
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import type { UserMode } from "@/types"
 import { normalizarPlan, type Plan } from "@/constants/planes"
+import type { EstadoCobros } from "@/lib/marketplace"
 import type { EstiloPerfil, ModoOnboarding } from "@/constants/onboarding"
 import { entrarDemo, salirDemo, restaurarSiQuedoDemo, type TipoDemo } from "@/lib/demo"
 
 const GUEST = { id: "guest", name: "Visita" } as const
+const AVATAR_DEMO = "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80"
 
 // Si supabase-js se queda esperando su lock (PWA con pestañas viejas), la UI no debe quedar congelada.
 function conTimeout<T>(p: Promise<T>, ms = 8000): Promise<T> {
@@ -21,12 +23,16 @@ export function useAuth() {
   const [userName, setUserName] = useState("Alex")
   const [userEmail, setUserEmail] = useState("alex@clossapp.com")
   const [userPhone, setUserPhone] = useState("+52 844 123 4567")
-  const [userAvatarUrl, setUserAvatarUrl] = useState("https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80")
+  const [userAvatarUrl, setUserAvatarUrl] = useState("")
   // null mientras no se sabe (o si la tabla perfiles aun no existe): no se bloquea nada.
   const [plan, setPlan] = useState<Plan | null>(null)
   const [estilo, setEstilo] = useState<EstiloPerfil | null>(null)
   // Solo muestra el acceso a /admin; los permisos reales los revisa la base.
   const [esAdmin, setEsAdmin] = useState(false)
+  // Cuenta de cobro de Stripe lista para recibir el dinero de ventas y rentas.
+  const [cobrosActivos, setCobrosActivos] = useState(false)
+  // En qué punto del alta de la cuenta de cobro está (para decirle qué sigue).
+  const [cobrosEstado, setCobrosEstado] = useState<EstadoCobros>("sin_cuenta")
   // Qué parte del recorrido de estilo mostrar (cuenta nueva, preguntas pospuestas o desde el menú).
   const [mostrarOnboarding, setMostrarOnboarding] = useState<ModoOnboarding | false>(false)
   // Modo demo (reemplaza al invitado): datos simulados + recorrido guiado.
@@ -52,7 +58,7 @@ export function useAuth() {
   const aplicarSesion = useCallback(async (user: { id: string; email?: string | null }) => {
     const { data } = await supabase
       .from("perfiles")
-      .select("plan, estilo, onboarding_completado, rol, punto_acopio_nombre, es_admin, nombre, telefono, avatar_url")
+      .select("plan, estilo, onboarding_completado, rol, punto_acopio_nombre, es_admin, nombre, telefono, avatar_url, cobros_activos, cobros_estado")
       .eq("user_id", user.id)
       .maybeSingle()
     setUserId(user.id)
@@ -67,9 +73,12 @@ export function useAuth() {
     setUserName(data?.nombre || displayNameFor(user.email, GUEST.name))
     // Sin datos guardados no se muestran los de ejemplo del estado inicial.
     setUserPhone(data?.telefono ?? "")
-    if (data?.avatar_url) setUserAvatarUrl(data.avatar_url)
+    // Sin foto propia queda vacío (se muestra la inicial), nunca la de otra cuenta o la de ejemplo.
+    setUserAvatarUrl(data?.avatar_url ?? "")
     if (!data) return
     setEsAdmin(!!data.es_admin)
+    setCobrosActivos(!!data.cobros_activos)
+    setCobrosEstado((data.cobros_estado as EstadoCobros | null) ?? (data.cobros_activos ? "activa" : "sin_cuenta"))
     setPlan(normalizarPlan(data.plan))
     setEstilo((data.estilo as EstiloPerfil | null) ?? null)
     if (!data.onboarding_completado) setMostrarOnboarding("inicial")
@@ -103,9 +112,12 @@ export function useAuth() {
         setUserId(GUEST.id)
         setUserName(GUEST.name)
         setUserEmail("")
+        setUserAvatarUrl("")
         setPlan(null)
         setEstilo(null)
         setEsAdmin(false)
+        setCobrosActivos(false)
+        setCobrosEstado("sin_cuenta")
         setMostrarOnboarding(false)
         return
       }
@@ -187,6 +199,7 @@ export function useAuth() {
     setUserId(GUEST.id)
     setUserName("Alex (demo)")
     setUserEmail("alex@ejemplo.com")
+    setUserAvatarUrl(AVATAR_DEMO)
   }, [])
 
   const iniciarTour = useCallback(() => setTourActivo(true), [])
@@ -201,6 +214,7 @@ export function useAuth() {
       setUserId(GUEST.id)
       setUserName(GUEST.name)
       setUserEmail("")
+      setUserAvatarUrl("")
       return
     }
     // Primero se limpia la UI: si signOut se cuelga, el usuario igual ve el login.
@@ -208,9 +222,11 @@ export function useAuth() {
     setUserId(GUEST.id)
     setUserName(GUEST.name)
     setUserEmail("")
+    setUserAvatarUrl("")
     setPlan(null)
     setEstilo(null)
     setEsAdmin(false)
+    setCobrosActivos(false)
     setMostrarOnboarding(false)
     // La sesion sobrevive al cierre: sin signOut volveria sola en la proxima apertura.
     try {
@@ -287,7 +303,7 @@ export function useAuth() {
 
   return {
     userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isRecoleccion, isAuthenticated, initializing, plan,
-    estilo, mostrarOnboarding, abrirOnboarding, terminarOnboarding, esAdmin,
+    estilo, mostrarOnboarding, abrirOnboarding, terminarOnboarding, esAdmin, cobrosActivos, cobrosEstado,
     demo, tourActivo, iniciarTour, cerrarTour, entrarModoDemo,
     login, register, loginWithProvider, resetPassword, clearError,
     logout, updateProfile, loading, error,

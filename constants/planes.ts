@@ -29,7 +29,7 @@ export const PLANES: { id: Plan; precio: number; resumen: string; incluye: strin
     id: "plus",
     precio: 59,
     resumen: "Para usar más y pasar lo que no usas.",
-    incluye: ["Hasta 200 prendas", "Outfits con IA ilimitados", "Vender y rentar en el Shop", "Estadísticas avanzadas"],
+    incluye: ["Hasta 200 prendas", "Outfits con IA con uso justo", "Comprar, vender y rentar en el Shop", "Estadísticas avanzadas"],
   },
   {
     id: "elite",

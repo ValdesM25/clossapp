@@ -16,6 +16,7 @@ export default function RestablecerPage() {
   const [confirmacion, setConfirmacion] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
+  const [listo, setListo] = useState(false)
 
   async function guardar(e: React.FormEvent) {
     e.preventDefault()
@@ -27,10 +28,16 @@ export default function RestablecerPage() {
     const { error } = await createClient().auth.updateUser({ password })
     setGuardando(false)
     if (error) {
-      setError("El enlace expiró o ya se usó. Pide uno nuevo desde el inicio de sesión.")
+      // Antes todo error decía "el enlace expiró", aunque el problema fuera la contraseña.
+      setError(error.code === "same_password"
+        ? "Esa es tu contraseña actual. Elige una distinta."
+        : error.code === "weak_password"
+          ? "La contraseña es muy débil. Usa al menos 8 caracteres, con letras y números."
+          : "El enlace expiró o ya se usó. Pide uno nuevo desde el inicio de sesión.")
       return
     }
-    router.replace("/")
+    setListo(true)
+    setTimeout(() => router.replace("/"), 1500)
   }
 
   return (
@@ -50,7 +57,8 @@ export default function RestablecerPage() {
             onChange={(e) => setConfirmacion(e.target.value)} className={inputClass} />
         </div>
         {error && <p role="alert" className="text-xs text-red-500">{error}</p>}
-        <button type="submit" disabled={guardando}
+        {listo && <p role="status" className="text-xs text-zinc-700 text-center">Listo, tu contraseña cambió. Entrando a la app…</p>}
+        <button type="submit" disabled={guardando || listo}
           className="w-full h-11 bg-zinc-900 text-white text-sm font-medium tracking-wide disabled:opacity-50 flex items-center justify-center">
           {guardando ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar contraseña"}
         </button>

@@ -290,17 +290,37 @@ export default function PoliticasPage() {
         </Seccion>
 
         <Seccion id="marketplace" numero="03" titulo="Uso del Marketplace">
+          <p className="text-[14px]">
+            Comprar, vender y rentar prendas está disponible en los planes Plus y Elite. Con el plan
+            Esencial puedes donar ropa a los centros de acopio y ganar puntos.
+          </p>
           <Sub titulo="Nuestro rol">
             <p>
               Clossapp es un{" "}
               <strong className="font-medium text-zinc-900">espacio de encuentro</strong> entre
-              personas que desean vender, rentar o donar prendas. No somos parte de la operación:
-              no compramos, no vendemos y no somos propietarios de las prendas publicadas.
+              personas que desean vender, rentar o donar prendas, y cobramos y guardamos el pago mientras
+              se entrega la prenda. No compramos, no vendemos y no somos propietarios de las prendas publicadas.
             </p>
-            <p className="text-[13px] text-zinc-500 border border-zinc-100 bg-zinc-50 px-3 py-2.5">
-              Clossapp no procesa pagos ni retiene fondos. El pago, la entrega y cualquier
-              acuerdo sobre la prenda ocurren directamente entre las personas involucradas y bajo
-              su propia responsabilidad.
+          </Sub>
+
+          <Sub titulo="Pagos, custodia y comisión">
+            <p>
+              Las compras y rentas se pagan con tarjeta a través de Stripe. El pago queda en custodia
+              en la cuenta de Clossapp y no se entrega a quien vende hasta que la prenda se recoge en el
+              centro de acopio y el centro confirma la entrega con el código QR del pedido. En una renta,
+              el pago se libera cuando la prenda se devuelve.
+            </p>
+            <p>
+              Clossapp cobra una comisión del 15% sobre el precio de cada venta o renta; quien vende recibe
+              el 85% restante. Las comisiones de procesamiento de Stripe las absorbe Clossapp. Para recibir
+              su dinero, quien vende debe tener una cuenta de cobro en Stripe, que pide verificar su
+              identidad y una cuenta bancaria (CLABE) a su nombre. Si al liberarse un pago aún no la tiene,
+              el pago espera hasta que la conecte.
+            </p>
+            <p>
+              Si un pedido se cancela antes de la entrega, se reembolsa el total a la tarjeta con la que se
+              pagó. Un pago que no se completa en 30 minutos se cancela solo y las prendas vuelven a estar
+              disponibles. Las rentas pueden reservarse con hasta dos meses de anticipación.
             </p>
           </Sub>
 
@@ -315,9 +335,9 @@ export default function PoliticasPage() {
 
           <Sub titulo="Responsabilidad de quien aparta">
             <p>
-              Al apartar una prenda manifiestas tu intención de adquirirla o rentarla. Te
-              corresponde verificar el estado real del artículo antes de concretar cualquier
-              pago o intercambio.
+              Al pagar una prenda te comprometes a recogerla en el centro de acopio indicado. Revísala
+              al recogerla: si no corresponde a lo publicado, no confirmes la entrega y escríbenos para
+              cancelar el pedido.
             </p>
           </Sub>
 
@@ -326,7 +346,7 @@ export default function PoliticasPage() {
               Sólo determinadas categorías, como vestidos y accesorios, están habilitadas para
               renta. Quien renta se compromete a devolver la prenda en la fecha acordada y en
               condiciones equivalentes a las recibidas, salvo el desgaste normal de uso. Los
-              acuerdos sobre depósitos, daños o retrasos son entre las partes.
+              acuerdos sobre daños o retrasos son entre las partes.
             </p>
           </Sub>
 
@@ -371,6 +391,16 @@ export default function PoliticasPage() {
               crédito o débito a través de Stripe. Al contratar, autorizas que el mismo cargo se haga
               cada mes, en la misma fecha, hasta que canceles. Los precios están en pesos mexicanos e
               incluyen IVA.
+            </p>
+          </Sub>
+
+          <Sub titulo="Uso justo">
+            <p>
+              Los outfits y análisis con inteligencia artificial de Plus y Elite están pensados para el
+              uso personal de tu clóset y se rigen por una política de uso justo. Para que el servicio
+              funcione bien para todas las personas, podemos limitar cuántos se generan en un mismo día
+              cuando el uso supera por mucho lo normal. Si llegas a ese tope, la app te avisa y puedes
+              seguir al día siguiente; el resto de la app funciona igual.
             </p>
           </Sub>
 

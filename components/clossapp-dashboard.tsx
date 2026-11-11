@@ -26,7 +26,8 @@ import { tomarVolverA } from "@/lib/volver-a"
 import { PASOS_DEMO_ACOPIO, PASOS_DEMO_USUARIO, PASO_INSTALAR_IOS } from "@/constants/tour"
 import { useInstalarApp } from "@/hooks/use-instalar-app"
 import { PantallaEntrada } from "@/components/shared/pantalla-entrada"
-import { EVENTO_NAVEGAR } from "@/lib/navegar"
+import { VideoInstalarIos } from "@/components/shared/video-instalar-ios"
+import { EVENTO_NAVEGAR, navegarA, peticionVenderDeUrl, type DestinoNavegar, type PeticionVender } from "@/lib/navegar"
 
 /** Pastilla fija del modo demo: recuerda que todo es de ejemplo y deja repetir la guía o salir. */
 function BarraDemo({ abajo }: { abajo: string }) {
@@ -75,6 +76,7 @@ function AppShell() {
       <Contenido />
       {/* La sesión se comprueba debajo de la entrada: sin esto la app instalada mostraría el login un instante. */}
       <PantallaEntrada key={entradas} />
+      <VideoInstalarIos />
     </>
   )
 }
@@ -121,11 +123,25 @@ function Contenido() {
 
 function AuthenticatedShell() {
   const { refresh } = usePrendasContext()
-  const [activeView, setActiveView] = useState<View>("inicio")
+  const { plan } = useAuthContext()
+  // Al volver de un pago (?pedido), del alta de cobros (?vender=ok|revision|datos|error) o al tocar
+  // un push del vendedor (?vender=1) se abre el Shop. Solo se dibuja en el navegador (después de
+  // restaurar la sesión), así que window existe.
+  const [peticionVender, setPeticionVender] = useState<PeticionVender | null>(() => peticionVenderDeUrl(window.location.search))
+  const [activeView, setActiveView] = useState<View>(() =>
+    peticionVender || new URLSearchParams(window.location.search).has("pedido") ? "marketplace" : "inicio")
   const keyboardOpen = useKeyboard()
 
   useEffect(() => {
-    const ir = (e: Event) => setActiveView((e as CustomEvent<View>).detail)
+    if (peticionVenderDeUrl(window.location.search)) window.history.replaceState(null, "", window.location.pathname)
+  }, [])
+
+  useEffect(() => {
+    const ir = (e: Event) => {
+      const { vista, venderPrendaId } = (e as CustomEvent<DestinoNavegar>).detail
+      if (venderPrendaId) setPeticionVender({ prendaId: venderPrendaId })
+      setActiveView(vista)
+    }
     window.addEventListener(EVENTO_NAVEGAR, ir)
     return () => window.removeEventListener(EVENTO_NAVEGAR, ir)
   }, [])
@@ -134,8 +150,9 @@ function AuthenticatedShell() {
     inicio: <InicioView onNavigate={(view) => setActiveView(view)} />,
     armario: <ArmarioView />,
     simulador: <SimuladorView onElegir={() => setActiveView("armario")} />,
-    marketplace: <MarketplaceView onApartar={refresh} />,
-    estadisticas: <EstadisticasView onSellPrenda={() => setActiveView("marketplace")} />,
+    marketplace: <MarketplaceView onApartar={refresh} peticion={peticionVender} onAtendida={() => setPeticionVender(null)} />,
+    // En el plan gratis ese botón dice "Donar": solo lleva al Shop, que para ese plan es la pantalla de donar.
+    estadisticas: <EstadisticasView onSellPrenda={(p) => navegarA("marketplace", plan === "gratis" ? undefined : { venderPrendaId: p.id })} />,
     planes: <PlanesView />,
     perfil: <PerfilView />,
     punto_recoleccion: <PuntoRecoleccionView />,

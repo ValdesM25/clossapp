@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { Turnstile, TURNSTILE_SITE_KEY, type TurnstileHandle } from "@/components/shared/turnstile"
 import { useAuthContext } from "@/context/auth-context"
-import type { ProveedorSocial } from "@/services/auth.service"
+import { ERROR_CREDENCIALES, type ProveedorSocial } from "@/services/auth.service"
 import { guardarVolverA } from "@/lib/volver-a"
 
 type Modo = "entrar" | "crear" | "recuperar"
@@ -33,6 +33,7 @@ export function LoginView() {
   const [mostrarPassword, setMostrarPassword] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaFallo, setCaptchaFallo] = useState(false)
   const captchaRef = useRef<TurnstileHandle>(null)
   const esperandoCaptcha = !!TURNSTILE_SITE_KEY && !captchaToken
 
@@ -84,31 +85,27 @@ export function LoginView() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="min-h-dvh bg-white">
-      <div className="flex min-h-dvh w-full flex-col lg:flex-row">
-        {/* Desktop: columna sticky con imagen completa */}
-        <div className="hidden lg:block sticky top-0 h-dvh w-[50%]">
-          <img src="/img_login_1mitad.jpg" alt="Imagen de bienvenida" className="h-full w-full object-cover" />
-        </div>
-
-        {/* Móvil: imagen en la parte de arriba con degradado suave hacia blanco */}
-        <div className="block lg:hidden relative h-56 sm:h-64 w-full overflow-hidden shrink-0 bg-zinc-100">
+      className="min-h-dvh bg-zinc-50/60 sm:py-8 sm:px-4 flex flex-col justify-center items-center">
+      {/* Tarjeta principal estilo app / referencia: en móvil ancho completo, en PC contenedor centrado */}
+      <div className="w-full sm:max-w-md bg-white min-h-dvh sm:min-h-0 sm:rounded-3xl sm:shadow-[0_8px_30px_rgb(0,0,0,0.06)] sm:border sm:border-zinc-200/80 overflow-hidden flex flex-col">
+        {/* Imagen en la parte de arriba con degradado suave hacia el blanco */}
+        <div className="relative h-60 sm:h-64 w-full overflow-hidden shrink-0 bg-zinc-100">
           <img
             src="/img_login_1mitad.jpg"
             alt="Imagen de bienvenida"
             className="h-full w-full object-cover object-center"
           />
+          {/* Degradado que desvanece la foto hacia blanco exactamente como la referencia */}
           <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
         </div>
 
         {/* Contenido / Formulario */}
-        <div className="flex w-full lg:w-[50%] flex-col justify-center bg-white px-6 pb-12 pt-0 sm:px-10 lg:px-16 lg:py-12">
-          <div className="w-full max-w-sm mx-auto">
-            {/* Logo en medio, posicionado con la transición de la imagen al blanco */}
-            <div className="mb-6 text-center -mt-12 sm:-mt-14 relative z-10 lg:mt-0 lg:mb-8">
-              <img src="/logo.svg" alt="Clossapp" className="mx-auto h-12 sm:h-14 w-auto mb-2" />
-              <p className="text-xs text-zinc-500 uppercase tracking-widest font-medium">Tu armario digital</p>
-            </div>
+        <div className="px-6 pb-10 pt-0 sm:px-8 flex-1 flex flex-col">
+          {/* Logo en medio, posicionado con la transición del degradado */}
+          <div className="mb-6 text-center -mt-12 relative z-10">
+            <img src="/logo.svg" alt="Clossapp" className="mx-auto h-12 w-auto mb-2 drop-shadow-xs" />
+            <p className="text-xs text-zinc-500 uppercase tracking-widest font-medium">Tu armario digital</p>
+          </div>
 
             {/* Pestañas de modo (Iniciar sesión / Crear cuenta) al estilo del diseño de referencia */}
             <div className="flex items-center gap-6 border-b border-zinc-200 mb-6">
@@ -203,9 +200,23 @@ export function LoginView() {
                   </div>
                 )}
 
-                <Turnstile ref={captchaRef} onToken={setCaptchaToken} />
+                <Turnstile ref={captchaRef} onToken={(t) => { setCaptchaToken(t); if (t) setCaptchaFallo(false) }} onFallo={() => setCaptchaFallo(true)} />
+                {captchaFallo && !captchaToken && (
+                  <p role="alert" className="text-xs text-red-500 font-medium">
+                    No cargó la verificación anti-robots. Desactiva el bloqueador de anuncios o recarga la página.
+                  </p>
+                )}
 
                 {error && <p role="alert" className="text-xs text-red-500 font-medium">{error}</p>}
+                {/* Supabase no revela si el correo existe: ante credenciales que no coinciden se invita a registrarse. */}
+                {modo === "entrar" && error === ERROR_CREDENCIALES && (
+                  <p className="text-xs text-zinc-700 border border-zinc-200 rounded-xl px-4 py-3 bg-zinc-50">
+                    ¿Aún no tienes cuenta?{" "}
+                    <button type="button" onClick={() => cambiarModo("crear")} className="font-semibold underline underline-offset-2">Créala gratis</button>
+                    {" "}con este correo, o{" "}
+                    <button type="button" onClick={() => cambiarModo("recuperar")} className="font-semibold underline underline-offset-2">recupera tu contraseña</button>.
+                  </p>
+                )}
                 {aviso && <p role="status" className="text-xs text-zinc-700 border border-zinc-200 rounded-xl px-4 py-3 bg-zinc-50">{aviso}</p>}
 
                 {/* Botón principal (Iniciar sesión) */}
@@ -314,7 +325,6 @@ export function LoginView() {
             </div>
           </div>
         </div>
-      </div>
     </motion.div>
   )
 }

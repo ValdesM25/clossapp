@@ -22,6 +22,8 @@ export const { dynamic, dynamicParams, revalidate, generateStaticParams, GET } =
       "**/logo_f.png",
       "**/img_login_1mitad.jpg",
       "**/placeholder*.{jpg,png,svg}",
+      // Solo se ve en iPhone sin instalar: quien ya instaló no necesita esos 700 KB.
+      "**/instalar-ios.{mp4,jpg}",
     ],
     // Usa el esbuild nativo (esta en devDependencies) en vez de la variante
     // wasm, que habria que instalar aparte y compila mas lento.

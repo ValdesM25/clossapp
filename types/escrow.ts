@@ -13,6 +13,7 @@ export interface CartItem {
 }
 
 export type EscrowStatus =
+  | "pendiente_pago"
   | "pago_en_custodia"
   | "listo_en_punto"
   | "en_renta_cliente"

@@ -418,14 +418,19 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
               </div>
             )}
 
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              disabled={selectedIds.length === 0}
-              onClick={() => setPaso("entrega")}
-              className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold tracking-wide disabled:opacity-40 transition-colors shadow-sm"
-            >
-              Continuar ({cantidadSeleccionada} {cantidadSeleccionada === 1 ? "prenda" : "prendas"})
-            </motion.button>
+            {/* Pegado abajo mientras se elige: con muchas prendas no hay que bajar hasta el final para continuar.
+                El pb-40 del contenedor de scroll lo dejaría flotando lejos de la barra de navegación: baja 3rem para
+                quedar justo arriba de ella, y el after tapa las prendas que pasarían por debajo. */}
+            <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)-3rem)] z-30 -mx-4 px-4 py-3 bg-white border-t border-zinc-100 after:absolute after:inset-x-0 after:top-full after:h-40 after:bg-white">
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                disabled={selectedIds.length === 0}
+                onClick={() => setPaso("entrega")}
+                className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold tracking-wide disabled:opacity-40 transition-colors shadow-sm"
+              >
+                Continuar ({cantidadSeleccionada} {cantidadSeleccionada === 1 ? "prenda" : "prendas"})
+              </motion.button>
+            </div>
           </motion.div>
         )}
 

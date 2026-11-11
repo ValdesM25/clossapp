@@ -91,7 +91,9 @@ export function InicioView({ onNavigate }: InicioViewProps) {
         </div>
         <button type="button" onClick={() => navegarA("perfil")} aria-label="Abrir tu perfil"
           className="w-11 h-11 rounded-full overflow-hidden border border-zinc-200 shrink-0">
-          <img src={userAvatarUrl} alt="" className="w-full h-full object-cover" />
+          {userAvatarUrl
+            ? <img src={userAvatarUrl} alt="" className="w-full h-full object-cover" />
+            : <span aria-hidden="true" className="w-full h-full flex items-center justify-center bg-zinc-100 text-zinc-700 font-serif">{userName.charAt(0).toUpperCase()}</span>}
         </button>
       </div>
 
@@ -267,11 +269,13 @@ export function InicioView({ onNavigate }: InicioViewProps) {
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Combinar
               </motion.button>
-              <div className="grid grid-cols-2">
-                <button type="button" onClick={() => onNavigate?.("marketplace")}
-                  className="h-10 text-xs text-zinc-600 hover:text-zinc-900 flex items-center justify-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5" aria-hidden="true" /> Vender
-                </button>
+              <div className={cn("grid", plan === "gratis" ? "grid-cols-1" : "grid-cols-2")}>
+                {plan !== "gratis" && (
+                  <button type="button" onClick={() => navegarA("marketplace", { venderPrendaId: p.id })}
+                    className="h-10 text-xs text-zinc-600 hover:text-zinc-900 flex items-center justify-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5" aria-hidden="true" /> Vender
+                  </button>
+                )}
                 <button type="button" onClick={() => onNavigate?.("marketplace")}
                   className="h-10 text-xs text-zinc-600 hover:text-zinc-900 flex items-center justify-center gap-1.5">
                   <HeartHandshake className="w-3.5 h-3.5" aria-hidden="true" /> Donar

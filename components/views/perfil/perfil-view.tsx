@@ -2,11 +2,13 @@
 
 import { useState, useRef, useEffect, ChangeEvent } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { User, LogOut, Camera, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck, Crown, Gift, BarChart3, ChevronRight, Luggage, type LucideIcon } from "lucide-react"
+import { User, LogOut, Camera, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck, Crown, Gift, BarChart3, ChevronRight, Luggage, Wallet, type LucideIcon } from "lucide-react"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { activarPush, pushActivo, pushDisponible } from "@/lib/push"
 import { navegarA } from "@/lib/navegar"
+import { validarPassword } from "@/services/auth.service"
+import { abrirCuentaCobro } from "@/services/marketplace.service"
 import { NOMBRE_PLAN, esDePago } from "@/constants/planes"
 import { CenteredModal } from "@/components/shared/centered-modal"
 import { AvatarCropper } from "@/components/shared/avatar-cropper"
@@ -15,7 +17,21 @@ import { pageProps } from "@/constants/animation"
 
 /** Pestaña Perfil: cuenta, estilo, estadísticas, planes y recordatorios, cada opción con lo que hace. */
 export function PerfilView() {
-  const { userName, userEmail, userPhone, userAvatarUrl, userMode, isGuest, plan, logout, updateProfile, abrirOnboarding, userId, esAdmin } = useAuthContext()
+  const { userName, userEmail, userPhone, userAvatarUrl, userMode, isGuest, plan, logout, updateProfile, abrirOnboarding, userId, esAdmin, cobrosActivos } = useAuthContext()
+  const [abriendoCobros, setAbriendoCobros] = useState(false)
+
+  // Alta de la cuenta de cobro o, si ya está activa, el panel de Stripe con sus depósitos.
+  async function irACobros() {
+    setAbriendoCobros(true)
+    try {
+      const r = await abrirCuentaCobro()
+      if (r.url) return window.location.assign(r.url)
+      window.location.reload()
+    } catch (err) {
+      setPushMsg(err instanceof Error ? err.message : "No se pudo abrir tu cuenta de cobro.")
+      setAbriendoCobros(false)
+    }
+  }
   const [pushOn, setPushOn] = useState(false)
   const [pushMsg, setPushMsg] = useState<string | null>(null)
   useEffect(() => { pushActivo().then(setPushOn).catch(() => setPushOn(false)) }, [])
@@ -83,6 +99,11 @@ export function PerfilView() {
       setErrorMsg("Las contraseñas no coinciden")
       return
     }
+    const invalida = password ? validarPassword(password) : null
+    if (invalida) {
+      setErrorMsg(invalida)
+      return
+    }
 
     setLoading(true)
     try {
@@ -98,7 +119,9 @@ export function PerfilView() {
         setSuccessMsg(null)
       }, 1200)
     } catch (err) {
-      setErrorMsg("Error al actualizar la información")
+      setErrorMsg(err instanceof Error && /password/i.test(err.message)
+        ? "Se guardaron tus datos, pero no la contraseña. Prueba con otra distinta a la actual."
+        : "Error al actualizar la información")
     } finally {
       setLoading(false)
     }
@@ -113,7 +136,9 @@ export function PerfilView() {
         </p>
       )}
       <header className="flex items-center gap-4">
-        <img src={avatarPreview || userAvatarUrl} alt="" className="w-16 h-16 rounded-full object-cover border border-zinc-200 shrink-0" />
+        {avatarPreview || userAvatarUrl
+          ? <img src={avatarPreview || userAvatarUrl} alt="" className="w-16 h-16 rounded-full object-cover border border-zinc-200 shrink-0" />
+          : <span aria-hidden="true" className="w-16 h-16 rounded-full border border-zinc-200 shrink-0 text-2xl flex items-center justify-center bg-zinc-100 text-zinc-700 font-serif">{userName.charAt(0).toUpperCase()}</span>}
         <div className="min-w-0">
           <h1 className="font-serif text-3xl text-zinc-900 truncate">{userName || "Tu perfil"}</h1>
           <p className="text-sm text-zinc-500 truncate">{userEmail}</p>
@@ -139,6 +164,15 @@ export function PerfilView() {
           <Fila icono={Crown} titulo="Planes y puntos" dataTour="perfil-planes"
             texto="Tu plan, los puntos que ganas al donar ropa y cómo canjearlos por descuentos."
             onClick={() => navegarA("planes")} />
+        )}
+        {/* Vender y rentar es de planes de pago: ahí se cobra. */}
+        {userMode === "VIP" && esDePago(plan) && (
+          <Fila icono={Wallet} titulo={cobrosActivos ? "Mis cobros" : "Cobrar mis ventas"}
+            texto={cobrosActivos
+              ? "Tus depósitos en Stripe: recibes el 85% de cada venta o renta al entregarse la prenda."
+              : "Conecta tu cuenta de cobro en Stripe para vender y rentar. Te pide identificación y CLABE."}
+            estado={abriendoCobros ? "Abriendo…" : undefined}
+            onClick={abriendoCobros ? undefined : () => void irACobros()} />
         )}
       </Grupo>
 
@@ -195,7 +229,9 @@ export function PerfilView() {
           {/* Cambio de Foto */}
           <div className="flex flex-col items-center gap-2 py-2 border-y border-zinc-100">
             <div className="relative group w-20 h-20 rounded-full overflow-hidden border-2 border-zinc-900 shadow-md">
-              <img src={avatarPreview} alt="Vista previa avatar" className="w-full h-full object-cover" />
+              {avatarPreview
+                ? <img src={avatarPreview} alt="Vista previa avatar" className="w-full h-full object-cover" />
+                : <span aria-hidden="true" className="w-full h-full text-3xl flex items-center justify-center bg-zinc-100 text-zinc-700 font-serif">{userName.charAt(0).toUpperCase()}</span>}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}

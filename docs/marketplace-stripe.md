@@ -1,0 +1,59 @@
+# Marketplace con pago real en Stripe y 15% de comisión
+
+**Decisión de Mauri (10 de noviembre de 2026):** el marketplace cobra de verdad con Stripe y Clossapp se queda con el 15% de cada venta o renta. Antes el pago era simulado: un formulario de tarjeta prellenado ("Alex Rivera •••• 4242") que no cobraba nada y aun así marcaba la orden como "pago en custodia".
+
+## Cómo funciona
+1. **Vendedor:** para publicar necesita una cuenta de cobro en Stripe (Connect Express). La conecta desde "Publicar" en el Shop o desde Perfil → "Cobrar mis ventas". Stripe le pide identificación y CLABE y verifica todo; Clossapp no ve esos datos. Ya activa, la misma fila abre su panel de depósitos en Stripe.
+2. **Comprador:** "Pagar" lo manda a la página de pago de Stripe (solo tarjeta, que incluye Apple Pay y Google Pay). La orden nace en `pendiente_pago` y aparta las prendas. Si no paga, el pago expira a los 30 min y la base libera las prendas a los 45 (cron cada 10 min).
+3. **Custodia:** con el pago confirmado (webhook `checkout.session.completed`), la orden pasa a `pago_en_custodia`. El dinero queda en la cuenta de Clossapp.
+4. **Entrega:** el centro de acopio escanea el QR (`liberar`; en renta, al devolverse). El servidor apunta lo de cada vendedor en `escrow_pagos_vendedor` y le transfiere el **85%** a su cuenta. El **15%** se queda en Clossapp.
+5. **Cancelar antes de entregar:** reembolso completo a la tarjeta. Si el pago llega después de que la orden expiró, se reembolsa solo.
+
+## Decisiones mías
+- **Cargos y transferencias separados** (no destination charges): es lo que permite retener el dinero hasta la entrega y pagar a varios vendedores de una misma orden.
+- **Comisiones de Stripe:** las absorbe Clossapp desde su 15%; el vendedor recibe 85% limpio. Ejemplo con una prenda de $200: el vendedor recibe $170 y Clossapp $30 menos la comisión de Stripe (unos $12 con IVA).
+- **Rentas a máximo 2 meses** (antes 6): Stripe pide no retener fondos más de 90 días.
+- **Máximo 3 pagos pendientes por cuenta:** cada orden sin pagar aparta prendas; sin tope, alguien podría apartar todo el Shop.
+- **Liberar exige que la orden esté pagada:** antes se podía liberar cualquier orden no cancelada.
+- **Publicar exige cuenta de cobro activa** (trigger en la base), para no vender algo que luego no se puede pagar al vendedor. Lo que ya estaba publicado sigue publicado; si se vende y el vendedor no tiene cuenta, su pago espera hasta que la conecte.
+- **Transferencias idempotentes** (`pago-vendedor-<id>`), y cada liberación reintenta los pagos que hayan fallado antes.
+- Se actualizaron las políticas (sección Marketplace): Clossapp sí cobra y guarda el pago; comisión del 15%; reembolsos y expiración.
+
+## Archivos
+- La experiencia del vendedor (intro "Vende en Clossapp", espacio de vendedor y avisos push) está en `docs/marketplace-vender.md`.
+- `supabase/21-marketplace-stripe.sql`: columnas de Stripe en `perfiles` y `escrow_ordenes`, estado `pendiente_pago`, tabla `escrow_pagos_vendedor`, nuevas `crear_orden_escrow`, `cancelar_orden_escrow`, `escrow_avanzar`, `expirar_ordenes_sin_pago` (+ cron) y trigger de publicar.
+- Rutas nuevas: `app/api/marketplace/checkout`, `app/api/escrow/avanzar`, `app/api/escrow/cancelar`, `app/api/stripe/connect`, `app/api/stripe/connect/volver`. Webhook: `app/api/stripe/webhook/route.ts`.
+- `lib/marketplace.ts` (reparto 85/15, con tests) y `lib/marketplace.server.ts` (pagos a vendedores, confirmación del pago).
+- App: `escrow-checkout-modal.tsx` (sin formulario falso), `escrow-orders-modal.tsx` (estado "Pago pendiente", cancelar con reembolso), `marketplace-view.tsx` (Publicar pide cuenta de cobro, avisos al volver de Stripe), `perfil-view.tsx` (fila de cobros), `services/escrow.service.ts`, `use-auth.ts`, `clossapp-dashboard.tsx`, `app/politicas/page.tsx`.
+
+## En producción desde el 11 de noviembre de 2026
+
+- **Connect activado** por Mauri, en modo Live. Quedó así: Clossapp cobra y paga a cada vendedor ("You collect payments and pay recipients"), el alta la hospeda Stripe, los vendedores usan el Express Dashboard y Clossapp responde por reembolsos y contracargos.
+- **Webhook de cuentas conectadas** creado ("Connected accounts", evento `account.updated`, misma URL `https://www.clossapp.com/api/stripe/webhook`). Su secreto está en Vercel como `STRIPE_CONNECT_WEBHOOK_SECRET`. El webhook de suscripciones (`clossapp-suscripciones`) sigue igual.
+- **Permisos de la llave de Stripe:** la app usa una llave restringida (`rk_live_...9WgW`) que solo tenía permisos de suscripciones, y "Conectar con Stripe" fallaba con *Permission denied* (lo mostraron los logs de Vercel). Mauri le agregó Connect → Accounts (Write), Transfers (Write), Refunds (Write) y PaymentIntents (Read). Si se crea otra llave, necesita esos permisos además de los de suscripciones.
+- **Primera vendedora conectada** (11 de noviembre de 2026): cuenta Express activa, con cobros, transferencias y depósitos habilitados.
+- **Arreglo de pantallas (#54):** el intro de Vender, el detalle de prenda, Mis Pedidos y el carrito salían abajo en el celular, y había scroll lateral en el Shop. Se corrigió en `constants/animation.ts` (la animación ya no deja `transform`), con portales a `body` y con la cabecera del Shop en `flex-wrap`.
+- **Migración 21 aplicada** (`marketplace_stripe`), justo antes del merge.
+- **#52 en `main`** (merge commit `7fce07d`, 11 de noviembre de 2026, 00:32 UTC), con la UX de vendedor incluida (`docs/marketplace-vender.md`). El deploy de producción quedó en vivo. Sin sesión, las rutas nuevas responden como se espera: conectar cobros da 401, el webhook sin firma o con firma falsa da 400 y el regreso de Stripe redirige al inicio.
+- **Orden de ejemplo cancelada:** `ESC-UYC1YU` era una renta del "Vestido Midi Floral" en el "Centro de Acopio Norte" (no existe), creada en septiembre con el pago simulado y sin cobro real. Mauri confirmó que eran datos de ejemplo. Se marcó `cancelado` (`validated_by = cancelado:datos-de-ejemplo-pago-simulado`); no se borró. Ya no hay órdenes "en custodia" sin cobro de Stripe.
+
+## ⏳ PENDIENTE
+
+### Prueba real antes de anunciarlo (Mauri, con dos cuentas propias)
+- [ ] Cuenta A (Plus/Elite): Shop → **Vender** → seguir el intro → "Conectar con Stripe" → alta con datos reales → publicar una prenda de **$10 MXN**.
+- [ ] Cuenta B (Plus/Elite): comprarla con tarjeta real. A recibe el push "¡Vendiste…!".
+- [ ] En "Mis pedidos" de B debe decir "En custodia".
+- [ ] Un centro de acopio escanea el QR (si no hay cuenta de centro, crear una antes). A recibe el push "Te depositamos $8.50".
+- [ ] En Stripe: cobro de $10, transferencia de $8.50 a la cuenta A y $1.50 que se queda Clossapp (menos la comisión de Stripe).
+- [ ] Probar también cancelar un pedido pagado: debe llegar el reembolso.
+- [ ] Revisar el espacio de vendedor de la cuenta A en Plus y en Elite, y los push de "cuenta lista" y "Stripe necesita más datos" si aparecen durante el alta.
+
+### Después
+- [ ] Revisión legal de la sección Marketplace de `/politicas` (custodia, comisión del 15%, reembolsos).
+
+## Cómo se probó
+- `node --test lib/marketplace.test.mjs lib/plan-stripe.test.mjs`: 9 de 9 (reparto exacto con centavos impares y varios vendedores).
+- La migración se corrió en producción dentro de una transacción que se deshizo: sin cuenta de cobro no se publica; con cuenta sí; la orden nace `pendiente_pago` y aparta la prenda; el centro no puede liberar sin pago; cancelar regresa la prenda; una orden pagada se libera y la prenda cambia de dueña; una orden vieja sin pago expira y libera la prenda; el cuarto pago pendiente se rechaza; el cron queda programado. Después se confirmó que no quedó nada.
+- Rutas nuevas en local sin sesión: rechazan con 401/400 o sin permiso.
+- `tsc` sin errores; `eslint` con un aviso nuevo del mismo tipo que ya hay en el repo (setState en un efecto, en el Shop).
+- **No se probó un pago, una transferencia ni un reembolso reales en Stripe** (la cuenta solo tiene modo live y Connect no está configurado).

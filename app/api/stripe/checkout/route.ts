@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { getStripe, preciosStripe, supabaseAdmin } from "@/lib/stripe.server"
 import { esDePago, normalizarPlan } from "@/constants/planes"
+import { bloqueaNuevoPago } from "@/lib/plan-stripe"
 
 /** Abre el pago de Stripe para pasar a Plus o Elite. El usuario sale de la sesión, nunca del body. */
 export async function POST(req: NextRequest) {
@@ -35,7 +36,21 @@ export async function POST(req: NextRequest) {
       cliente = nuevo.id
       const { error: errGuardar } = await supabaseAdmin().from("perfiles").update({ stripe_customer_id: cliente }).eq("user_id", user.id)
       if (errGuardar) throw errGuardar
+    } else {
+      // El plan lo escribe el webhook segundos después de pagar: mientras tanto perfiles aún dice
+      // "gratis", así que se le pregunta a Stripe si ya hay una suscripción.
+      const subs = await stripe.subscriptions.list({ customer: cliente, status: "all", limit: 20 })
+      if (bloqueaNuevoPago(subs.data.map((s) => s.status))) {
+        return NextResponse.json({ error: "Ya tienes una suscripción. Si acabas de pagar, tu plan se activa en unos minutos." }, { status: 409 })
+      }
+      // Un pago abierto en otra pestaña también cobraría aparte: se cierra antes de abrir este.
+      const abiertas = await stripe.checkout.sessions.list({ customer: cliente, status: "open", limit: 20 })
+      await Promise.all(abiertas.data.map((s) => stripe.checkout.sessions.expire(s.id)))
     }
+
+    // Descuento canjeado con puntos antes de pagar: se aplica solo en este primer cobro.
+    const { data: descuento } = await supabase.from("descuentos_canje").select("id, opcion")
+      .eq("user_id", user.id).eq("estado", "pendiente").maybeSingle()
 
     const origen = req.nextUrl.origin
     const sesion = await stripe.checkout.sessions.create({
@@ -44,6 +59,7 @@ export async function POST(req: NextRequest) {
       client_reference_id: user.id,
       line_items: [{ price: preciosStripe().porPlan[plan as "plus" | "elite"], quantity: 1 }],
       subscription_data: { metadata: { user_id: user.id } },
+      ...(descuento ? { discounts: [{ coupon: `canje_${descuento.opcion}` }], metadata: { descuento_id: descuento.id } } : {}),
       locale: "es-419",
       success_url: `${origen}/planes?pago=ok`,
       cancel_url: `${origen}/planes?plan=${plan}`,
