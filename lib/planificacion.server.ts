@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk"
 import { bloquePerfilPrompt } from "@/lib/estilo"
 import type { EstiloPerfil } from "@/constants/onboarding"
 import type { Lugar } from "@/lib/clima"
-import { validarOutfits, type Momento, type MomentoPlan, type TipoPlan } from "@/lib/planificacion"
+import { categoriaDe, validarOutfits, type Momento, type MomentoPlan, type TipoPlan } from "@/lib/planificacion"
 
 // Solo servidor: ningún componente cliente debe importar este archivo (ver types/analisis.ts).
 
@@ -67,7 +67,7 @@ function inventarioPrompt(prendas: PrendaPlan[]) {
   return prendas.map((p) => ({
     id: String(p.id),
     nombre: corto(p.name),
-    categoria: corto(p.category),
+    categoria: corto(categoriaDe(p)),
     color: corto(p.color || p.metadata?.color_principal),
     estilo: corto(p.style || p.metadata?.estilo),
   }))
@@ -126,7 +126,7 @@ export async function generarOutfitsPlan(datos: {
   const fin = Date.now() + PLAZO_MS
   const system = SISTEMA + bloquePerfilPrompt(datos.estilo)
   const inventario = JSON.stringify(inventarioPrompt(datos.prendas))
-  const paraValidar = datos.prendas.map((p) => ({ id: String(p.id), category: p.category ?? "" }))
+  const paraValidar = datos.prendas.map((p) => ({ id: String(p.id), category: categoriaDe(p) }))
 
   const datosBloque = (momentos: MomentoPlan[], yaPlaneados: YaPlaneado[], correcciones = "") =>
     JSON.stringify({

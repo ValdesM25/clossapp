@@ -1,6 +1,6 @@
 # Fase 3: la pantalla
 
-Estado: **sin empezar.**
+Estado: **hecha (11 nov 2026) en `feat/planificacion-pantalla`, sin integrar todavía a `integracion/elite`.** Probada con mariela@clossapp.com a 390×844; capturas en [`capturas/`](capturas/).
 Rama: `feat/planificacion-pantalla`. Depende de la fase 2.
 
 ## Objetivo
@@ -182,11 +182,65 @@ Props: `plan`, `prendas` (de `usePrendasContext()`), `soloLectura`, `generando`,
 
 ## Criterios de aceptación
 
-- [ ] No queda nada de la maqueta inventada (`rg -n "unsplash|OUTFITS_INICIALES|EQUIPAJE_INICIAL" components/views/planificacion` solo encuentra la vista previa, y la vista previa usa `GUEST_PRENDAS`).
-- [ ] Las cuatro situaciones de la tabla de arriba se ven bien a 390×844.
-- [ ] Ningún botón que gasta IA aparece en solo lectura ni sin Elite.
-- [ ] Capturas en la descripción del PR.
+- [x] No queda nada de la maqueta inventada: el `rg` no encuentra nada en `components/views/planificacion`; la vista previa toma sus fotos de `GUEST_PRENDAS`.
+- [x] Las cuatro situaciones de la tabla de arriba se ven bien a 390×844 (capturas 01, 03, 15 a 17).
+- [x] Ningún botón que gasta IA aparece en solo lectura ni sin Elite (revisado en la pantalla: en solo lectura solo quedan "Me lo puse", la maleta y "Borrar plan").
+- [x] Capturas: por decisión de Mauri van en `docs/planificacion-outfits/capturas/` (780 px de ancho, JPEG) en vez de la descripción del PR.
 
 ## Hecho
 
-(Lo llena quien ejecute la fase.)
+Rama `feat/planificacion-pantalla` (sale de `804a2e0`), commits `a42f3ae`, `acf11a9` y `864e67d`, más el de esta documentación. Sin push ni PR.
+
+### Qué se hizo
+
+- Los archivos de la tabla, tal como se describen. `planificacion-view.tsx` se reescribió entero; `PlanificacionView` conserva `onNavigate` y `onBack`.
+- `lib/planificacion.ts`: `grupoDe` acepta plurales (las prendas de ejemplo usan "Pantalones", "Chaquetas"…); se exportan `sumarDias` y `ordenMomento`, y se agregan `fechaCorta`, `rangoFechas`, `estadoPlan` y `categoriaDe`, todas con tests (33 en total).
+- `verPrendaId` en `lib/navegar.ts`, el dashboard y `MarketplaceView`: el Shop lo guarda al montarse (porque `onAtendida` limpia la petición enseguida) y abre el detalle cuando llegan los items. Una petición que solo trae `verPrendaId` ya no abre la capa de vender.
+
+### Decisiones fuera del documento
+
+- **`categoriaDe` (cambia también la fase 2).** Mariela tiene dos vestidos guardados como `Top` ("Vestido Largo Satinado Verde Salvia"). Para una boda la IA los elegía como vestido y la revisión los rechazaba por no llevar parte de abajo: falló 4 veces. Ahora una prenda cuyo nombre empieza con "Vestido" cuenta como vestido en el prompt, en la revisión y en la maleta. Con el cambio salió a la primera. La causa de fondo es el análisis de prendas, que a veces guarda mal la categoría.
+- **La ruta deja en el log** por qué un outfit no pasó la revisión (`[planificacion] no pasaron la revisión`). Sin esto no se podía saber qué fallaba.
+- **`OutfitVisual`** (compartido con el Simulador) dibuja también las prendas que no caen en `LAYER_ORDER` (Blusa, Vestido, plurales) en un grupo "Más prendas"; antes se perdían. Los nombres pasan a 12 px.
+- **`prendas.id` llega como número** aunque `types/prenda.ts` diga texto; la vista lo convierte a texto al entrar, porque los planes guardan los ids como texto.
+- **Candado con `useRef`** en `armar` y `otroOutfit`: el estado `generando` tarda un render y dos toques en el mismo instante cobrarían dos veces.
+- **Sugerencias del Shop:** solo en planes de pago (Esencial solo dona). Si el faltante cae en el grupo "otro" (por ejemplo, "Impermeable"), solo se muestra "Búscalo en el Shop" para no sugerir cosas sin relación. En la vista previa se usa `STATIC_MARKET`, sin tocar la base.
+- **La tarjeta de la vista previa no es fija:** con `sticky` tapaba casi la mitad de la pantalla del celular.
+- `AlertDialog` con `rounded-none` para mantener los bordes rectos; es el primer uso de ese componente en la app.
+- Rojo y verde solo para errores y para los puntos del selector de días; la app ya los usa en otras pantallas.
+
+### Prueba real (11 nov 2026, `next dev` en el puerto 3100, Chromium a 390×844)
+
+- **Sin IA:** vista previa bloqueada con mariela en `plus` y sin planes (01), lista vacía en Elite (03), crear un viaje con destino buscado hasta el paso 3 (04, 05) y demo en un contexto aislado del navegador (17: "Así se ve con Elite", sin botón ni precio).
+- **Viaje de 10 días** (Oaxaca, 11 a 20 nov, 11 momentos): el primer bloque de 7 días tardó **12 s** en una sola llamada; el bucle siguió solo con los 3 días restantes. El plazo de 100 s queda muy holgado. Capturas mientras se arma (06) y listo (07).
+- **Faltante con el Shop:** "Senderismo en la sierra con botas de montaña" dio `faltante` de calzado y sugirió la "Bota Vaquera Negra" ($1,500) del Shop; al tocarla se abrió su detalle en el Shop (08, 11).
+- **Maleta:** 25 prendas agrupadas; dos marcadas se guardaron en `empacadas` (09).
+- **Me lo puse:** cambió a "Usado ✓" y las 4 prendas sumaron un uso con `ultimo_uso` de hoy (10).
+- **Fecha importante** con "Usar mi ubicación" (geolocalización emulada en Saltillo): 1 de 1 en 6 s, con clima de Saltillo (12).
+- **Mi semana** sin lugar, con 3 días de cuota restantes: avisó "Hoy armamos 3 días; el resto lo completas mañana." (13), armó 3 de 7 y mostró "Te faltan 4 días por armar. Ya usaste los días de planificación de hoy…" sin botón de "Completar" (14).
+- **Solo lectura:** mariela en `plus` con sus 3 planes: aviso con "Ver Elite", sin "Nuevo plan", "Completar", "Otro outfit" ni "Reintentar"; quedan "Me lo puse", la maleta y "Borrar plan" (15, 16). Regresó a `elite`.
+- **Borrar:** los 3 planes se borraron desde la pantalla con el `AlertDialog` (18).
+- La sesión del Chromium del MCP siguió viva desde la fase 2; no hizo falta otro enlace mágico.
+
+Tokens en `uso_ia_registro` (filas 3 a 12, todas `claude-sonnet-5-5`):
+
+| Filas | Qué | Entrada | Salida | Caché leído | Caché escrito | MXN |
+|---|---|---|---|---|---|---|
+| 3 | Bloque de 7 días (8 momentos) | 982 | 1,153 | 0 | 3,897 | 0.42 |
+| 4 y 5 | 3 días restantes + corrección de la boda | 1,699 | 724 | 7,794 | 0 | 0.22 |
+| 6 a 9 | La boda: reintento del bucle y "Reintentar" antes del arreglo | 3,184 | 910 | 15,588 | 0 | 0.33 |
+| 10 | La boda después de `categoriaDe` (el inventario cambió: caché nuevo) | 761 | 221 | 0 | 3,901 | 0.24 |
+| 11 | Fecha importante (1 día) | 183 | 214 | 3,901 | 0 | 0.06 |
+| 12 | Mi semana (3 días) | 305 | 496 | 3,901 | 0 | 0.11 |
+
+- Total de la prueba: **~$1.39 MXN**. Sin los intentos fallidos de la boda (filas 5 a 9) habría sido ~$0.97 por 14 días planeados (~$0.07 por día, debajo de los $0.17 estimados).
+- El caché del inventario se comparte entre planes del mismo usuario: la fecha y la semana lo leyeron del caché del viaje.
+- Mariela quedó con 14 de 14 días usados hoy y 14 de 30 en el mes, y sin planes.
+- **Lo que borrar los planes no deshace:** "Me lo puse" sumó un uso a las prendas 123, 130, 154 y 162 de mariela y cambió su `ultimo_uso` al 11 nov. Esos datos alimentan Estadísticas. Los `usos` se pueden restar; las fechas anteriores no se anotaron y no se pueden recuperar.
+
+### Pendiente o a revisar
+
+- Cuando un momento falla, el bucle de `armar` lo vuelve a intentar una vez más por su cuenta (cobra y devuelve el día). Es barato (~$0.17 MXN por par de llamadas), pero si un momento falla siempre se paga dos veces.
+- El análisis de prendas guarda algunas con categoría equivocada; `categoriaDe` solo cubre los vestidos.
+- En este Chromium no cargan las fotos de Unsplash de `GUEST_PRENDAS` (error de certificado del navegador del MCP); en la vista previa y la demo se ven los nombres sin foto.
+- La captura 05 es anterior a quitar las barras de scroll de los atajos.

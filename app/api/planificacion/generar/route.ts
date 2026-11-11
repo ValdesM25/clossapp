@@ -5,7 +5,7 @@ import { leerEstilo } from "@/lib/cuota.server"
 import { MENSAJES_LIMITE, type MotivoLimite } from "@/constants/planes"
 import { climaParaFechas } from "@/lib/clima"
 import {
-  cuotaRestante, diasDe, hoyMexico, siguienteBloque, validarOutfits,
+  categoriaDe, cuotaRestante, diasDe, hoyMexico, siguienteBloque, validarOutfits,
   MAX_DIAS_BLOQUE, MIN_PRENDAS_PLAN, type MomentoPlan, type PlanOutfit,
 } from "@/lib/planificacion"
 import { generarOutfitsPlan, type PrendaPlan, type UsoIA } from "@/lib/planificacion.server"
@@ -156,10 +156,12 @@ export async function POST(req: NextRequest) {
     await registrarUsos(user.id, usos)
 
     // 11. Revisión final sobre la mezcla.
-    validos = validarOutfits({
+    const revision = validarOutfits({
       propuestas, momentos: bloque, previos,
-      inventario: prendas.map((p) => ({ id: String(p.id), category: p.category ?? "" })),
-    }).validos
+      inventario: prendas.map((p) => ({ id: String(p.id), category: categoriaDe(p) })),
+    })
+    validos = revision.validos
+    if (Object.keys(revision.errores).length) console.error("[planificacion] no pasaron la revisión", revision.errores)
 
     // 12. Guardar. Al regenerar con error no se toca el momento: se queda el outfit anterior.
     const admin = supabaseAdmin()

@@ -275,5 +275,5 @@ Tokens en `uso_ia_registro` (precios de Sonnet 5.5: $2 de entrada, $2.50 escribi
 
 ### Pendiente para fases siguientes
 
-- Medir el tiempo de un bloque de 7 días (14 momentos) contra el plazo de 100 s.
+- ~~Medir el tiempo de un bloque de 7 días contra el plazo de 100 s.~~ Hecho en la fase 3: 7 días (8 momentos) en 12 s.
 - Revisar en los logs si aparece `La IA no terminó: refusal`; los rechazos por daños generales no tienen respaldo.

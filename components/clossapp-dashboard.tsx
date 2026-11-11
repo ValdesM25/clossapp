@@ -138,8 +138,9 @@ function AuthenticatedShell() {
 
   useEffect(() => {
     const ir = (e: Event) => {
-      const { vista, venderPrendaId } = (e as CustomEvent<DestinoNavegar>).detail
+      const { vista, venderPrendaId, verPrendaId } = (e as CustomEvent<DestinoNavegar>).detail
       if (venderPrendaId) setPeticionVender({ prendaId: venderPrendaId })
+      else if (verPrendaId) setPeticionVender({ verPrendaId })
       setActiveView(vista)
     }
     window.addEventListener(EVENTO_NAVEGAR, ir)
