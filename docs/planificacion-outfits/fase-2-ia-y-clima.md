@@ -1,6 +1,6 @@
 # Fase 2: lógica, clima e IA
 
-Estado: **hecha (11 nov 2026) en `feat/planificacion-ia`, sin integrar todavía a `integracion/elite`.** Prueba real con mariela@clossapp.com (Elite) y prueba de cuenta sin Elite hechas.
+Estado: **hecha (11 nov 2026) e integrada en `integracion/elite` (merge `a94f863`).** Prueba real con mariela@clossapp.com (Elite) y prueba de cuenta sin Elite hechas.
 Rama: `feat/planificacion-ia`. Depende de la fase 1 (migración 24 aplicada en producción).
 
 ## Objetivo
