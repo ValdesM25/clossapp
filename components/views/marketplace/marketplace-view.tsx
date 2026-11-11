@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Search, Tag, ShoppingBag, ShieldCheck } from "lucide-react"
+import { Search, Tag, ShoppingBag, ShieldCheck, SlidersHorizontal, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { PrendaSkeleton } from "@/components/shared/prenda-skeleton"
@@ -27,6 +27,9 @@ import { DonacionPanel } from "./donacion-panel"
 import { CartDrawer } from "./cart-drawer"
 import { EscrowCheckoutModal } from "./escrow-checkout-modal"
 import { EscrowOrdersModal } from "./escrow-orders-modal"
+
+/** Sin acentos ni mayúsculas: "Suéter" se encuentra escribiendo "sueter". */
+const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
 
 interface MarketplaceViewProps {
   onApartar: () => void
@@ -72,6 +75,9 @@ export function MarketplaceView({ onApartar, peticion, onAtendida }: Marketplace
   const [showOrdersModal, setShowOrdersModal] = useState(false)
   const [escrowOrdersCount, setEscrowOrdersCount] = useState(0)
   const [aviso, setAviso] = useState<string | null>(null)
+  const [buscando, setBuscando] = useState(false)
+  const [busqueda, setBusqueda] = useState("")
+  const [verFiltros, setVerFiltros] = useState(false)
 
   useEffect(() => { if (peticion) onAtendida?.() }, [peticion, onAtendida])
 
@@ -122,9 +128,19 @@ export function MarketplaceView({ onApartar, peticion, onAtendida }: Marketplace
   }, [loadEscrowOrdersCount, supabase, showOrdersModal, showCheckoutModal])
 
   const currentItems = marketTab === "comprar" ? items : rentaItems
-  const filtered = activeFilter === "Todos" ? currentItems : currentItems.filter((i) => i.category === activeFilter)
+  const consulta = normalizar(busqueda.trim())
+  const filtered = currentItems.filter((i) =>
+    (activeFilter === "Todos" || i.category === activeFilter) &&
+    (!consulta || normalizar(`${i.name} ${i.category} ${i.talla ?? ""}`).includes(consulta)))
   const isRenta = marketTab === "rentar"
   const isDonar = soloDonar || marketTab === "donar"
+  const hayAcciones = !isDonar || (soloDonar && !isGuest)
+
+  function cerrarBusqueda() {
+    setBusqueda("")
+    setBuscando(false)
+  }
+  const alternarBusqueda = () => (buscando ? cerrarBusqueda() : setBuscando(true))
 
   async function handleApartar(fechaRenta?: string) {
     if (selectedItem) {
@@ -161,94 +177,110 @@ export function MarketplaceView({ onApartar, peticion, onAtendida }: Marketplace
 
   return (
     <motion.div {...pageProps} className="flex flex-col gap-6 pb-32 pt-8">
-      {/* flex-wrap: en celulares angostos los botones (con sus contadores) bajan a otra línea en vez de desbordar. */}
-      <div className="px-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-3">
-        <div>
-          <h1 className="font-serif text-2xl text-zinc-900">{soloDonar ? "Donar" : "Marketplace"}</h1>
-        </div>
+      <div className="flex flex-col gap-3">
+        {/* "Shop" ya se lee en la barra de abajo: el título queda solo para lectores de pantalla. */}
+        <h1 className="sr-only">{soloDonar ? "Donar" : "Marketplace"}</h1>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Botón Mis Pedidos (para Comprar y Rentar) */}
-          {!isDonar && (
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={() => setShowOrdersModal(true)}
-              className="border border-zinc-200 text-zinc-700 hover:bg-zinc-50 text-xs px-2 sm:px-2.5 py-1.5 flex items-center gap-1 font-medium rounded shrink-0 relative"
-              title="Ver mis pedidos"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
-              <span className="text-[11px] sm:text-xs">Mis Pedidos</span>
-              {escrowOrdersCount > 0 && (
-                <span className="bg-zinc-900 text-white font-bold text-[10px] px-1.5 py-0.2 rounded-full min-w-[16px] text-center">
-                  {escrowOrdersCount}
-                </span>
-              )}
-            </motion.button>
-          )}
+        {hayAcciones && (
+          // flex-wrap: en celulares angostos los botones (con sus contadores) bajan a otra línea en vez de desbordar.
+          <div className="px-4 flex flex-wrap items-center gap-2">
+            {!isDonar && (
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={() => setShowOrdersModal(true)}
+                className="h-10 border border-zinc-200 text-zinc-700 hover:bg-zinc-50 text-xs px-3 flex items-center gap-1.5 font-medium shrink-0"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-zinc-600 shrink-0" aria-hidden="true" />
+                <span>Pedidos</span>
+                {escrowOrdersCount > 0 && (
+                  <span className="bg-zinc-900 text-white font-bold text-[10px] px-1.5 rounded-full min-w-[16px] text-center">
+                    {escrowOrdersCount}
+                  </span>
+                )}
+              </motion.button>
+            )}
 
-          {/* Botón Carrito de Compras/Rentas (para Comprar y Rentar) */}
-          {!isDonar && (
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={() => setIsCartOpen(true)}
-              className="bg-zinc-900 text-white text-xs px-2.5 sm:px-3 py-1.5 flex items-center gap-1.5 font-medium rounded shadow-xs relative shrink-0"
-            >
-              <ShoppingBag className="w-3.5 h-3.5 text-zinc-300" />
-              <span>Carrito</span>
-              {itemCount > 0 && (
-                <span className="bg-white text-zinc-950 font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center -mr-1">
-                  {itemCount}
-                </span>
-              )}
-            </motion.button>
-          )}
+            {!isDonar && (
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={() => setIsCartOpen(true)}
+                className="h-10 border border-zinc-200 text-zinc-700 hover:bg-zinc-50 text-xs px-3 flex items-center gap-1.5 font-medium shrink-0"
+              >
+                <ShoppingBag className="w-3.5 h-3.5 text-zinc-600 shrink-0" aria-hidden="true" />
+                <span>Carrito</span>
+                {itemCount > 0 && (
+                  <span className="bg-zinc-900 text-white font-bold text-[10px] px-1.5 rounded-full min-w-[16px] text-center">
+                    {itemCount}
+                  </span>
+                )}
+              </motion.button>
+            )}
 
-          {/* En el plan gratis también se ve: el intro le explica qué es vender y lo manda a Plus. */}
-          {!isGuest && (soloDonar || marketTab !== "donar") && (
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={abrirVender}
-              aria-label="Vender"
-              className="border border-zinc-900 text-zinc-900 text-xs px-2.5 sm:px-3 py-1.5 flex items-center gap-1 tracking-wide rounded shrink-0"
-            >
-              <Tag className="w-3 h-3" /> <span className="hidden xs:inline">Vender</span>
-            </motion.button>
-          )}
-        </div>
-      </div>
-
-      {aviso && (
-        <p role="status" className="mx-4 border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-zinc-700">{aviso}</p>
-      )}
-
-      {soloDonar ? (
-        <div className="mx-4 border border-zinc-200 bg-zinc-50 px-4 py-3 flex items-center justify-between gap-3">
-          <p className="text-xs text-zinc-600 leading-relaxed">Comprar, vender y rentar prendas es parte de Plus. Con tu plan puedes donar y ganar puntos.</p>
-          <button type="button" onClick={() => window.location.assign("/planes?plan=plus")}
-            className="shrink-0 h-10 px-3 border border-zinc-900 text-zinc-900 text-xs font-medium">Ver Plus</button>
-        </div>
-      ) : (
-        <div data-tour="marketplace" className="px-4 flex border-b border-zinc-200">
-          {(["comprar", "rentar", "donar"] as const).map((tab) => (
-            <button key={tab} onClick={() => { setMarketTab(tab); setActiveFilter("Todos") }}
-              className={cn("flex-1 py-2.5 text-xs font-medium tracking-widest uppercase transition-colors border-b-2 -mb-px",
-                marketTab === tab ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-500")}>
-              {tab === "comprar" ? "Comprar" : tab === "rentar" ? "Rentar" : "Donar"}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {isDonar ? (
-        <DonacionPanel prendas={prendas} isGuest={isGuest} />
-      ) : (
-        <>
-          <div className="px-4 relative">
-            <Search className="absolute left-7 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-            <Input placeholder="Buscar prendas..." className="pl-10 rounded-none border-zinc-200 focus-visible:ring-0 focus-visible:border-zinc-900 text-zinc-700 placeholder:text-zinc-500" />
+            {/* Acción principal. En el plan gratis también se ve: el intro le explica qué es vender y lo manda a Plus. */}
+            {!isGuest && (
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={abrirVender}
+                className="ml-auto h-10 bg-zinc-900 hover:bg-zinc-800 text-white text-xs px-4 flex items-center gap-1.5 font-medium tracking-wide shrink-0"
+              >
+                <Tag className="w-3.5 h-3.5" aria-hidden="true" /> Vender
+              </motion.button>
+            )}
           </div>
+        )}
 
-          <div className="flex gap-2 overflow-x-auto pb-1 px-4">
+        {aviso && (
+          <p role="status" className="mx-4 border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-zinc-700">{aviso}</p>
+        )}
+
+        {soloDonar ? (
+          <div className="mx-4 border border-zinc-200 bg-zinc-50 px-4 py-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-zinc-600 leading-relaxed">Comprar, vender y rentar prendas es parte de Plus. Con tu plan puedes donar y ganar puntos.</p>
+            <button type="button" onClick={() => window.location.assign("/planes?plan=plus")}
+              className="shrink-0 h-10 px-3 border border-zinc-900 text-zinc-900 text-xs font-medium">Ver Plus</button>
+          </div>
+        ) : (
+          <div data-tour="marketplace" className="px-4 flex items-stretch border-b border-zinc-200">
+            {(["comprar", "rentar", "donar"] as const).map((tab) => (
+              <button key={tab} onClick={() => { setMarketTab(tab); setActiveFilter("Todos") }}
+                className={cn("flex-1 py-2.5 text-xs font-medium tracking-widest uppercase transition-colors border-b-2 -mb-px",
+                  marketTab === tab ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-500")}>
+                {tab === "comprar" ? "Comprar" : tab === "rentar" ? "Rentar" : "Donar"}
+              </button>
+            ))}
+            {!isDonar && (
+              <div className="flex items-center -mr-2">
+                <button type="button" onClick={alternarBusqueda} aria-label="Buscar" aria-expanded={buscando} aria-controls="shop-busqueda"
+                  className={cn("w-10 h-10 flex items-center justify-center", buscando || busqueda ? "text-zinc-900" : "text-zinc-500")}>
+                  <Search className="w-4 h-4" aria-hidden="true" />
+                </button>
+                <button type="button" onClick={() => setVerFiltros((v) => !v)} aria-label="Filtros" aria-expanded={verFiltros} aria-controls="shop-filtros"
+                  className={cn("relative w-10 h-10 flex items-center justify-center", verFiltros || activeFilter !== "Todos" ? "text-zinc-900" : "text-zinc-500")}>
+                  <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+                  {/* Con el panel cerrado, el punto avisa que hay una categoría elegida. */}
+                  {activeFilter !== "Todos" && <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-zinc-900" aria-hidden="true" />}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!isDonar && buscando && (
+          <div id="shop-busqueda" className="px-4 relative">
+            <Search className="absolute left-7 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" aria-hidden="true" />
+            <Input autoFocus value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Escape") cerrarBusqueda() }}
+              enterKeyHint="search" aria-label="Buscar prendas" placeholder="Nombre, categoría o talla"
+              className="pl-10 pr-11 rounded-none border-zinc-200 focus-visible:ring-0 focus-visible:border-zinc-900 text-zinc-700 placeholder:text-zinc-500" />
+            <button type="button" onClick={cerrarBusqueda} aria-label="Cerrar búsqueda"
+              className="absolute right-4 top-0 w-10 h-full flex items-center justify-center text-zinc-500 hover:text-zinc-900">
+              <X className="w-4 h-4" aria-hidden="true" />
+            </button>
+          </div>
+        )}
+
+        {!isDonar && verFiltros && (
+          <div id="shop-filtros" className="flex gap-2 overflow-x-auto pb-1 px-4">
             {filterChips.map((f) => (
               <motion.button key={f} whileTap={{ scale: 0.96 }} onClick={() => setActiveFilter(f)}
                 className={cn("shrink-0 px-4 py-1.5 text-xs tracking-wide border transition-colors",
@@ -257,10 +289,16 @@ export function MarketplaceView({ onApartar, peticion, onAtendida }: Marketplace
               </motion.button>
             ))}
           </div>
+        )}
+      </div>
 
+      {isDonar ? (
+        <DonacionPanel prendas={prendas} isGuest={isGuest} />
+      ) : (
+        <>
           {loading ? <PrendaSkeleton /> : filtered.length === 0 ? (
             <div className="mx-4 flex flex-col items-center justify-center py-12 gap-2 border border-zinc-100">
-              <p className="text-xs text-zinc-500 uppercase tracking-widest">Sin prendas disponibles</p>
+              <p className="text-xs text-zinc-500 uppercase tracking-widest">{consulta ? "Nada coincide con tu búsqueda" : "Sin prendas disponibles"}</p>
             </div>
           ) : (
             <div className="columns-2 gap-3 px-4 space-y-3">
