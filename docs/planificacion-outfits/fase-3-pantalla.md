@@ -1,6 +1,6 @@
 # Fase 3: la pantalla
 
-Estado: **hecha (11 nov 2026) en `feat/planificacion-pantalla`, sin integrar todavía a `integracion/elite`.** Probada con mariela@clossapp.com a 390×844; capturas en [`capturas/`](capturas/).
+Estado: **hecha (11 nov 2026) e integrada en `integracion/elite` (merge `662bc47`).** Probada con mariela@clossapp.com a 390×844; capturas en [`capturas/`](capturas/).
 Rama: `feat/planificacion-pantalla`. Depende de la fase 2.
 
 ## Objetivo
@@ -235,8 +235,8 @@ Tokens en `uso_ia_registro` (filas 3 a 12, todas `claude-sonnet-5-5`):
 
 - Total de la prueba: **~$1.39 MXN**. Sin los intentos fallidos de la boda (filas 5 a 9) habría sido ~$0.97 por 14 días planeados (~$0.07 por día, debajo de los $0.17 estimados).
 - El caché del inventario se comparte entre planes del mismo usuario: la fecha y la semana lo leyeron del caché del viaje.
-- Mariela quedó con 14 de 14 días usados hoy y 14 de 30 en el mes, y sin planes.
-- **Lo que borrar los planes no deshace:** "Me lo puse" sumó un uso a las prendas 123, 130, 154 y 162 de mariela y cambió su `ultimo_uso` al 11 nov. Esos datos alimentan Estadísticas. Los `usos` se pueden restar; las fechas anteriores no se anotaron y no se pueden recuperar.
+- Mariela quedó sin planes. Con OK de Mauri se le devolvieron los 14 días con `devolver_dias_plan` (quedó en 0 y 0).
+- **Lo que borrar los planes no deshace:** "Me lo puse" sumó un uso a las prendas 123, 130, 154 y 162 de mariela y cambió su `ultimo_uso` al 11 nov. Esos datos alimentan Estadísticas. Mauri decidió dejarlo así: es la cuenta que usa para demostraciones.
 
 ### Pendiente o a revisar
 
