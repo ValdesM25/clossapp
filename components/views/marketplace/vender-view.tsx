@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useCapa } from "@/hooks/use-capa"
+import { createPortal } from "react-dom"
 import { motion } from "framer-motion"
 import { X, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -174,7 +175,10 @@ export function VenderView({ onPublicar, onCerrar, aviso, bloqueada }: VenderVie
     </ul>
   )
 
-  return (
+  if (typeof document === "undefined") return null
+
+  // En body: la vista del Shop anima con transform, y un fixed dentro se mediría contra ella y no contra la pantalla.
+  return createPortal(
     <div ref={capa} role="dialog" aria-modal="true" aria-label="Vender" className="fixed inset-0 z-[90] bg-white overflow-y-auto">
       <div className="max-w-xl mx-auto px-4 pt-6 pb-[max(2rem,env(safe-area-inset-bottom))] flex flex-col gap-6">
         <div className="flex items-center justify-between">
@@ -265,6 +269,7 @@ export function VenderView({ onPublicar, onCerrar, aviso, bloqueada }: VenderVie
           {errorCobros && <p role="status" className="text-xs text-zinc-600">{errorCobros}</p>}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

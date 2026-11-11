@@ -2,12 +2,19 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { X } from "lucide-react"
-import type { ReactNode } from "react"
+import { useSyncExternalStore, type ReactNode } from "react"
+import { createPortal } from "react-dom"
+
+const sinSuscripcion = () => () => {}
 
 export function CenteredModal({ open, isOpen, onClose, children }: { open?: boolean; isOpen?: boolean; onClose: () => void; children: ReactNode }) {
   const isVisible = open ?? isOpen ?? false
+  // En el servidor no hay document: el portal se monta ya en el navegador.
+  const enCliente = useSyncExternalStore(sinSuscripcion, () => true, () => false)
+  if (!enCliente) return null
 
-  return (
+  // En body: las vistas animan con transform, y un fixed dentro se mediría contra la vista y no contra la pantalla.
+  return createPortal(
     <AnimatePresence>
       {isVisible && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -25,6 +32,7 @@ export function CenteredModal({ open, isOpen, onClose, children }: { open?: bool
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }
