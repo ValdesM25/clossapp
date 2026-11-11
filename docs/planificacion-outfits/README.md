@@ -68,11 +68,26 @@ Cada fase es una rama y un PR hacia la rama de integración (ver "Cómo se integ
 
 ## Día del merge
 
-1. Crear en Stripe (modo real) dos precios nuevos, mensuales, en MXN y con IVA incluido, sobre los productos que ya existen: Plus $89 (`prod_VZkCJAgXcWO9Ny`) y Elite $159 (`prod_VZkCJIe8FVF2NV`). Hoy nadie tiene una suscripción en Stripe, así que nadie queda con el precio viejo.
-2. En Vercel (producción), cambiar `STRIPE_PRICE_PLUS` y `STRIPE_PRICE_ELITE` por los ids nuevos. **Ojo:** un precio que no esté en esas variables se trata como plan `gratis` (`lib/stripe.server.ts`), así que el cambio y el deploy van juntos.
-3. Mergear el PR final y el de la landing. Esperar el deploy.
-4. Revisar `/planes` ($89 y $159) y abrir un Checkout de cada plan sin pagar, para ver que Stripe muestra el precio nuevo.
-5. Archivar los precios viejos en Stripe y anotar los ids nuevos en `docs/tanda-pagos/fase-1-suscripciones.md`.
+> **Cuidado con los precios:** lo que se cobra de verdad lo decide Stripe, no el código. `constants/planes.ts` y la landing solo **muestran** el precio; el Checkout cobra el precio de Stripe cuyo id está en `STRIPE_PRICE_PLUS` / `STRIPE_PRICE_ELITE`. Nadie tiene suscripción hoy (11 nov 2026), así que nadie se queda con el precio viejo. Pero si se publica la app antes de cambiar Stripe, **la página dirá $89 y Stripe cobrará $59**. Por eso los pasos 1 a 3 van el mismo día y en este orden.
+
+Los pasos de Stripe se hacen con el **MCP de Stripe** (`mcp__stripe__*`), y cada escritura **necesita el OK de Mauri** porque toca cobros reales.
+
+1. **Revisar la cuenta y los precios actuales (solo lectura).**
+   - `list_available_accounts_or_orgs`: confirmar que es la cuenta de Clossapp en **modo real**, no el sandbox.
+   - `stripe_api_search` para encontrar la operación de listar precios, y `stripe_api_read` con `GET /v1/prices?product=prod_VZkCJAgXcWO9Ny` (Plus) y `GET /v1/prices?product=prod_VZkCJIe8FVF2NV` (Elite).
+   - Anotar del precio activo de cada uno: `id`, `unit_amount` (5900 y 9900), `currency` (`mxn`), `recurring.interval` (`month`) y `tax_behavior`. El precio nuevo debe copiar todo menos el monto.
+   - Antes de crear nada, confirmar que nadie tiene una suscripción activa con `GET /v1/subscriptions?status=active`.
+2. **Crear los precios nuevos (escritura, con OK de Mauri).** Con `stripe_api_write`, `POST /v1/prices` dos veces:
+   - Plus: `product=prod_VZkCJAgXcWO9Ny`, `unit_amount=8900`, `currency=mxn`, `recurring[interval]=month`, `tax_behavior=<el mismo del precio viejo>`, `nickname=Plus $89 mensual`.
+   - Elite: `product=prod_VZkCJIe8FVF2NV`, `unit_amount=15900`, mismos campos, `nickname=Elite $159 mensual`.
+   - Guardar los dos `price_…` nuevos.
+3. **Vercel (producción):** cambiar `STRIPE_PRICE_PLUS` y `STRIPE_PRICE_ELITE` por los ids nuevos, con el MCP de Vercel (`edit_project_env`) o desde el panel, con OK de Mauri. **Ojo:** un precio que no esté en esas variables se trata como plan `gratis` (`lib/stripe.server.ts`), así que el cambio de variables y el deploy van juntos.
+4. **Mergear** el PR final y el de la landing. Esperar el deploy (las variables nuevas solo se leen en el deploy nuevo).
+5. **Comprobar:** `/planes` muestra $89 y $159, y abrir un Checkout de cada plan **sin pagar** para ver que Stripe cobra el monto nuevo.
+6. **Archivar los precios viejos** (con OK de Mauri): `stripe_api_write`, `POST /v1/prices/<id viejo>` con `active=false`. Archivar no borra nada; solo impide usarlos en compras nuevas.
+7. Anotar los ids nuevos en `docs/tanda-pagos/fase-1-suscripciones.md` (sección "Cómo quedó activado").
+
+**Si algo sale mal después del merge:** volver a poner en Vercel los ids viejos (siguen existiendo aunque estén archivados; desarchivarlos con `active=true`) y redeplegar. Mientras tanto la página mostraría $89 y Stripe cobraría $59; avisar a Mauri.
 
 ## Reglas para quien ejecute una fase
 
