@@ -26,7 +26,7 @@ export function BottomNav({ activeView, onNavigate, open, flash }: BottomNavProp
               return (
                 <motion.button key={item.id} type="button" data-tour={`nav-${item.id}`} whileTap={{ scale: 0.95 }} onClick={() => onNavigate(item.id)}
                   aria-current={isActive ? "page" : undefined}
-                  className="flex-1 min-h-12 flex flex-col items-center justify-center gap-1 relative">
+                  className="flex-1 min-h-12 flex flex-col items-center justify-center gap-1 relative px-0.5">
                   {isActive && !item.destacado && (
                     <motion.span layoutId="nav-activo" aria-hidden="true" className="absolute top-0 h-0.5 w-6 bg-zinc-900"
                       transition={{ type: "spring", stiffness: 500, damping: 40 }} />
@@ -42,7 +42,7 @@ export function BottomNav({ activeView, onNavigate, open, flash }: BottomNavProp
                   ) : (
                     <item.icon aria-hidden="true" className={cn("w-5 h-5 transition-colors", isActive ? "text-zinc-900" : "text-zinc-500")} />
                   )}
-                  <span className={cn("text-[11px] font-medium transition-colors", isActive || item.destacado ? "text-zinc-900" : "text-zinc-500")}>
+                  <span className={cn("text-[10px] sm:text-[11px] font-medium transition-colors text-center leading-tight truncate max-w-full px-0.5", isActive || item.destacado ? "text-zinc-900" : "text-zinc-500")}>
                     {item.label}
                   </span>
                 </motion.button>
