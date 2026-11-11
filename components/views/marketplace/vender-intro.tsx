@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useCapa } from "@/hooks/use-capa"
+import { createPortal } from "react-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowLeft, X, Camera, CreditCard, ShieldCheck, Wallet } from "lucide-react"
 import { abrirCuentaCobro } from "@/services/marketplace.service"
@@ -79,7 +80,10 @@ export function VenderIntro({ caso, pasoInicial = 1, onCerrar, onPublicar }: Ven
   const progreso = (paso / TOTAL) * 100
   const clasesTitulo = "font-serif text-2xl text-zinc-900 outline-none"
 
-  return (
+  if (typeof document === "undefined") return null
+
+  // En body: la vista del Shop anima con transform, y un fixed dentro se mediría contra ella y no contra la pantalla.
+  return createPortal(
     <div ref={capa} role="dialog" aria-modal="true" aria-label="Vende en Clossapp" className="fixed inset-0 z-[90] bg-white flex flex-col overflow-y-auto">
       <header className="px-6 pt-6 pb-4 max-w-xl w-full mx-auto">
         <div className="flex items-center justify-between">
@@ -151,6 +155,7 @@ export function VenderIntro({ caso, pasoInicial = 1, onCerrar, onPublicar }: Ven
           </motion.button>
         </div>
       </footer>
-    </div>
+    </div>,
+    document.body,
   )
 }

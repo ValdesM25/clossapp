@@ -161,7 +161,8 @@ export function MarketplaceView({ onApartar, peticion, onAtendida }: Marketplace
 
   return (
     <motion.div {...pageProps} className="flex flex-col gap-6 pb-32 pt-8">
-      <div className="px-4 flex items-center justify-between gap-2">
+      {/* flex-wrap: en celulares angostos los botones (con sus contadores) bajan a otra línea en vez de desbordar. */}
+      <div className="px-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-3">
         <div>
           <h1 className="font-serif text-2xl text-zinc-900">{soloDonar ? "Donar" : "Marketplace"}</h1>
         </div>
