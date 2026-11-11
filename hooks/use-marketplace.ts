@@ -15,6 +15,7 @@ export type MarketTab = "comprar" | "rentar" | "donar"
 function mensajePublicar(msg: string | undefined, propio = false): string {
   if (msg?.includes("SIN_CUENTA_COBRO")) return "Conecta tu cuenta de cobro para publicar. Tócala en Vender."
   if (msg?.includes("PLAN_SIN_MARKETPLACE")) return "Vender y rentar es parte de Plus y Elite."
+  if (msg?.includes("PRENDA_EN_PEDIDO")) return "Esta prenda ya está en un pedido en curso. Podrás publicarla si se cancela."
   // propio: texto que ya escribió nuestra API y se puede mostrar tal cual.
   return propio && msg ? msg : "No se pudo publicar la prenda. Intenta de nuevo."
 }

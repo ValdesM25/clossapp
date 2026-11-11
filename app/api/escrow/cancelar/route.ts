@@ -8,8 +8,12 @@ export async function POST(req: NextRequest) {
   if (typeof token !== "string") return NextResponse.json({ error: "Solicitud no válida" }, { status: 400 })
 
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: "Inicia sesión para cancelar tu pedido." }, { status: 401 })
+
   // La base decide quién puede (quien compró, el centro o admin) y regresa las prendas a la venta.
-  const { data: orden, error } = await supabase.rpc("cancelar_orden_escrow", { p_token: token })
+  // Va con la service role: un pedido pagado solo lo cancela el servidor, que es quien reembolsa.
+  const { data: orden, error } = await supabaseAdmin().rpc("cancelar_orden_escrow", { p_token: token, p_uid: user.id })
   if (error || !orden) return NextResponse.json({ error: error?.message ?? "No se pudo cancelar el pedido." }, { status: 409 })
   if (!orden.stripe_payment_intent) return NextResponse.json(orden)
 
