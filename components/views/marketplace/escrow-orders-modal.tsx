@@ -163,6 +163,7 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
             </div>
           ) : (
             filteredOrders.map((order) => {
+              const isPendiente = order.status === "pendiente_pago"
               const isCustodia = order.status === "pago_en_custodia"
               const isEnRenta = order.status === "en_renta_cliente"
               const isLiberado = order.status === "entregado_y_liberado"
@@ -188,12 +189,15 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                       className={cn(
                         "text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full flex items-center gap-1 border",
                         isCustodia && "bg-amber-50 text-amber-800 border-amber-200",
+                        isPendiente && "bg-zinc-50 text-zinc-700 border-zinc-300",
                         isEnRenta && "bg-zinc-50 text-zinc-800 border-zinc-200",
                         isLiberado && "bg-emerald-50 text-emerald-800 border-emerald-200",
                         isCancelado && "bg-zinc-50 text-zinc-500 border-zinc-200"
                       )}
                     >
-                      {isCustodia ? (
+                      {isPendiente ? (
+                        <>Pago pendiente</>
+                      ) : isCustodia ? (
                         <>
                           <Clock className="w-3 h-3 text-amber-600 animate-pulse" />{" "}
                           {isRentaOrder ? "Paso 1: Recolección" : "En Custodia"}
@@ -253,6 +257,8 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                       >
                         <QrCode className="w-3.5 h-3.5 text-zinc-200" /> Ver QR #2 Devolución
                       </button>
+                    ) : isPendiente ? (
+                      <span className="text-zinc-500 font-medium shrink-0">Si no terminaste de pagar, se libera en 45 min</span>
                     ) : isCancelado ? (
                       <span className="text-zinc-500 font-medium shrink-0">Pedido cancelado</span>
                     ) : (
@@ -260,10 +266,10 @@ export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
                     )}
                   </div>
 
-                  {isCustodia && (
+                  {(isCustodia || isPendiente) && (
                     confirmarCancelar === order.id ? (
                       <div className="pt-2 border-t border-zinc-100 space-y-2">
-                        <p className="text-[11px] text-zinc-700">¿Cancelar este pedido? El pago en custodia no se entrega a quien vende y la prenda vuelve a estar disponible.</p>
+                        <p className="text-[11px] text-zinc-700">¿Cancelar este pedido? Te devolvemos todo lo que pagaste a tu tarjeta y la prenda vuelve a estar disponible.</p>
                         {errorCancelar && <p role="alert" className="text-[11px] text-red-600">{errorCancelar}</p>}
                         <div className="flex gap-2">
                           <button type="button" disabled={cancelando} onClick={() => handleCancelar(order)}

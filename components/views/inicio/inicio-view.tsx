@@ -236,7 +236,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
               </motion.button>
               <div className={cn("grid", plan === "gratis" ? "grid-cols-1" : "grid-cols-2")}>
                 {plan !== "gratis" && (
-                  <button type="button" onClick={() => onNavigate?.("marketplace")}
+                  <button type="button" onClick={() => navegarA("marketplace", { venderPrendaId: p.id })}
                     className="h-10 text-xs text-zinc-600 hover:text-zinc-900 flex items-center justify-center gap-1.5">
                     <Tag className="w-3.5 h-3.5" aria-hidden="true" /> Vender
                   </button>

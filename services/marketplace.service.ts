@@ -27,12 +27,13 @@ export async function publishForSale(
   talla: string | null,
   estadoUso: string | null
 ): Promise<Prenda[]> {
-  await supabase.from("prendas").update({
+  const { error } = await supabase.from("prendas").update({
     en_venta: true,
     precio,
     talla: talla || null,
     estado_uso: estadoUso || null,
   }).eq("id", prendaId)
+  if (error) throw error
   return fetchVentaItems(supabase)
 }
 
@@ -49,4 +50,12 @@ export async function publishForRent(
   const data = await res.json()
   if (!res.ok) throw new Error(data.error)
   return []
+}
+
+/** Cuenta de cobro en Stripe: devuelve a dónde ir (alta o panel de depósitos) o `listo` si ya quedó activa. */
+export async function abrirCuentaCobro(): Promise<{ url?: string; listo?: boolean }> {
+  const res = await fetch("/api/stripe/connect", { method: "POST" }).catch(() => null)
+  const json = await res?.json().catch(() => null)
+  if (!res?.ok || !json) throw new Error(json?.error ?? "No se pudo conectar. Revisa tu conexión e intenta de nuevo.")
+  return json
 }

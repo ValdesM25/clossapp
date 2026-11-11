@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Search, Tag, ShoppingBag, ShieldCheck, PackageCheck } from "lucide-react"
+import { Search, Tag, ShoppingBag, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { PrendaSkeleton } from "@/components/shared/prenda-skeleton"
@@ -14,10 +14,15 @@ import { useCartContext } from "@/context/cart-context"
 import { useMarketplace } from "@/hooks/use-marketplace"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { fetchUserEscrowOrders } from "@/services/escrow.service"
+import { esDePago } from "@/constants/planes"
+import { EVENTO_PUBLICADA } from "@/hooks/use-ventas"
+import type { PeticionVender } from "@/lib/navegar"
 import type { Prenda } from "@/types"
 import { MarketItemCard } from "./market-item-card"
 import { ItemDetailModal } from "./item-detail-modal"
 import { SellFormModal } from "./sell-form-modal"
+import { VenderIntro } from "./vender-intro"
+import { VenderView } from "./vender-view"
 import { DonacionPanel } from "./donacion-panel"
 import { CartDrawer } from "./cart-drawer"
 import { EscrowCheckoutModal } from "./escrow-checkout-modal"
@@ -25,14 +30,21 @@ import { EscrowOrdersModal } from "./escrow-orders-modal"
 
 interface MarketplaceViewProps {
   onApartar: () => void
+  /** Qué abrir al llegar (regreso de Stripe, push o prenda olvidada); se avisa con onAtendida para no repetirlo. */
+  peticion?: PeticionVender | null
+  onAtendida?: () => void
 }
 
-export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
-  const { userId, userEmail, isGuest, plan } = useAuthContext()
+const CASO_RETORNO = { ok: "activa", revision: "en_revision", datos: "requiere_datos", error: "error" } as const
+
+export function MarketplaceView({ onApartar, peticion, onAtendida }: MarketplaceViewProps) {
+  const { userId, userEmail, isGuest, plan, cobrosEstado } = useAuthContext()
   // Esencial solo dona: comprar, vender y rentar es de Plus y Elite (la base también lo bloquea).
   const soloDonar = plan === "gratis"
+  // Vender pide plan de pago y cuenta de cobro activa; si falta algo, el intro lo explica.
+  const puedeVender = esDePago(plan) && cobrosEstado === "activa"
   const { prendas } = usePrendasContext()
-  const { itemCount, setIsCartOpen, addToCart } = useCartContext()
+  const { itemCount, setIsCartOpen, addToCart, clearCart } = useCartContext()
   const supabase = createBrowserSupabaseClient()
 
   const {
@@ -42,11 +54,41 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
     publish,
   } = useMarketplace(userId, isGuest)
 
+  // Qué abrir al entrar al Shop; se decide una sola vez. Con una prenda elegida se va directo al
+  // formulario; con "?vender=1" (push) al espacio del vendedor. Sin poder vender, al intro.
+  const [inicio] = useState(() => {
+    const ninguno = { capa: null, prenda: null, form: false }
+    if (!peticion) return ninguno
+    if (peticion.retorno || !puedeVender) return { ...ninguno, capa: "intro" as const }
+    if (peticion.prendaId) return { ...ninguno, prenda: prendas.find((p) => p.id === peticion.prendaId) ?? null, form: true }
+    return { ...ninguno, capa: "vender" as const }
+  })
+  const [capa, setCapa] = useState<"intro" | "vender" | null>(inicio.capa)
+  const [retorno, setRetorno] = useState(peticion?.retorno)
+  const [prendaInicial, setPrendaInicial] = useState<Prenda | null>(inicio.prenda)
   const [selectedItem, setSelectedItem] = useState<Prenda | null>(null)
-  const [showSellForm, setShowSellForm] = useState(false)
+  const [showSellForm, setShowSellForm] = useState(inicio.form)
   const [showCheckoutModal, setShowCheckoutModal] = useState(false)
   const [showOrdersModal, setShowOrdersModal] = useState(false)
   const [escrowOrdersCount, setEscrowOrdersCount] = useState(0)
+  const [aviso, setAviso] = useState<string | null>(null)
+
+  useEffect(() => { if (peticion) onAtendida?.() }, [peticion, onAtendida])
+
+  // Regreso de Stripe del pago de una compra (?pedido). El alta de cobros (?vender) la lee el dashboard.
+  useEffect(() => {
+    const pedido = new URLSearchParams(window.location.search).get("pedido")
+    if (!pedido) return
+    window.history.replaceState(null, "", window.location.pathname)
+    if (pedido === "ok") {
+      clearCart()
+      setShowOrdersModal(true)
+    }
+    setAviso(
+      pedido === "ok" ? "Listo, tu pago quedó en custodia. Recoge tus prendas con el QR de Mis Pedidos."
+        : "No se completó el pago. Tus prendas siguen en el carrito.",
+    )
+  }, [clearCart])
 
   const loadEscrowOrdersCount = useCallback(async () => {
     try {
@@ -99,7 +141,22 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
   }
 
   async function handlePublish(prenda: Prenda, precio: string, talla: string, estado: string) {
-    await publish(prenda, sellMode, precio, talla, estado)
+    const r = await publish(prenda, sellMode, precio, talla, estado)
+    if (!r.error) {
+      setAviso("Publicada. Ya aparece en el Shop")
+      window.dispatchEvent(new Event(EVENTO_PUBLICADA))
+    }
+    return r
+  }
+
+  function abrirVender() {
+    setRetorno(undefined)
+    setCapa(puedeVender ? "vender" : "intro")
+  }
+
+  function abrirFormulario() {
+    setSellMode("venta")
+    setShowSellForm(true)
   }
 
   return (
@@ -145,17 +202,23 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
             </motion.button>
           )}
 
-          {!isGuest && !isDonar && (
+          {/* En el plan gratis también se ve: el intro le explica qué es vender y lo manda a Plus. */}
+          {!isGuest && (soloDonar || marketTab !== "donar") && (
             <motion.button
               whileTap={{ scale: 0.96 }}
-              onClick={() => { setShowSellForm(true); setSellMode("venta") }}
+              onClick={abrirVender}
+              aria-label="Vender"
               className="border border-zinc-900 text-zinc-900 text-xs px-2.5 sm:px-3 py-1.5 flex items-center gap-1 tracking-wide rounded shrink-0"
             >
-              <Tag className="w-3 h-3" /> <span className="hidden xs:inline">Publicar</span>
+              <Tag className="w-3 h-3" /> <span className="hidden xs:inline">Vender</span>
             </motion.button>
           )}
         </div>
       </div>
+
+      {aviso && (
+        <p role="status" className="mx-4 border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-zinc-700">{aviso}</p>
+      )}
 
       {soloDonar ? (
         <div className="mx-4 border border-zinc-200 bg-zinc-50 px-4 py-3 flex items-center justify-between gap-3">
@@ -220,14 +283,28 @@ export function MarketplaceView({ onApartar }: MarketplaceViewProps) {
 
       <SellFormModal
         open={showSellForm}
-        onClose={() => setShowSellForm(false)}
+        onClose={() => { setShowSellForm(false); setPrendaInicial(null) }}
         prendas={prendas}
+        prendaInicial={prendaInicial}
         sellMode={sellMode}
         setSellMode={setSellMode}
         selling={selling}
         rentaError={rentaError}
         onPublish={handlePublish}
       />
+
+      {capa === "intro" && (
+        <VenderIntro
+          caso={soloDonar ? "gratis" : retorno ? CASO_RETORNO[retorno] : cobrosEstado}
+          pasoInicial={retorno ? 3 : 1}
+          onCerrar={() => setCapa(null)}
+          onPublicar={() => { setCapa(null); abrirFormulario() }}
+        />
+      )}
+
+      {capa === "vender" && (
+        <VenderView onPublicar={abrirFormulario} onCerrar={() => setCapa(null)} aviso={aviso} bloqueada={showSellForm} />
+      )}
 
       <CartDrawer
         onCheckout={() => setShowCheckoutModal(true)}
