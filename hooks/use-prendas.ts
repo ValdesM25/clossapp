@@ -64,6 +64,8 @@ export function usePrendas(userId: string, isGuest: boolean) {
     } catch (err) {
       console.error("Error deleting prenda:", err)
       await refresh()
+      // La prenda ya volvió a la lista; quien llama avisa por qué no se borró.
+      throw err
     }
   }, [supabase, userId, isGuest, refresh])
 
