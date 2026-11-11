@@ -1,6 +1,6 @@
 # Fase 2: lógica, clima e IA
 
-Estado: **sin empezar.**
+Estado: **hecha (11 nov 2026) en `feat/planificacion-ia`, sin integrar todavía a `integracion/elite`.** Prueba real con mariela@clossapp.com (Elite) y prueba de cuenta sin Elite hechas.
 Rama: `feat/planificacion-ia`. Depende de la fase 1 (migración 24 aplicada en producción).
 
 ## Objetivo
@@ -226,11 +226,54 @@ Agregar este comentario arriba del cobro:
 
 ## Criterios de aceptación
 
-- [ ] Tests nuevos y viejos pasan.
-- [ ] La ruta no cobra si falla antes de llamar a la IA y devuelve la cuota si la IA falla.
-- [ ] Ningún componente cliente importa `lib/planificacion.server.ts`.
-- [ ] Prueba real hecha y anotada en "Hecho" con los tokens que salieron en `uso_ia_registro`.
+- [x] Tests nuevos y viejos pasan (31 de 31).
+- [x] La ruta no cobra si falla antes de llamar a la IA y devuelve la cuota si la IA falla. Lo primero se probó en vivo (cuenta sin Elite: 403 sin cobro). Lo segundo se revisó en el código, no se forzó un fallo de la IA en vivo.
+- [x] Ningún componente cliente importa `lib/planificacion.server.ts` (solo la ruta).
+- [x] Prueba real hecha y anotada en "Hecho" con los tokens que salieron en `uso_ia_registro`.
 
 ## Hecho
 
-(Lo llena quien ejecute la fase.)
+Commits en `feat/planificacion-ia` (sale de `92a01dc`). Sin push ni PR.
+
+### Qué se hizo
+
+- `lib/clima.ts`: `describir` movida desde `services/clima.service.ts` (que ahora la importa), `fuenteParaFecha`, `restarUnAnio`, `climaParaFechas` (máximo dos llamadas a Open-Meteo con 8 s de tope, nunca lanza) y `buscarLugares`.
+- `lib/planificacion.ts`: tipos, constantes y funciones puras de la tabla del paso 2, más `hoyMexico` (copiada de `hooks/use-cuota-ia.ts`, que no se tocó). Tests en `lib/planificacion.test.mjs`, incluidos `fuenteParaFecha` y `restarUnAnio`.
+- `lib/planificacion.server.ts`: sistema fijo, inventario en caché, esquema con `faltante` como `anyOf` null u objeto (la skill `claude-api` confirma que structured outputs admite `anyOf` y `null`), llamada a `claude-sonnet-5-5` con `output_config: { effort: "medium", format: { type: "json_schema", … } }`, sin `thinking`, y segunda llamada solo para los momentos que fallen la revisión.
+- `app/api/planificacion/generar/route.ts`: los 15 pasos, con los cambios de abajo.
+- `constants/planes.ts`: `solo_elite`, `plan_dia` y `plan_mes`.
+
+### Decisiones fuera del documento
+
+- **Elite antes que el plan.** La ruta lee `perfiles` y revisa Elite antes de leer el plan (pasos 3 y 4 invertidos). En el orden original, una cuenta sin Elite no puede tener planes y recibía 404 en vez de 403. Todo sigue antes del cobro.
+- **"Otro outfit" no repite.** Al regenerar, el outfit actual del momento entra a "ya planeados" y a `previos`. Sin esto, la regla 8 no lo veía (el momento está en el bloque) y la IA podía devolver el mismo.
+- **Tiempo.** El cliente de Anthropic va con `maxRetries: 0` y un plazo total de 100 s entre las dos llamadas (la segunda solo si quedan 20 s o más). Así un corte lanza dentro del `try` de la ruta y se devuelve la cuota, en vez de que Vercel mate la función a los 120 s sin devolverla. Mauri decidió dejar `maxDuration = 120`; medirlo con un bloque de 7 días en la fase 3.
+- **Si falla la corrección,** se guardan los outfits buenos de la primera llamada y solo se pierde la corrección.
+- **Orden estable del inventario:** `created_at` y luego `id` descendentes, con los ids como texto, para que el prefijo del caché no cambie entre llamadas.
+- **Fallbacks del servidor (decisión de Mauri: hacerlo ahora).** La llamada va por `client.beta.messages.create` con el beta `server-side-fallback-2026-07-01` y `fallbacks: "default"`. En Sonnet 5.5 solo reintenta rechazos de ciberseguridad y de modelos de IA, en Sonnet 5 al mismo precio; los de daños generales, biología y razonamiento no se reintentan y siguen devolviendo la cuota. El SDK 0.104.1 solo tipa la forma con lista de modelos, así que `"default"` va con el tipo forzado. Se toma el **último** bloque de texto (si entra el respaldo, el texto del modelo que rechazó queda antes) y `uso_ia_registro.modelo` guarda el modelo que respondió (`msg.model`), no la constante.
+- Duplicados de `prenda_ids` dentro de un outfit dan su propio mensaje ("Repetiste una prenda dentro del outfit.") en vez del de prendas ajenas.
+
+### Prueba real (11 nov 2026, `next dev` en el puerto 3100, Chromium a 390×844)
+
+- **Entrada:** el Turnstile no carga en el Chromium del MCP, así que no se pudo entrar con contraseña. Con OK de Mauri se generó un enlace mágico con `auth.admin.generateLink` (no manda correo) y se abrió en `/auth/callback?token_hash=…&type=magiclink`. Sirve para las pruebas de las fases 3 a 5.
+- **Plan:** viaje "Prueba fase 2 Oaxaca", 11 a 13 nov, con 4 momentos (día y noche el 11, día el 12 y el 13), creado con `crear_plan_outfit` por PostgREST con el token de la sesión.
+- **Bloque:** 200 `{ generados: 4, errores: 0, pendientes: 0 }` en 9 s. Los 4 quedaron `listo` con prendas reales de su armario. Clima de pronóstico de Open-Meteo (mín 12 y 16 °C, lluvia el 12 y el 13); con mínima de 12 °C, todos llevan abrigo. Los días de lluvia trajeron `faltante` "Impermeable" con un motivo corto.
+- **Otro outfit** (día del 11): 200 `{ generados: 1 }` en 5 s. Cambió de `108, 123, 130, 136` a `113, 123, 130, 164, 118`.
+- **Cuota:** quedó en 4 días hoy y 4 en el mes (3 del bloque y 1 de la regeneración).
+- **Sin Elite:** se cambió `perfiles.plan` de mariela a `gratis` con SQL (decisión de Mauri; no hay cuentas Plus ni gratis del equipo), se llamó al bloque y a la regeneración del mismo plan y se regresó a `elite` (`perfiles` no tiene triggers, así que el cambio no tocó nada más). Las dos respondieron 403 `solo_elite`. La cuota siguió en 4/4 y `uso_ia_registro` en 2 filas: no se llamó a la IA ni se cobró.
+- **Limpieza:** plan borrado con `borrar_plan_outfit` (0 planes y 0 momentos). Mariela quedó en `elite`, con 4 de sus 30 días del mes usados.
+
+Tokens en `uso_ia_registro` (precios de Sonnet 5.5: $2 de entrada, $2.50 escribir caché, $0.20 leer caché y $10 de salida por millón, USD; 1 USD = 18 MXN):
+
+| Llamada | Entrada | Salida | Caché leído | Caché escrito | Costo |
+|---|---|---|---|---|---|
+| Bloque de 3 días (4 momentos) | 542 | 706 | 0 | 3,897 | ~$0.018 USD, ~$0.32 MXN |
+| Otro outfit (1 momento) | 431 | 171 | **3,897** | 0 | ~$0.003 USD, ~$0.06 MXN |
+
+- El caché funciona: la segunda llamada leyó todo el prefijo (sistema más el inventario de 46 prendas).
+- Por día planeado salió ~$0.11 MXN, debajo de los ~$0.17 estimados en el README. La salida incluye el razonamiento; un bloque de 7 días con 2 momentos por día se medirá en la fase 3.
+
+### Pendiente para fases siguientes
+
+- Medir el tiempo de un bloque de 7 días (14 momentos) contra el plazo de 100 s.
+- Revisar en los logs si aparece `La IA no terminó: refusal`; los rechazos por daños generales no tienen respaldo.
