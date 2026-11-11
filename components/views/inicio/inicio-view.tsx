@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Sparkles, Sun, Clock, Tag, HeartHandshake, Check, ArrowRight, RefreshCw, Shirt, Plus, Luggage } from "lucide-react"
+import { Sparkles, Sun, Clock, Tag, HeartHandshake, Check, ArrowRight, RefreshCw, Shirt, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { pageProps } from "@/constants/animation"
 import { useAuthContext } from "@/context/auth-context"
@@ -196,41 +196,6 @@ export function InicioView({ onNavigate }: InicioViewProps) {
           </div>
         </div>
         )}
-      </section>
-
-      {/* SECCIÓN PLANIFICACIÓN DE VIAJE */}
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Luggage className="w-4 h-4 text-zinc-500" aria-hidden="true" />
-            <p className="text-xs text-zinc-500 uppercase tracking-widest">Planificación de viaje</p>
-          </div>
-          <button type="button" onClick={() => onNavigate?.("planificacion")}
-            className="min-h-10 -my-2 text-xs text-zinc-600 hover:text-zinc-900 flex items-center gap-1">
-            Ver planificación <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div onClick={() => onNavigate?.("planificacion")}
-          className="border border-zinc-200 bg-white p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-zinc-900 transition-colors cursor-pointer group shadow-2xs">
-          <div className="flex items-start gap-3.5">
-            <div className="w-12 h-12 bg-zinc-900 text-white flex items-center justify-center shrink-0">
-              <Luggage className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] tracking-widest uppercase font-semibold text-zinc-400">Escapada de otoño</span>
-                <span className="text-[10px] bg-zinc-100 text-zinc-700 px-1.5 py-0.5 font-medium">3 de 5 outfits listos</span>
-              </div>
-              <h3 className="font-serif text-xl text-zinc-900 group-hover:underline">París, a tu manera.</h3>
-              <p className="text-xs text-zinc-500 mt-0.5">12-16 oct. 2026 · 18 prendas empacadas · Asistente IA activo</p>
-            </div>
-          </div>
-          <span className="self-end sm:self-auto h-9 px-3.5 bg-zinc-900 text-white text-xs font-medium flex items-center gap-1.5 group-hover:bg-zinc-800 transition-colors">
-            <span>Abrir viaje</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </span>
-        </div>
       </section>
 
       {/* SECCIÓN 2: PRENDAS QUE NO SE HAN UTILIZADO EN UN TIEMPO */}

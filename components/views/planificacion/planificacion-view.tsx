@@ -10,17 +10,12 @@ import {
   Sparkles,
   Sun,
   CloudSun,
-  Cloud,
   RotateCw,
-  ShoppingBag,
   Check,
   Luggage,
   ArrowRight,
   X,
   Plus,
-  Compass,
-  CheckCircle2,
-  SlidersHorizontal,
   Info,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -211,7 +206,6 @@ export function PlanificacionView({ onNavigate, onBack }: PlanificacionViewProps
   const [modalOutfit, setModalOutfit] = useState<OutfitDay | null>(null)
   const [modalEquipaje, setModalEquipaje] = useState(false)
   const [modalAsistenteIA, setModalAsistenteIA] = useState(false)
-  const [productoAgregado, setProductoAgregado] = useState<string | null>(null)
 
   const outfitsListosCount = outfits.filter((o) => o.status === "ready").length
   const totalEmpacadas = equipaje.reduce((acc, c) => acc + c.empacadas, 0)
@@ -267,12 +261,6 @@ export function PlanificacionView({ onNavigate, onBack }: PlanificacionViewProps
       )
       setRotandoDia(null)
     }, 800)
-  }
-
-  // Agregar producto al carrito
-  function handleComprarProducto(_prodId: string, nombre: string, _precio: number, _img: string) {
-    setProductoAgregado(nombre)
-    setTimeout(() => setProductoAgregado(null), 3000)
   }
 
   return (
@@ -595,115 +583,6 @@ export function PlanificacionView({ onNavigate, onBack }: PlanificacionViewProps
               <span>Ver lista de equipaje</span>
               <ArrowRight className="w-4 h-4" />
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Sección Marketplace: Completa tu maleta, no la llenes */}
-      <div className="flex flex-col gap-4 pt-6 border-t border-zinc-100">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="font-serif text-2xl text-zinc-900 font-normal">Completa tu maleta, no la llenes.</h3>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              Una selección para tu destino. Primero, aprovecha lo que ya tienes.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onNavigate?.("marketplace")}
-            className="text-xs font-medium text-zinc-900 hover:underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
-          >
-            <span>Explorar marketplace</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {productoAgregado && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-2 text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>«{productoAgregado}» añadido a tu bolsa de compra.</span>
-          </div>
-        )}
-
-        {/* 2 Productos sugeridos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Producto 1 */}
-          <div className="border border-zinc-200 p-4 bg-white flex flex-col sm:flex-row items-center gap-4">
-            <div className="w-28 h-28 bg-zinc-100 shrink-0 overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&w=500&q=80"
-                alt="Bufanda de lana suave"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex-1 flex flex-col justify-between w-full h-full gap-2">
-              <div>
-                <span className="text-[10px] tracking-widest text-zinc-400 uppercase font-semibold">
-                  PARA LOS DÍAS FRESCOS
-                </span>
-                <h4 className="font-serif text-lg text-zinc-900 font-normal leading-snug">Bufanda de lana suave</h4>
-                <p className="text-xs text-zinc-500">Crudo · Un básico para tus capas</p>
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-sm font-semibold text-zinc-900">$29.00</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleComprarProducto(
-                      "prod-bufanda",
-                      "Bufanda de lana suave",
-                      29,
-                      "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&w=500&q=80"
-                    )
-                  }
-                  className="h-8 px-3 border border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>Ver producto</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Producto 2 */}
-          <div className="border border-zinc-200 p-4 bg-white flex flex-col sm:flex-row items-center gap-4">
-            <div className="w-28 h-28 bg-zinc-100 shrink-0 overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1558882224-dda166733046?auto=format&fit=crop&w=500&q=80"
-                alt="Paraguas compacto"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex-1 flex flex-col justify-between w-full h-full gap-2">
-              <div>
-                <span className="text-[10px] tracking-widest text-zinc-400 uppercase font-semibold">
-                  POR SI PARÍS TE SORPRENDE
-                </span>
-                <h4 className="font-serif text-lg text-zinc-900 font-normal leading-snug">Paraguas compacto</h4>
-                <p className="text-xs text-zinc-500">Negro · Ligero y fácil de llevar</p>
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-sm font-semibold text-zinc-900">$24.00</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleComprarProducto(
-                      "prod-paraguas",
-                      "Paraguas compacto",
-                      24,
-                      "https://images.unsplash.com/photo-1558882224-dda166733046?auto=format&fit=crop&w=500&q=80"
-                    )
-                  }
-                  className="h-8 px-3 border border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>Ver producto</span>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
