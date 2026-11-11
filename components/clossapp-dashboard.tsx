@@ -18,6 +18,7 @@ import { ArmarioView } from "@/components/views/armario/armario-view"
 import { PlanesView } from "@/components/views/planes/planes-view"
 import { PuntoRecoleccionView } from "@/components/views/punto-recoleccion/punto-recoleccion-view"
 import { PerfilView } from "@/components/views/perfil/perfil-view"
+import { PlanificacionView } from "@/components/views/planificacion/planificacion-view"
 import { ArrowLeft } from "lucide-react"
 import { OnboardingView } from "@/components/views/onboarding/onboarding-view"
 import { TourGuiado } from "@/components/shared/tour-guiado"
@@ -138,6 +139,7 @@ function AuthenticatedShell() {
     planes: <PlanesView />,
     perfil: <PerfilView />,
     punto_recoleccion: <PuntoRecoleccionView />,
+    planificacion: <PlanificacionView onNavigate={(view) => setActiveView(view)} onBack={() => setActiveView("inicio")} />,
   }
 
   return (

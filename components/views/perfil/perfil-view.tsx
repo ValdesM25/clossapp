@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, ChangeEvent } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { User, LogOut, Camera, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck, Crown, Gift, BarChart3, ChevronRight, type LucideIcon } from "lucide-react"
+import { User, LogOut, Camera, Mail, Phone, Check, Loader2, KeyRound, Sparkles, Bell, Store, ShieldCheck, Crown, Gift, BarChart3, ChevronRight, Luggage, type LucideIcon } from "lucide-react"
 import { useAuthContext } from "@/context/auth-context"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { activarPush, pushActivo, pushDisponible } from "@/lib/push"
@@ -124,6 +124,9 @@ export function PerfilView() {
       </header>
 
       <Grupo titulo="Tu actividad">
+        <Fila icono={Luggage} titulo="Planificación de viajes" dataTour="perfil-planificacion"
+          texto="Organiza tus looks para vacaciones o escapadas, empaca ligero y no olvides nada."
+          onClick={() => navegarA("planificacion")} />
         <Fila icono={BarChart3} titulo="Mis estadísticas" dataTour="perfil-estadisticas"
           texto="Qué usas más, qué llevas meses sin ponerte y cuántos outfits has armado."
           onClick={() => navegarA("estadisticas")} />

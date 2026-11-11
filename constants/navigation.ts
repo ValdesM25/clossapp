@@ -8,7 +8,7 @@ export const navItems = [
   { id: "armario" as View, label: "Armario", icon: Shirt },
   { id: "simulador" as View, label: "Outfit", icon: Sparkles, destacado: true },
   { id: "marketplace" as View, label: "Shop", icon: ShoppingBag },
-  { id: "perfil" as View, label: "Perfil", icon: UserRound, incluye: ["estadisticas", "planes"] as View[] },
+  { id: "perfil" as View, label: "Perfil", icon: UserRound, incluye: ["estadisticas", "planes", "planificacion"] as View[] },
 ]
 
 export const filterChips = ["Todos", "Ropa", "Accesorios", "Zapatos"]
