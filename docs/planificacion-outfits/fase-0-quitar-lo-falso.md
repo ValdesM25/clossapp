@@ -1,6 +1,6 @@
 # Fase 0: quitar lo falso que ya está en producción
 
-Estado: **hecha el 11 nov 2026, en la rama `fix/quitar-viaje-falso` sin integrar todavía (falta el OK de Mauri).**
+Estado: **hecha el 11 nov 2026 e integrada en `integracion/elite` (merge `2e4de4f`).**
 Rama: `fix/quitar-viaje-falso`. No depende de otra fase. Es corta y conviene hacerla primero.
 
 ## Objetivo

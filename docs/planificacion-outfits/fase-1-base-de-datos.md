@@ -1,6 +1,6 @@
 # Fase 1: base de datos
 
-Estado: **hecha. Migración 24 aplicada en producción el 11 nov 2026 con el OK de Mauri.**
+Estado: **hecha e integrada en `integracion/elite` el 11 nov 2026. Migración 24 aplicada en producción con el OK de Mauri.**
 Rama: `feat/planificacion-base`. Archivo nuevo: `supabase/24-planificacion.sql`.
 
 ## Objetivo
