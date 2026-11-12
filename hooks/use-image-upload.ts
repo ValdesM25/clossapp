@@ -77,8 +77,11 @@ export function useImageUpload(userId: string, isGuest: boolean) {
     try {
       const blob = await resizeImage(preview.file)
       const path = `${userId}/${clientIdRef.current}.jpg`
-      const { error: uploadError } = await supabase.storage.from("closet-images").upload(path, blob, { contentType: "image/jpeg", upsert: true })
-      if (uploadError) throw new Error(uploadError.message)
+      // Sin upsert: closet-images solo deja insertar en la carpeta propia (sin SELECT ni UPDATE),
+      // y upsert necesita los tres, así que fallaba con "violates row-level security". El nombre
+      // es único por prenda (clientId): si un reintento choca con la foto que ya subió, sirve igual.
+      const { error: uploadError } = await supabase.storage.from("closet-images").upload(path, blob, { contentType: "image/jpeg" })
+      if (uploadError && !/already exists|duplicate/i.test(uploadError.message)) throw new Error(uploadError.message)
       const { data: urlData } = supabase.storage.from("closet-images").getPublicUrl(path)
       return urlData.publicUrl
     } finally {
