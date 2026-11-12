@@ -1,6 +1,6 @@
 # Fase 4: entradas (Inicio, Perfil, Simulador y /planes)
 
-Estado: **hecha (11 nov 2026) en `feat/planificacion-entradas`, sin integrar todavía. La barra inferior (paso 6) queda pendiente: Mauri lo decide después.**
+Estado: **hecha (11 nov 2026) en `feat/planificacion-entradas`, sin integrar todavía.**
 Rama: `feat/planificacion-entradas`. Depende de la fase 3.
 
 ## Objetivo
@@ -77,7 +77,7 @@ Si se quita, devolver `"planificacion"` a `incluye` de Perfil para que Perfil qu
 - [x] Las cuatro filas de la tabla de Inicio se ven bien (capturas 19 a 21; el centro de acopio no ve Inicio).
 - [x] El outfit planeado sustituye al del día sin gastar IA (sin `POST /api/generate-outfits` en el log al recargar).
 - [x] Perfil, Simulador y /planes con los textos nuevos; la landing, en su rama de precios (sin subir).
-- [ ] La barra inferior quedó como dijo Mauri: **pendiente**, Mauri lo decide después. No se tocó `constants/navigation.ts`.
+- [x] La barra inferior quedó como dijo Mauri: 6 botones, con Outfit en el extremo derecho (captura 24).
 
 ## Hecho
 
@@ -102,7 +102,11 @@ Rama `feat/planificacion-entradas` (sale de `5a131c4`), commit `99e0e57` más el
 
 ### Barra inferior (P1)
 
-Se le presentaron a Mauri las opciones de la tabla y una recomendación (quitar Planificación y dejar 5 botones, porque lo diario ya sale en Inicio). Decidió pensarlo. La barra sigue con los 6 botones de `5c04812`.
+Se le presentaron a Mauri las opciones de la tabla y una recomendación (quitar Planificación y dejar 5 botones, porque lo diario ya sale en Inicio). **Decidió que Planificación se queda** y que Outfit pase a la derecha para que no se vea mal y quede al alcance del pulgar.
+
+- `constants/navigation.ts`: Inicio, Armario, Planificación, Shop, Perfil y Outfit (destacado) en el extremo derecho. Con 6 botones no hay centro y el destacado en el tercer lugar se veía chueco.
+- `constants/tour.ts`: el paso de la barra ya no dice "Outfit (al centro)".
+- A 390 px ningún texto se corta (Planificación mide 68 px; los demás, 56 px).
 
 ### Prueba (11 nov 2026, `next dev` en el puerto 3100, Chromium a 390×844, mariela@clossapp.com)
 

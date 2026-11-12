@@ -1,6 +1,6 @@
 # Tanda: Planificación de outfits (Elite)
 
-Estado: **en curso. Fases 0 y 1 hechas e integradas en `integracion/elite` (11 nov 2026); la migración 24 ya está en producción. Fase 2 hecha, probada e integrada (11 nov). Fase 3 hecha, probada e integrada (11 nov). Fase 4 hecha y probada en `feat/planificacion-entradas` (11 nov), falta integrarla; la barra inferior sigue pendiente (P1). Sigue la fase 5.**
+Estado: **en curso. Fases 0 y 1 hechas e integradas en `integracion/elite` (11 nov 2026); la migración 24 ya está en producción. Fase 2 hecha, probada e integrada (11 nov). Fase 3 hecha, probada e integrada (11 nov). Fase 4 hecha, probada e integrada (11 nov); la barra queda con 6 botones y Outfit a la derecha (P1 resuelta). Sigue la fase 5.**
 
 Este documento explica qué se construye, por qué y con qué reglas. Cada fase tiene su propio archivo con los pasos exactos. Está escrito para que un agente pueda ejecutar una fase sin haber leído la conversación donde se decidió.
 
@@ -53,7 +53,7 @@ Cada fase es una rama y un PR hacia la rama de integración (ver "Cómo se integ
 
 ## Pendientes y decisiones posteriores
 
-- **P1. Barra inferior: pendiente.** El commit `5c04812` (klesnuck) agregó Planificación como sexto botón. El comentario anterior decía "Máximo 5" y Outfit dejó de estar al centro. Mauri lo está hablando con su colega. Está en la fase 4; no tocarlo sin su respuesta.
+- **P1. Barra inferior: resuelto (11 nov).** Planificación se queda como sexto botón y Outfit (destacado) pasa al extremo derecho, al alcance del pulgar. Hecho en la fase 4.
 - **P2. "Modelos de IA frontier": resuelto (11 nov).** Se queda en la tarjeta de Elite. Mauri decidió que se cumple con Sonnet 5.5 en la planificación (Haiku en el resto de la app) y que no contradice nada.
 - **P3. Precios: resuelto (11 nov).** Plus $89 y Elite $159. Cambiados en la app (`feat/precios-89-159`) y en la landing (`clossapp-landing`, `feat/precios-89-159`). Lo que se cobra cambia en Stripe el día del merge (ver "Día del merge").
 - **P4. Topes de la decisión 2: aplicados (11 nov).** Plus y Elite quedan en 10 análisis y 8 outfits al día (`supabase/23-topes-uso-justo.sql`, ya en producción).

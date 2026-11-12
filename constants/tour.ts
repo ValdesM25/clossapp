@@ -26,7 +26,7 @@ export const PASOS_DEMO_USUARIO: PasoTour[] = [
   {
     etiqueta: "Navegación",
     titulo: "Todo está a un toque",
-    texto: "Desde esta barra llegas a cada sección: Inicio, Armario, Outfit (al centro), Shop y Perfil.",
+    texto: "Desde esta barra llegas a cada sección: Inicio, Armario, Planificación, Shop, Perfil y Outfit (el botón negro a la derecha).",
     ancla: "nav",
     clickAntes: ["nav-inicio"],
   },
