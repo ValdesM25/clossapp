@@ -38,7 +38,7 @@ Por ahora el mercado es solo México. La app de tiendas, si llega, se hará apar
 | 1b | por definir | Administrar la suscripción desde Clossapp (opción B, decidida por Mauri) | [fase-1-suscripciones.md#pendientes](fase-1-suscripciones.md#pendientes) |
 | 2 | por definir | Canje de puntos como código de descuento de un solo uso en Stripe | pendiente |
 | 3 | por definir | Vender y rentar solo en planes de pago | pendiente |
-| 4 | por definir | Funciones exclusivas de Elite: modelos frontier y planificación de outfits | pendiente |
+| 4 | `integracion/elite` | Funciones exclusivas de Elite: modelos frontier y planificación de outfits | hecha como tanda propia: [../planificacion-outfits/README.md](../planificacion-outfits/README.md) |
 | 5 | por definir | Shop con Stripe Connect y 5% de comisión | pendiente |
 
 La fase 1 va primero porque las demás dependen de saber el plan real de cada cuenta.

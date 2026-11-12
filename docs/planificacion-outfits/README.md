@@ -1,6 +1,6 @@
 # Tanda: Planificación de outfits (Elite)
 
-Estado: **en curso. Fases 0 y 1 hechas e integradas en `integracion/elite` (11 nov 2026); la migración 24 ya está en producción. Fase 2 hecha, probada e integrada (11 nov). Fase 3 hecha, probada e integrada (11 nov). Fase 4 hecha, probada e integrada (11 nov); la barra queda con 6 botones y Outfit a la derecha (P1 resuelta). Fase 5 hecha e integrada (11 nov): la función de la 25 está en producción; la tarea de cron y la configuración del push quedan pendientes (P5). Sigue la fase 6.**
+Estado: **en curso. Fases 0 y 1 hechas e integradas en `integracion/elite` (11 nov 2026); la migración 24 ya está en producción. Fase 2 hecha, probada e integrada (11 nov). Fase 3 hecha, probada e integrada (11 nov). Fase 4 hecha, probada e integrada (11 nov); la barra queda con 6 botones y Outfit a la derecha (P1 resuelta). Fase 5 hecha e integrada (11 nov): la función de la 25 está en producción; la tarea de cron y la configuración del push quedan pendientes (P5). Fase 6: documentación al día y costo preliminar; la prueba real espera al PR final de `integracion/elite` a `main` y al "Día del merge".**
 
 Este documento explica qué se construye, por qué y con qué reglas. Cada fase tiene su propio archivo con los pasos exactos. Está escrito para que un agente pueda ejecutar una fase sin haber leído la conversación donde se decidió.
 
@@ -36,6 +36,7 @@ Este documento explica qué se construye, por qué y con qué reglas. Cada fase 
 - Lo que no usa IA: clima (Open-Meteo), maleta (sale de los outfits), revisión (código), sugerencias del Shop (consulta a la base) y la vista previa (ejemplo fijo).
 - Protecciones: cuota diaria y mensual, devolución de cuota si falla, caché del armario en el prompt y una tabla que guarda los tokens reales de cada llamada para comparar con esta estimación.
 - **Fuera del código (Mauri):** poner un límite de gasto mensual en la consola de Anthropic. Es el techo duro si algo sale mal.
+- **Costo medido en las pruebas (preliminar, 11 nov 2026):** 13 llamadas en `uso_ia_registro`, **$2.01 MXN** en total, ~19 días planeados (incluye 4 intentos fallidos de una boda antes del arreglo de `categoriaDe`): **~$0.11 MXN por día planeado**, debajo de los ~$0.17 estimados. Un bloque de 7 días (8 momentos) costó $0.42 MXN y tardó 12 s. El caché del armario funciona (2,699 tokens leídos en promedio). El costo real se mide después de una semana en producción (fase 6, paso 2).
 
 ## Fases
 

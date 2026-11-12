@@ -10,7 +10,7 @@ Actualizado el 11 de noviembre de 2026. Lo que ya se hizo de la revisión está 
 
 ## Por decidir o hacer (del reporte de bugs)
 - [ ] Plus promete "Estadísticas avanzadas", que no existen (no hay estadísticas distintas por plan).
-- [ ] Elite: "Modelos de IA frontier" y "Planificación de outfits" (Mauri: en desarrollo).
+- [ ] Elite: "Modelos de IA frontier" y "Planificación de outfits": **hecha en `integracion/elite`** (tanda `docs/planificacion-outfits/`, 11 nov 2026); "frontier" se cumple con Sonnet 5.5 en la planificación. Marcar al mergear el PR final a `main`.
 - [ ] Al terminar la guía de la demo, "Crear mi cuenta" deja en la pestaña "Iniciar sesión" en lugar de "Crear cuenta".
 - [ ] En la demo, "Agregar prenda" no hace nada al tocarlo (solo muestra un candado); explicar que hay que crear cuenta.
 - [ ] Al entrar se lee el perfil dos veces (`login` y el evento `SIGNED_IN`).
