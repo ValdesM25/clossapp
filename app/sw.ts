@@ -102,8 +102,10 @@ self.addEventListener("notificationclick", (event) => {
       const abierta = ventanas.find((v) => "focus" in v) as WindowClient | undefined
       if (!abierta) return self.clients.openWindow(url)
       // Con la app abierta, un aviso con destino (por ejemplo "/?plan=…") la lleva ahí; "/" solo la enfoca.
+      // Primero focus: el navegador solo lo permite justo después del toque. Si la ventana no la
+      // controla este service worker, navigate falla y se abre una nueva.
       if (url === "/") return abierta.focus()
-      return abierta.navigate(url).then((v) => (v ?? abierta).focus())
+      return abierta.focus().then((v) => v.navigate(url)).catch(() => self.clients.openWindow(url))
     })
   )
 })
