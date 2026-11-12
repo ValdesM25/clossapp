@@ -46,7 +46,7 @@ export function MomentoCard({
             {esNoche ? <Moon className="w-3.5 h-3.5" aria-hidden="true" /> : <Sun className="w-3.5 h-3.5" aria-hidden="true" />}
             {esNoche ? "Noche" : "Día"}
           </p>
-          <p className="text-sm text-zinc-900 mt-0.5">{momento.actividad.trim() || "Día casual"}</p>
+          {momento.actividad.trim() && <p className="text-sm text-zinc-900 mt-0.5">{momento.actividad.trim()}</p>}
         </div>
         {clima && (
           <p className="text-xs text-zinc-500 text-right shrink-0 flex flex-col items-end gap-0.5">

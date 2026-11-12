@@ -309,7 +309,7 @@ export function CrearPlan({ hoy, tipoInicial, cuota, onCancelar, onCrear }: {
           <>
             <div>
               <h1 className="font-serif text-3xl text-zinc-900 font-normal">{fechas.length === 1 ? "¿Qué harás ese día?" : "¿Qué harás cada día?"}</h1>
-              <p className="text-xs text-zinc-500 mt-1">Si dejas uno vacío, armamos algo casual.</p>
+              <p className="text-xs text-zinc-500 mt-1">Si dejas uno vacío, nos guiamos por el nombre del plan.</p>
             </div>
             <div className="flex flex-col gap-3">
               {fechas.map((f, i) => {
