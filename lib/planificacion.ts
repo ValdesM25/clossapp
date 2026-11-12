@@ -6,7 +6,7 @@ import type { ClimaDia, Lugar } from "./clima"
 export type TipoPlan = "semana" | "fecha" | "viaje"
 export type Momento = "dia" | "noche"
 export type EstadoMomento = "pendiente" | "listo" | "error"
-export type OutfitPlan = { titulo: string; descripcion: string; prenda_ids: string[] }
+export type OutfitPlan = { titulo: string; descripcion: string; prenda_ids: string[]; justificacion?: string }
 export type Faltante = { categoria: string; motivo: string }
 export type MomentoPlan = {
   id: string; plan_id: string; fecha: string; momento: Momento; actividad: string
@@ -186,13 +186,14 @@ export function validarOutfits({ propuestas, momentos, inventario, previos }: {
     const error = (msg: string) => { errores[momento.id] = msg }
     if (!lista) { error("Falta el outfit de este momento."); continue }
     if (lista.length > 1) { error("Mandaste más de un outfit para este momento."); continue }
-    const { titulo, descripcion, prenda_ids, faltante } = lista[0] as Record<string, unknown>
+    const { titulo, descripcion, prenda_ids, faltante, justificacion } = lista[0] as Record<string, unknown>
     if (!esTexto(titulo) || !esTexto(descripcion) || !Array.isArray(prenda_ids) || !prenda_ids.every(esTexto)) {
       error("El outfit no tiene la forma esperada."); continue
     }
 
     // 2. Textos: se recortan en vez de fallar.
     const t = titulo.trim().slice(0, 60), d = descripcion.trim().slice(0, 240)
+    const j = esTexto(justificacion) ? justificacion.trim().slice(0, 400) : undefined
     if (!t || !d) { error("Falta el título o la descripción."); continue }
 
     // 3. Prendas reales y sin repetir.
@@ -230,7 +231,10 @@ export function validarOutfits({ propuestas, momentos, inventario, previos }: {
     usados.add(clave)
 
     // 9. Faltante: si no cumple, se guarda null.
-    validos[momento.id] = { outfit: { titulo: t, descripcion: d, prenda_ids }, faltante: leerFaltante(faltante) }
+    validos[momento.id] = {
+      outfit: { titulo: t, descripcion: d, prenda_ids, ...(j ? { justificacion: j } : {}) },
+      faltante: leerFaltante(faltante),
+    }
   }
   return { validos, errores }
 }

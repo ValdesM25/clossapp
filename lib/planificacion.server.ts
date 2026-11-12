@@ -21,18 +21,19 @@ export type PrendaPlan = {
   color: string | null; style: string | null; metadata: Record<string, unknown> | null
 }
 type YaPlaneado = { fecha: string; momento: Momento; titulo: string; prenda_ids: string[] }
-type Propuesta = { momento_id: string; titulo: string; descripcion: string; prenda_ids: string[]; faltante: unknown }
+type Propuesta = { momento_id: string; titulo: string; descripcion: string; justificacion?: string; prenda_ids: string[]; faltante: unknown }
 
 const corto = (v: unknown, max = 60) => String(v ?? "").slice(0, max)
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"]
 
-const SISTEMA = `Eres estilista. Armas un outfit por cada momento_id que te pasan, usando solo ids del inventario.
-- Toma en cuenta la actividad, el clima (mínima, máxima, lluvia) y si es de día o de noche.
+const SISTEMA = `Eres estilista profesional. Armas un outfit por cada momento_id que te pasan, usando solo ids del inventario.
+- Toma en cuenta la actividad, el lugar o destino turístico, el clima (mínima, máxima, lluvia), si es de día o de noche, y las exigencias del entorno (caminata, terreno, formalidad, sol o viento).
 - Cada outfit lleva una parte de arriba y una de abajo, o un vestido; un solo calzado; abrigo si la mínima es de 12 °C o menos o si llueve; de 2 a 7 prendas.
 - No repitas un outfit completo de los "ya planeados".
 - En viajes, prefiere repetir prendas versátiles en días distintos para que la maleta sea ligera, sin repetir el outfit completo.
 - Si para una actividad no hay nada adecuado en el armario (por ejemplo, ropa formal para una boda), arma lo mejor posible y llena "faltante" con la categoría y un motivo corto; si no falta nada, "faltante" es null.
-- Título de hasta 40 caracteres y descripción de hasta 160, de tú, en español de México. No inventes prendas.`
+- Título de hasta 40 caracteres y descripción de hasta 160, de tú, en español de México.
+- Explica en "justificacion" (de 1 a 3 oraciones claras y prácticas, hasta 260 caracteres) POR QUÉ ese outfit es el indicado para ese lugar, actividad y clima específicos (por ejemplo: qué calzado se eligió según el terreno o pasos, cómo responden las capas a la temperatura o viento, y cómo encaja con el estilo del sitio). No inventes prendas.`
 
 const ESQUEMA = {
   type: "object", additionalProperties: false, required: ["outfits"],
@@ -41,11 +42,12 @@ const ESQUEMA = {
       type: "array",
       items: {
         type: "object", additionalProperties: false,
-        required: ["momento_id", "titulo", "descripcion", "prenda_ids", "faltante"],
+        required: ["momento_id", "titulo", "descripcion", "justificacion", "prenda_ids", "faltante"],
         properties: {
           momento_id: { type: "string" },
           titulo: { type: "string" },
           descripcion: { type: "string" },
+          justificacion: { type: "string" },
           prenda_ids: { type: "array", items: { type: "string" } },
           faltante: {
             anyOf: [

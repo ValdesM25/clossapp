@@ -36,9 +36,13 @@ export function TarjetasTipo({ onElegir }: { onElegir: (tipo: TipoPlan) => void 
 const EJEMPLO: Record<TipoPlan, string> = {
   semana: "Oficina, gym, algo casual…",
   fecha: "Boda, cena, entrevista…",
-  viaje: "Museos, playa, cena…",
+  viaje: "Pirámides de Teotihuacán, museo, cena…",
 }
-const ATAJOS = ["Oficina", "Casual", "Cena", "Evento formal", "Playa", "Deporte", "Turismo"]
+const ATAJOS: Record<TipoPlan, string[]> = {
+  semana: ["Oficina", "Casual", "Cena", "Evento formal", "Deporte", "Reunión", "Salida"],
+  fecha: ["Boda de día", "Boda de noche", "Cena formal", "Entrevista", "Graduación", "Coctel"],
+  viaje: ["Turismo / Caminata", "Museo / Cultura", "Cena especial", "Paseo por el centro", "Excursión", "Playa", "Traslado"],
+}
 
 const input = "h-11 w-full border border-zinc-300 bg-white px-3 text-sm text-zinc-900 focus:outline-none focus:border-zinc-900"
 const etiqueta = "text-xs font-medium text-zinc-700"
@@ -242,7 +246,7 @@ export function CrearPlan({ hoy, tipoInicial, cuota, onCancelar, onCrear }: {
                   <input id={`act-${f}`} value={actividad} maxLength={120} placeholder={EJEMPLO[tipo]} className={input}
                     onChange={(e) => cambiar(f, { actividad: e.target.value })} />
                   <div className="flex gap-1.5 overflow-x-auto -mx-4 px-4 pb-1 [scrollbar-width:none] overscroll-x-contain">
-                    {ATAJOS.map((a) => (
+                    {(ATAJOS[tipo] ?? ATAJOS.semana).map((a) => (
                       <button key={a} type="button" onClick={() => cambiar(f, { actividad: a })}
                         className={cn("shrink-0 h-10 px-3 border text-xs transition-colors",
                           actividad === a ? "bg-zinc-900 text-white border-zinc-900" : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-900")}>

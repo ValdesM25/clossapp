@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, CloudRain, RotateCw, Sun, Moon } from "lucide-react"
+import { Check, CloudRain, RotateCw, Sun, Moon, Sparkles } from "lucide-react"
 import type { Prenda } from "@/types"
 import { cn } from "@/lib/utils"
 import type { MomentoPlan } from "@/lib/planificacion"
@@ -93,6 +93,19 @@ export function MomentoCard({
                 <OutfitVisual outfitPrendas={delOutfit} />
                 <p className="text-xs text-zinc-500">{delOutfit.map((p) => p.name).join(" · ")}</p>
               </>
+            )}
+            {outfit.justificacion && (
+              <div className="bg-zinc-50 border border-zinc-200/80 p-3 sm:p-3.5 flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 text-zinc-900 shrink-0 mt-0.5" aria-hidden="true" />
+                <div className="flex flex-col gap-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-zinc-900 uppercase tracking-wider">
+                    ¿Por qué este outfit?
+                  </p>
+                  <p className="text-xs text-zinc-600 leading-relaxed">
+                    {outfit.justificacion}
+                  </p>
+                </div>
+              </div>
             )}
             {momento.faltante && <SugerenciasShop faltante={momento.faltante} items={itemsShop} userId={userId} />}
 
