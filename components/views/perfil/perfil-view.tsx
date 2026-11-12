@@ -149,8 +149,9 @@ export function PerfilView() {
       </header>
 
       <Grupo titulo="Tu actividad">
-        <Fila icono={Luggage} titulo="Planificación de viajes" dataTour="perfil-planificacion"
-          texto="Organiza tus looks para vacaciones o escapadas, empaca ligero y no olvides nada."
+        <Fila icono={Luggage} titulo="Planificación de outfits" dataTour="perfil-planificacion"
+          texto="Tu semana, fechas importantes y viajes, con outfits y maleta."
+          estado={plan === "elite" ? undefined : "Elite"}
           onClick={() => navegarA("planificacion")} />
         <Fila icono={BarChart3} titulo="Mis estadísticas" dataTour="perfil-estadisticas"
           texto="Qué usas más, qué llevas meses sin ponerte y cuántos outfits has armado."

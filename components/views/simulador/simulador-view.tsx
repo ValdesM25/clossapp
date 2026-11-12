@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
+import { Luggage } from "lucide-react"
 import { pageProps } from "@/constants/animation"
 import { useAuthContext } from "@/context/auth-context"
 import { usePrendasContext } from "@/context/prendas-context"
@@ -12,7 +13,7 @@ import { OutfitForm } from "./outfit-form"
 import { OutfitCard } from "./outfit-card"
 
 export function SimuladorView({ onElegir }: { onElegir: () => void }) {
-  const { userName, isGuest } = useAuthContext()
+  const { userName, isGuest, plan } = useAuthContext()
   const { prendas } = usePrendasContext()
 
   const [ocasion, setOcasion] = useState("")
@@ -66,6 +67,15 @@ export function SimuladorView({ onElegir }: { onElegir: () => void }) {
         agotado={esGratis && !!cuota && cuota.outfitsHoy >= cuota.outfitsDia}
         onVerPlanes={esGratis ? () => navegarA("planes") : undefined}
       />
+
+      <button type="button" onClick={() => navegarA("planificacion")}
+        className="mx-4 -my-4 self-start min-h-10 text-sm text-zinc-700 hover:text-zinc-900 flex items-center gap-2">
+        <Luggage className="w-4 h-4" aria-hidden="true" />
+        <span className="underline underline-offset-4">Planear varios días</span>
+        {plan !== "elite" && (
+          <span className="text-[11px] uppercase tracking-widest px-1.5 py-0.5 border border-zinc-300 text-zinc-600 no-underline">Elite</span>
+        )}
+      </button>
 
       <section ref={resultadosRef} aria-labelledby="looks-titulo" aria-busy={generating} className="flex flex-col gap-4 scroll-mt-6">
         <div className="px-4 flex items-baseline justify-between gap-3">
