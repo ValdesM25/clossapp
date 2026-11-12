@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto"
 import webpush from "web-push"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { supabaseAdmin } from "@/lib/stripe.server"
@@ -6,6 +7,14 @@ import { supabaseAdmin } from "@/lib/stripe.server"
 
 export type Aviso = { title: string; body: string; url: string }
 type Suscripcion = { id: string; endpoint: string; p256dh: string; auth: string }
+
+/** true si la petición trae `Authorization: Bearer <CRON_SECRET>` (Vercel Cron o pg_cron). */
+export function cronAutorizado(req: Request): boolean {
+  const secreto = process.env.CRON_SECRET
+  const recibido = Buffer.from(req.headers.get("authorization")?.replace(/^Bearer /, "") ?? "")
+  const esperado = Buffer.from(secreto ?? "")
+  return !!secreto && recibido.length === esperado.length && timingSafeEqual(recibido, esperado)
+}
 
 /** Configura VAPID; false si faltan variables. */
 export function configurarPush(): boolean {

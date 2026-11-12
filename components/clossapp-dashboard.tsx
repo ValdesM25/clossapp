@@ -27,7 +27,7 @@ import { PASOS_DEMO_ACOPIO, PASOS_DEMO_USUARIO, PASO_INSTALAR_IOS } from "@/cons
 import { useInstalarApp } from "@/hooks/use-instalar-app"
 import { PantallaEntrada } from "@/components/shared/pantalla-entrada"
 import { VideoInstalarIos } from "@/components/shared/video-instalar-ios"
-import { EVENTO_NAVEGAR, navegarA, peticionVenderDeUrl, type DestinoNavegar, type PeticionVender } from "@/lib/navegar"
+import { EVENTO_NAVEGAR, navegarA, peticionVenderDeUrl, planDeUrl, type DestinoNavegar, type PeticionVender } from "@/lib/navegar"
 
 /** Pastilla fija del modo demo: recuerda que todo es de ejemplo y deja repetir la guía o salir. */
 function BarraDemo({ abajo }: { abajo: string }) {
@@ -125,21 +125,26 @@ function AuthenticatedShell() {
   const { refresh } = usePrendasContext()
   const { plan } = useAuthContext()
   // Al volver de un pago (?pedido), del alta de cobros (?vender=ok|revision|datos|error) o al tocar
-  // un push del vendedor (?vender=1) se abre el Shop. Solo se dibuja en el navegador (después de
+  // un push del vendedor (?vender=1) se abre el Shop; con un aviso de planificación (?plan=<id>), ese plan. Solo se dibuja en el navegador (después de
   // restaurar la sesión), así que window existe.
   const [peticionVender, setPeticionVender] = useState<PeticionVender | null>(() => peticionVenderDeUrl(window.location.search))
   const [activeView, setActiveView] = useState<View>(() =>
-    peticionVender || new URLSearchParams(window.location.search).has("pedido") ? "marketplace" : "inicio")
+    planDeUrl(window.location.search) ? "planificacion"
+      : peticionVender || new URLSearchParams(window.location.search).has("pedido") ? "marketplace" : "inicio")
   const keyboardOpen = useKeyboard()
+  // Plan que abrir al entrar a Planificación (Inicio, avisos push).
+  const [planInicial, setPlanInicial] = useState<string | null>(() => planDeUrl(window.location.search))
 
   useEffect(() => {
-    if (peticionVenderDeUrl(window.location.search)) window.history.replaceState(null, "", window.location.pathname)
+    if (peticionVenderDeUrl(window.location.search) || planDeUrl(window.location.search)) window.history.replaceState(null, "", window.location.pathname)
   }, [])
 
   useEffect(() => {
     const ir = (e: Event) => {
-      const { vista, venderPrendaId } = (e as CustomEvent<DestinoNavegar>).detail
+      const { vista, venderPrendaId, verPrendaId, planId } = (e as CustomEvent<DestinoNavegar>).detail
+      if (planId) setPlanInicial(planId)
       if (venderPrendaId) setPeticionVender({ prendaId: venderPrendaId })
+      else if (verPrendaId) setPeticionVender({ verPrendaId })
       setActiveView(vista)
     }
     window.addEventListener(EVENTO_NAVEGAR, ir)
@@ -156,7 +161,7 @@ function AuthenticatedShell() {
     planes: <PlanesView />,
     perfil: <PerfilView />,
     punto_recoleccion: <PuntoRecoleccionView />,
-    planificacion: <PlanificacionView onNavigate={(view) => setActiveView(view)} onBack={() => setActiveView("inicio")} />,
+    planificacion: <PlanificacionView planInicial={planInicial} onPlanAbierto={() => setPlanInicial(null)} onNavigate={(view) => setActiveView(view)} onBack={() => setActiveView("inicio")} />,
   }
 
   return (

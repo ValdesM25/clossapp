@@ -10,7 +10,10 @@ export function OutfitVisual({ outfitPrendas }: { outfitPrendas: Prenda[] }) {
     ),
   })).filter((l) => l.items.length > 0)
 
-  const display = layers.length > 0 ? layers : [{ cat: "Prendas", items: outfitPrendas }]
+  // Lo que no cae en ninguna capa (Blusa, Vestido, "Pantalones"…) también se dibuja.
+  const enCapa = new Set(layers.flatMap((l) => l.items))
+  const resto = outfitPrendas.filter((p) => !enCapa.has(p))
+  const display = resto.length ? [...layers, { cat: layers.length ? "Más prendas" : "Prendas", items: resto }] : layers
 
   return (
     <div className="flex flex-col gap-2">
@@ -23,7 +26,7 @@ export function OutfitVisual({ outfitPrendas }: { outfitPrendas: Prenda[] }) {
                 {p.image_url && (
                   <img src={p.image_url} alt={p.name} className="w-8 h-8 object-cover shrink-0" />
                 )}
-                <span className="text-[10px] text-zinc-700 leading-tight max-w-[80px]">{p.name}</span>
+                <span className="text-xs text-zinc-700 leading-tight max-w-[96px]">{p.name}</span>
               </div>
             ))}
           </div>
