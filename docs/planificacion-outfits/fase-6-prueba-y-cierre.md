@@ -1,6 +1,6 @@
 # Fase 6: prueba real y cierre
 
-Estado: **sin empezar.**
+Estado: **preparada (11 nov 2026).** Documentación al día y costo preliminar. La prueba real (1), el costo de una semana (2) y lo de Mauri (3) esperan al PR final a `main` y a la configuración del push (P5).
 Rama: `docs/planificacion-cierre` (solo documentación). Depende de las fases 0 a 5 en producción.
 
 ## Objetivo
@@ -44,16 +44,21 @@ Comparar con lo estimado (~$1.2 MXN por bloque de 7 días, ~$0.17 por día). Si 
 
 - [ ] Poner un límite de gasto mensual en la consola de Anthropic.
 - [ ] Seguir el "Día del merge" del README (precios nuevos en Stripe y Vercel).
-- [ ] Decidir la pendiente P1 (barra inferior) si sigue abierta.
+- [x] Decidir la pendiente P1 (barra inferior) si sigue abierta. (Resuelta en la fase 4: 6 botones, Outfit a la derecha.)
+- [ ] Configurar el push en producción y programar la tarea de cron de los avisos (P5, "Día del merge").
 
 ## 4. Documentación
 
-- [ ] `docs/planificacion-outfits/README.md`: estado "en producción", fecha y costo real.
-- [ ] `docs/PENDIENTES.md`: marcar la línea de Elite / planificación.
-- [ ] `docs/revision-app-2026-11-10.md`: problema 10, anotar que la planificación ya existe (y que "modelos frontier" se cumple con Sonnet 5.5 en la planificación).
-- [ ] `docs/tanda-pagos/README.md`: fase 4, apuntar a esta tanda.
-- [ ] `docs/modelo-de-negocio.md` (archivo local de Mauri, no está en git): agregar la fila de costo de planificación en "Variables por uso de IA".
+- [ ] `docs/planificacion-outfits/README.md`: estado "en producción", fecha y costo real. (Hoy: estado al día y costo preliminar; "en producción" y el costo real van después del merge.)
+- [ ] `docs/PENDIENTES.md`: marcar la línea de Elite / planificación. (Texto actualizado; se marca al mergear.)
+- [x] `docs/revision-app-2026-11-10.md`: problema 10, anotar que la planificación ya existe (y que "modelos frontier" se cumple con Sonnet 5.5 en la planificación).
+- [x] `docs/tanda-pagos/README.md`: fase 4, apuntar a esta tanda.
+- [x] `docs/modelo-de-negocio.md` (archivo local de Mauri, no está en git): agregar la fila de costo de planificación en "Variables por uso de IA".
 
 ## Hecho
 
-(Lo llena quien ejecute la fase.)
+Rama `docs/planificacion-cierre` (sale de `65d0608`), solo documentación.
+
+- **Costo preliminar** con la consulta del paso 2 sobre los datos de las pruebas de las fases 2 a 4: 13 llamadas, $2.01 MXN, 645 tokens de entrada, 377 de salida y 2,699 de caché leído en promedio. ~$0.11 MXN por día planeado (estimado: $0.17). Anotado en "Costos" del README.
+- **Documentos:** README de la tanda (estado y costo), `PENDIENTES.md` (texto; se marca al mergear), problema 10 de `revision-app-2026-11-10.md`, fase 4 de `tanda-pagos/README.md` y la fila de planificación en `docs/modelo-de-negocio.md` (local, fuera de git).
+- **Queda para después del merge:** la prueba real del paso 1 en `www.clossapp.com` (los avisos necesitan P5), el costo de una semana real (paso 2) y cambiar el estado del README a "en producción".
