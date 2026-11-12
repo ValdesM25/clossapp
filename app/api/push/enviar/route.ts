@@ -1,7 +1,6 @@
-import { timingSafeEqual } from "node:crypto"
 import { NextResponse, type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import { configurarPush, enviarLote } from "@/lib/push.server"
+import { configurarPush, cronAutorizado, enviarLote } from "@/lib/push.server"
 
 /**
  * Envía el recordatorio "¿compraste algo nuevo?" a quien lleva más de 14
@@ -10,12 +9,7 @@ import { configurarPush, enviarLote } from "@/lib/push.server"
  * `Authorization: Bearer <CRON_SECRET>`.
  */
 async function enviar(req: NextRequest) {
-  const secreto = process.env.CRON_SECRET
-  const recibido = Buffer.from(req.headers.get("authorization")?.replace(/^Bearer /, "") ?? "")
-  const esperado = Buffer.from(secreto ?? "")
-  if (!secreto || recibido.length !== esperado.length || !timingSafeEqual(recibido, esperado)) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
+  if (!cronAutorizado(req)) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!configurarPush() || !serviceKey) {

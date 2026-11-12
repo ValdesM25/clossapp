@@ -17,6 +17,12 @@ export function navegarA(vista: View, opciones?: { venderPrendaId?: string; verP
  */
 export type PeticionVender = { retorno?: "ok" | "revision" | "datos" | "error"; prendaId?: string; verPrendaId?: string }
 
+/** Plan que abrir desde la URL ("?plan=<uuid>", lo mandan los avisos de planificación); null si no hay. */
+export function planDeUrl(search: string): string | null {
+  const id = new URLSearchParams(search).get("plan")
+  return id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? id : null
+}
+
 export function peticionVenderDeUrl(search: string): PeticionVender | null {
   const v = new URLSearchParams(search).get("vender")
   if (v === null) return null

@@ -1,6 +1,6 @@
 # Tanda: Planificación de outfits (Elite)
 
-Estado: **en curso. Fases 0 y 1 hechas e integradas en `integracion/elite` (11 nov 2026); la migración 24 ya está en producción. Fase 2 hecha, probada e integrada (11 nov). Fase 3 hecha, probada e integrada (11 nov). Fase 4 hecha, probada e integrada (11 nov); la barra queda con 6 botones y Outfit a la derecha (P1 resuelta). Sigue la fase 5.**
+Estado: **en curso. Fases 0 y 1 hechas e integradas en `integracion/elite` (11 nov 2026); la migración 24 ya está en producción. Fase 2 hecha, probada e integrada (11 nov). Fase 3 hecha, probada e integrada (11 nov). Fase 4 hecha, probada e integrada (11 nov); la barra queda con 6 botones y Outfit a la derecha (P1 resuelta). Fase 5 hecha e integrada (11 nov): la función de la 25 está en producción; la tarea de cron y la configuración del push quedan pendientes (P5). Sigue la fase 6.**
 
 Este documento explica qué se construye, por qué y con qué reglas. Cada fase tiene su propio archivo con los pasos exactos. Está escrito para que un agente pueda ejecutar una fase sin haber leído la conversación donde se decidió.
 
@@ -56,6 +56,7 @@ Cada fase es una rama y un PR hacia la rama de integración (ver "Cómo se integ
 - **P1. Barra inferior: resuelto (11 nov).** Planificación se queda como sexto botón y Outfit (destacado) pasa al extremo derecho, al alcance del pulgar. Hecho en la fase 4.
 - **P2. "Modelos de IA frontier": resuelto (11 nov).** Se queda en la tarjeta de Elite. Mauri decidió que se cumple con Sonnet 5.5 en la planificación (Haiku en el resto de la app) y que no contradice nada.
 - **P3. Precios: resuelto (11 nov).** Plus $89 y Elite $159. Cambiados en la app (`feat/precios-89-159`) y en la landing (`clossapp-landing`, `feat/precios-89-159`). Lo que se cobra cambia en Stripe el día del merge (ver "Día del merge").
+- **P5. Push sin configurar en producción: pendiente (Mauri).** Encontrado en la fase 5 (11 nov): Vault no tiene `cron_secret`, Vercel no tiene `CRON_SECRET` ni las llaves VAPID y `push_suscripciones` está vacía. Ningún aviso push ha salido nunca en producción (el recordatorio diario responde 401). `.env.local` tampoco las tiene, así que en local tampoco se puede probar un aviso real. Pasos en "Día del merge" (paso 3). La tarea de cron de los avisos de planificación tampoco está programada (decisión de Mauri): va después del deploy.
 - **P4. Topes de la decisión 2: aplicados (11 nov).** Plus y Elite quedan en 10 análisis y 8 outfits al día (`supabase/23-topes-uso-justo.sql`, ya en producción).
 
 ## Cómo se integra (decisión de Mauri, 11 nov)
@@ -82,6 +83,12 @@ Los pasos de Stripe se hacen con el **MCP de Stripe** (`mcp__stripe__*`), y cada
    - Elite: `product=prod_VZkCJIe8FVF2NV`, `unit_amount=15900`, mismos campos, `nickname=Elite $159 mensual`.
    - Guardar los dos `price_…` nuevos.
 3. **Vercel (producción):** cambiar `STRIPE_PRICE_PLUS` y `STRIPE_PRICE_ELITE` por los ids nuevos, con el MCP de Vercel (`edit_project_env`) o desde el panel, con OK de Mauri. **Ojo:** un precio que no esté en esas variables se trata como plan `gratis` (`lib/stripe.server.ts`), así que el cambio de variables y el deploy van juntos.
+   **Push (P5), también antes del merge, con los valores fuera del agente:**
+   - Generar las llaves con `npx web-push generate-vapid-keys`.
+   - En Vercel (producción): `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (por ejemplo `mailto:support@clossapp.com`) y `CRON_SECRET` (largo y al azar).
+   - En el SQL editor de Supabase: `select vault.create_secret('<el mismo valor que CRON_SECRET>', 'cron_secret');`
+   - Las variables nuevas también se leen solo en el deploy nuevo (paso 4). Después, activar las notificaciones en un teléfono con una cuenta Elite para la prueba de la fase 6.
+   - Después del deploy, programar la tarea de cron de los avisos (bloque comentado al final de `supabase/25-avisos-planificacion.sql`).
 4. **Mergear** el PR final y el de la landing. Esperar el deploy (las variables nuevas solo se leen en el deploy nuevo).
 5. **Comprobar:** `/planes` muestra $89 y $159, y abrir un Checkout de cada plan **sin pagar** para ver que Stripe cobra el monto nuevo.
 6. **Archivar los precios viejos** (con OK de Mauri): `stripe_api_write`, `POST /v1/prices/<id viejo>` con `active=false`. Archivar no borra nada; solo impide usarlos en compras nuevas.
