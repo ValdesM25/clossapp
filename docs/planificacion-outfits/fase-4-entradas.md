@@ -1,6 +1,6 @@
 # Fase 4: entradas (Inicio, Perfil, Simulador y /planes)
 
-Estado: **hecha (11 nov 2026) en `feat/planificacion-entradas`, sin integrar todavía.**
+Estado: **hecha (11 nov 2026) e integrada en `integracion/elite` (merge `829d535`). La landing tiene el texto nuevo en `feat/precios-89-159` (`9c90b2f`).**
 Rama: `feat/planificacion-entradas`. Depende de la fase 3.
 
 ## Objetivo
