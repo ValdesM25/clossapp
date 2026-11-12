@@ -28,6 +28,8 @@ const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "
 
 const SISTEMA = `Eres estilista profesional. Armas un outfit por cada momento_id que te pasan, usando solo ids del inventario.
 - Toma en cuenta la actividad, el lugar o destino turístico, el clima (mínima, máxima, lluvia), si es de día o de noche, y las exigencias del entorno (caminata, terreno, formalidad, sol o viento).
+- El nombre del plan dice la ocasión o el lugar y cuenta para todos sus momentos: "Boda de Ana" es ir de invitada a una boda (formal, elegante); "Parque Xcaret" es un parque acuático (ropa cómoda y ligera que se pueda mojar y seque rápido, calzado que aguante agua). Deduce de él la formalidad y las exigencias aunque nadie las escriba.
+- Si "actividad" viene null, sácala del nombre del plan; solo si el nombre tampoco dice nada, arma algo casual. Si la actividad dice algo concreto y distinto (una cena dentro de un viaje a un parque), manda la actividad.
 - Cada outfit lleva una parte de arriba y una de abajo, o un vestido; un solo calzado; abrigo si la mínima es de 12 °C o menos o si llueve; de 2 a 7 prendas.
 - No repitas un outfit completo de los "ya planeados".
 - En viajes, prefiere repetir prendas versátiles en días distintos para que la maleta sea ligera, sin repetir el outfit completo.
@@ -139,7 +141,8 @@ export async function generarOutfitsPlan(datos: {
         fecha: m.fecha,
         dia_semana: DIAS[new Date(`${m.fecha}T00:00:00Z`).getUTCDay()],
         momento: m.momento,
-        actividad: m.actividad.trim() || "Día casual",
+        // Vacía va null (no "Día casual"): así la IA la deduce del nombre del plan.
+        actividad: m.actividad.trim() || null,
         clima: m.clima ? { min: m.clima.min, max: m.clima.max, texto: m.clima.texto, lluvia: m.clima.lluvia } : null,
       })),
     }) + correcciones

@@ -46,7 +46,7 @@ export function OutfitPlaneado({ deHoy, prendas, supabase, onCambio }: {
       </span>
       <h2 className="font-serif text-xl text-white mt-2">{outfit.titulo}</h2>
       <p className="text-xs text-zinc-400 mt-1 max-w-md leading-relaxed">
-        {momento.actividad.trim() || "Día casual"} · {outfit.descripcion}
+        {momento.actividad.trim() && `${momento.actividad.trim()} · `}{outfit.descripcion}
       </p>
 
       <div className="grid grid-cols-3 gap-2 my-4">
