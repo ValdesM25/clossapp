@@ -1,6 +1,6 @@
 # Fase 6: prueba real y cierre
 
-Estado: **preparada (11 nov 2026).** Documentación al día y costo preliminar. La prueba real (1), el costo de una semana (2) y lo de Mauri (3) esperan al PR final a `main` y a la configuración del push (P5).
+Estado: **en producción (11 nov 2026).** El día del merge se hizo completo salvo el push. Quedan la prueba real con avisos (necesita P5) y el costo de una semana.
 Rama: `docs/planificacion-cierre` (solo documentación). Depende de las fases 0 a 5 en producción.
 
 ## Objetivo
@@ -43,14 +43,14 @@ Comparar con lo estimado (~$1.2 MXN por bloque de 7 días, ~$0.17 por día). Si 
 ## 3. Cosas que hace Mauri (fuera del código)
 
 - [ ] Poner un límite de gasto mensual en la consola de Anthropic.
-- [ ] Seguir el "Día del merge" del README (precios nuevos en Stripe y Vercel).
+- [x] Seguir el "Día del merge" del README (precios nuevos en Stripe y Vercel). Hecho el 11 nov con el MCP de Stripe y de Vercel, con OK de Mauri.
 - [x] Decidir la pendiente P1 (barra inferior) si sigue abierta. (Resuelta en la fase 4: 6 botones, Outfit a la derecha.)
 - [ ] Configurar el push en producción y programar la tarea de cron de los avisos (P5, "Día del merge").
 
 ## 4. Documentación
 
-- [ ] `docs/planificacion-outfits/README.md`: estado "en producción", fecha y costo real. (Hoy: estado al día y costo preliminar; "en producción" y el costo real van después del merge.)
-- [ ] `docs/PENDIENTES.md`: marcar la línea de Elite / planificación. (Texto actualizado; se marca al mergear.)
+- [ ] `docs/planificacion-outfits/README.md`: estado "en producción", fecha y costo real. (Estado y fecha, hechos; el costo real se anota después de una semana.)
+- [x] `docs/PENDIENTES.md`: marcar la línea de Elite / planificación.
 - [x] `docs/revision-app-2026-11-10.md`: problema 10, anotar que la planificación ya existe (y que "modelos frontier" se cumple con Sonnet 5.5 en la planificación).
 - [x] `docs/tanda-pagos/README.md`: fase 4, apuntar a esta tanda.
 - [x] `docs/modelo-de-negocio.md` (archivo local de Mauri, no está en git): agregar la fila de costo de planificación en "Variables por uso de IA".
@@ -62,3 +62,12 @@ Rama `docs/planificacion-cierre` (sale de `65d0608`), solo documentación.
 - **Costo preliminar** con la consulta del paso 2 sobre los datos de las pruebas de las fases 2 a 4: 13 llamadas, $2.01 MXN, 645 tokens de entrada, 377 de salida y 2,699 de caché leído en promedio. ~$0.11 MXN por día planeado (estimado: $0.17). Anotado en "Costos" del README.
 - **Documentos:** README de la tanda (estado y costo), `PENDIENTES.md` (texto; se marca al mergear), problema 10 de `revision-app-2026-11-10.md`, fase 4 de `tanda-pagos/README.md` y la fila de planificación en `docs/modelo-de-negocio.md` (local, fuera de git).
 - **Queda para después del merge:** la prueba real del paso 1 en `www.clossapp.com` (los avisos necesitan P5), el costo de una semana real (paso 2) y cambiar el estado del README a "en producción".
+
+### Día del merge (11 nov 2026, con OK de Mauri)
+
+- **Stripe (cuenta real `acct_1UYa3RG95iTnfeMV`, MCP de Stripe):** 0 suscripciones de cualquier estado antes de cambiar. Precios nuevos Plus $89 (`price_1Uam4vG95iTnfeMVfMqwDtRs`) y Elite $159 (`price_1Uam51G95iTnfeMV1MY58pOa`), copiando moneda, intervalo e IVA incluido. El portal `bpc_1UYaiMG95iTnfeMVhFubiv3H` pasó a ofrecer solo esos dos (antes ofrecía los viejos). Los nuevos quedaron como precio por defecto de cada producto y los viejos ($59 y $99) se archivaron; Stripe no deja archivar el precio por defecto.
+- **Vercel (MCP de Vercel):** `STRIPE_PRICE_PLUS` y `STRIPE_PRICE_ELITE` de producción con los ids nuevos, antes del deploy.
+- **Merge:** PR #59 (`8f76786`) y el PR #8 de la landing (`7404e3a`); los dos builds de preview estaban en verde y `main` no tenía nada nuevo. Deploys de producción READY (`www.clossapp.com` y `web.clossapp.com`).
+- **Comprobado por Mauri en su celular** (desde el agente no se puede abrir producción: el sandbox no tiene salida a internet): la landing y `/planes` muestran $89 y $159, y Checkout de Plus y Elite con una cuenta gratis cobra $89 y $159.
+- **Barra inferior:** después del merge Mauri la reordenó: Perfil · Armario · Inicio · Planificación · Shop · Outfit.
+- **Siguen pendientes:** P5 (llaves VAPID y `CRON_SECRET` en Vercel, `cron_secret` en Vault), programar la tarea de cron de los avisos, la prueba real con avisos, el costo de una semana y el límite de gasto en la consola de Anthropic.

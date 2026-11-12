@@ -1,6 +1,6 @@
 # Tanda: Planificación de outfits (Elite)
 
-Estado: **en curso. Fases 0 y 1 hechas e integradas en `integracion/elite` (11 nov 2026); la migración 24 ya está en producción. Fase 2 hecha, probada e integrada (11 nov). Fase 3 hecha, probada e integrada (11 nov). Fase 4 hecha, probada e integrada (11 nov); la barra queda con 6 botones y Outfit a la derecha (P1 resuelta). Fase 5 hecha e integrada (11 nov): la función de la 25 está en producción; la tarea de cron y la configuración del push quedan pendientes (P5). Fase 6: documentación al día y costo preliminar; la prueba real espera al PR final de `integracion/elite` a `main` y al "Día del merge".**
+Estado: **en producción desde el 11 nov 2026** (PR #59 a `main`, merge `8f76786`; landing en el PR #8 de `clossapp-landing`). Fases 0 a 5 hechas; de la 6 queda la prueba real con avisos y el costo de una semana. Pendientes fuera del código: configurar el push y programar la tarea de cron de los avisos (P5) y el límite de gasto en la consola de Anthropic.
 
 Este documento explica qué se construye, por qué y con qué reglas. Cada fase tiene su propio archivo con los pasos exactos. Está escrito para que un agente pueda ejecutar una fase sin haber leído la conversación donde se decidió.
 
@@ -54,7 +54,7 @@ Cada fase es una rama y un PR hacia la rama de integración (ver "Cómo se integ
 
 ## Pendientes y decisiones posteriores
 
-- **P1. Barra inferior: resuelto (11 nov).** Planificación se queda como sexto botón y Outfit (destacado) pasa al extremo derecho, al alcance del pulgar. Hecho en la fase 4.
+- **P1. Barra inferior: resuelto (11 nov).** Planificación se queda como sexto botón y Outfit (destacado) pasa al extremo derecho, al alcance del pulgar (fase 4). Después del merge Mauri reordenó la barra por uso y negocio: **Perfil · Armario · Inicio · Planificación · Shop · Outfit** (Inicio al centro, Shop junto a Outfit).
 - **P2. "Modelos de IA frontier": resuelto (11 nov).** Se queda en la tarjeta de Elite. Mauri decidió que se cumple con Sonnet 5.5 en la planificación (Haiku en el resto de la app) y que no contradice nada.
 - **P3. Precios: resuelto (11 nov).** Plus $89 y Elite $159. Cambiados en la app (`feat/precios-89-159`) y en la landing (`clossapp-landing`, `feat/precios-89-159`). Lo que se cobra cambia en Stripe el día del merge (ver "Día del merge").
 - **P5. Push sin configurar en producción: pendiente (Mauri).** Encontrado en la fase 5 (11 nov): Vault no tiene `cron_secret`, Vercel no tiene `CRON_SECRET` ni las llaves VAPID y `push_suscripciones` está vacía. Ningún aviso push ha salido nunca en producción (el recordatorio diario responde 401). `.env.local` tampoco las tiene, así que en local tampoco se puede probar un aviso real. Pasos en "Día del merge" (paso 3). La tarea de cron de los avisos de planificación tampoco está programada (decisión de Mauri): va después del deploy.
@@ -69,6 +69,8 @@ Cada fase es una rama y un PR hacia la rama de integración (ver "Cómo se integ
 - La landing es otro repo: su PR se mergea el mismo día que el PR final.
 
 ## Día del merge
+
+**Hecho el 11 nov 2026** (ver "Hecho" de la fase 6), salvo el push (P5) y la tarea de cron de los avisos.
 
 > **Cuidado con los precios:** lo que se cobra de verdad lo decide Stripe, no el código. `constants/planes.ts` y la landing solo **muestran** el precio; el Checkout cobra el precio de Stripe cuyo id está en `STRIPE_PRICE_PLUS` / `STRIPE_PRICE_ELITE`. Nadie tiene suscripción hoy (11 nov 2026), así que nadie se queda con el precio viejo. Pero si se publica la app antes de cambiar Stripe, **la página dirá $89 y Stripe cobrará $59**. Por eso los pasos 1 a 3 van el mismo día y en este orden.
 
