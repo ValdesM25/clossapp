@@ -94,7 +94,7 @@ export function MarketplaceView({ onApartar, peticion, onAtendida }: Marketplace
   useEffect(() => {
     const pedido = new URLSearchParams(window.location.search).get("pedido")
     if (!pedido) return
-    window.history.replaceState(null, "", window.location.pathname)
+    window.history.replaceState(window.history.state, "", window.location.pathname)
     if (pedido === "ok") {
       clearCart()
       setShowOrdersModal(true)

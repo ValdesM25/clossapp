@@ -231,12 +231,11 @@ export function ArmarioView() {
               return (
                 <button type="button" key={item.id} onClick={() => setSelectedPrenda(item)}
                   className={cn(
-                    "relative overflow-hidden text-left active:opacity-80 transition-opacity",
+                    "relative overflow-hidden text-left flex flex-col active:opacity-80 transition-opacity",
                     item.en_renta ? "bg-zinc-200 opacity-60" : "bg-zinc-50"
                   )}>
                   <img src={item.image_url || fashionImages[i % fashionImages.length]} alt={item.name} loading={i < 6 ? "eager" : "lazy"} decoding="async"
-                    className={cn("w-full object-cover", item.en_renta && "grayscale")}
-                    style={{ height: i % 3 === 0 ? "180px" : i % 3 === 1 ? "140px" : "160px" }} />
+                    className={cn("w-full aspect-[3/4] object-cover", item.en_renta && "grayscale")} />
                   {tieneRep && (
                     <div className="absolute top-2 right-2 bg-white border border-zinc-200 text-zinc-600 text-[11px] font-medium px-2 py-0.5 flex items-center gap-1">Rep.</div>
                   )}

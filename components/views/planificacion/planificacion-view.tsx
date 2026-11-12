@@ -9,6 +9,7 @@ import { esDePago } from "@/constants/planes"
 import { useAuthContext } from "@/context/auth-context"
 import { usePrendasContext } from "@/context/prendas-context"
 import { usePlanificacion } from "@/hooks/use-planificacion"
+import { useAtras } from "@/hooks/use-atras"
 import { hoyMexico, type TipoPlan } from "@/lib/planificacion"
 import { navegarA } from "@/lib/navegar"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
@@ -50,6 +51,8 @@ export function PlanificacionView({ onNavigate, onBack, planInicial, onPlanAbier
   const raiz = useRef<HTMLDivElement>(null)
   const clavePantalla = pantalla.tipo === "detalle" ? pantalla.id : pantalla.tipo
   useEffect(() => { raiz.current?.scrollIntoView({ block: "start" }) }, [clavePantalla])
+  // "Atrás" dentro de crear o de un plan regresa a la lista, no a la vista anterior.
+  useAtras(pantalla.tipo !== "lista", () => setPantalla({ tipo: "lista" }))
   const [errorLocal, setErrorLocal] = useState<string | null>(null)
 
   const previa = isGuest || !!demo

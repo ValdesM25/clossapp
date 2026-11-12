@@ -1,5 +1,6 @@
 "use client"
 
+import { useAtras } from "@/hooks/use-atras"
 import { useEffect, useRef, useState } from "react"
 import { useCapa } from "@/hooks/use-capa"
 import { createPortal } from "react-dom"
@@ -54,6 +55,7 @@ export function VenderIntro({ caso, pasoInicial = 1, onCerrar, onPublicar }: Ven
   // Foco al título de cada paso: el lector de pantalla lo anuncia y Escape funciona sin tocar nada.
   useEffect(() => { titulo.current?.focus() }, [paso])
   useCapa(capa, onCerrar)
+  useAtras(true, onCerrar)
 
   async function conectar() {
     setAbriendo(true)

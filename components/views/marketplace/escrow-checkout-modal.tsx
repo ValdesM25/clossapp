@@ -1,5 +1,6 @@
 "use client"
 
+import { useAtras } from "@/hooks/use-atras"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, ShieldCheck, CreditCard, Lock, CheckCircle2, QrCode, ArrowRight, Store } from "lucide-react"
@@ -18,6 +19,7 @@ interface EscrowCheckoutModalProps {
 }
 
 export function EscrowCheckoutModal({ open, onClose, onOrderCreated }: EscrowCheckoutModalProps) {
+  useAtras(open, onClose)
   const { cart, totalPrice, clearCart } = useCartContext()
   const { userId, userEmail, userName, isGuest } = useAuthContext()
   const supabase = createBrowserSupabaseClient()

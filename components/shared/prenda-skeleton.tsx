@@ -1,6 +1,6 @@
 export function PrendaSkeleton() {
   return (
-    <div className="columns-2 gap-3 space-y-3">
+    <div className="columns-2 gap-3">
       {[180, 140, 160, 180, 140, 160].map((h, i) => (
         <div key={i} className="break-inside-avoid overflow-hidden bg-zinc-100 mb-3 animate-pulse">
           <div className="bg-zinc-200" style={{ height: h }} />

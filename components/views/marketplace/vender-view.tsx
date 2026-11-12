@@ -1,5 +1,6 @@
 "use client"
 
+import { useAtras } from "@/hooks/use-atras"
 import { useEffect, useRef, useState } from "react"
 import { useCapa } from "@/hooks/use-capa"
 import { createPortal } from "react-dom"
@@ -150,6 +151,7 @@ export function VenderView({ onPublicar, onCerrar, aviso, bloqueada }: VenderVie
 
   useEffect(() => { titulo.current?.focus() }, [])
   useCapa(capa, onCerrar, !bloqueada)
+  useAtras(true, onCerrar)
 
   // Con la cuenta activa abre el panel de Stripe con los depósitos.
   async function irACobros() {

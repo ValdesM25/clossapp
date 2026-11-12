@@ -1,5 +1,6 @@
 "use client"
 
+import { useAtras } from "@/hooks/use-atras"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, ShoppingBag, ShieldCheck, Trash2, ArrowRight, Calendar, QrCode } from "lucide-react"
@@ -19,6 +20,7 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
   const { cart, isCartOpen, setIsCartOpen, removeFromCart, clearCart, itemCount, totalPrice } = useCartContext()
   const { userId, userEmail } = useAuthContext()
   const supabase = createBrowserSupabaseClient()
+  useAtras(isCartOpen, () => setIsCartOpen(false))
 
   const [escrowOrders, setEscrowOrders] = useState<EscrowOrder[]>([])
 
