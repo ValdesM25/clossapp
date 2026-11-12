@@ -1,6 +1,6 @@
 # Tanda: Planificación de outfits (Elite)
 
-Estado: **en curso. Fases 0 y 1 hechas e integradas en `integracion/elite` (11 nov 2026); la migración 24 ya está en producción. Fase 2 hecha, probada e integrada (11 nov). Fase 3 hecha, probada e integrada (11 nov). Fase 4 hecha, probada e integrada (11 nov); la barra queda con 6 botones y Outfit a la derecha (P1 resuelta). Sigue la fase 5.**
+Estado: **en curso. Fases 0 y 1 hechas e integradas en `integracion/elite` (11 nov 2026); la migración 24 ya está en producción. Fase 2 hecha, probada e integrada (11 nov). Fase 3 hecha, probada e integrada (11 nov). Fase 4 hecha, probada e integrada (11 nov); la barra queda con 6 botones y Outfit a la derecha (P1 resuelta). Fase 5: código hecho en `feat/planificacion-avisos`; falta aplicar la 25 y configurar el push en producción (Vault y Vercel no tienen el secreto del cron ni las llaves VAPID).**
 
 Este documento explica qué se construye, por qué y con qué reglas. Cada fase tiene su propio archivo con los pasos exactos. Está escrito para que un agente pueda ejecutar una fase sin haber leído la conversación donde se decidió.
 

@@ -1,6 +1,6 @@
 # Fase 5: avisos push
 
-Estado: **sin empezar.**
+Estado: **código hecho en `feat/planificacion-avisos` (11 nov 2026). Falta el OK de Mauri para aplicar la 25 y, antes de que sirva de algo, configurar el push en producción (ver "Hecho").**
 Rama: `feat/planificacion-avisos`. Depende de la fase 4 (usa `planId` en la navegación). Archivo nuevo: `supabase/25-avisos-planificacion.sql`.
 
 ## Objetivo
@@ -123,8 +123,32 @@ La función se probó contra producción el 11 nov 2026 dentro de un bloque que 
 
 - [ ] La función y la tarea de cron están en producción, aplicadas con el OK de Mauri.
 - [ ] El primer día real, `select * from cron.job_run_details where jobid = (select jobid from cron.job where jobname = 'clossapp-avisos-planificacion') order by start_time desc limit 1;` muestra la llamada sin error.
-- [ ] Las dos rutas de push usan `cronAutorizado`.
+- [x] Las dos rutas de push usan `cronAutorizado`.
 
 ## Hecho
 
-(Lo llena quien ejecute la fase.)
+Rama `feat/planificacion-avisos` (sale de `5ee87ac`). Sin push.
+
+### Qué se hizo
+
+- `supabase/25-avisos-planificacion.sql`: la función del documento (con `stable` y los nombres de tabla con `public.`) y la tarea `clossapp-avisos-planificacion` a las `0 3 * * *`, al mismo dominio que el recordatorio (`https://clossapp.vercel.app`). **Sin aplicar.**
+- `cronAutorizado` en `lib/push.server.ts`, usado por `app/api/push/enviar` y por la ruta nueva `app/api/push/planificacion` (GET y POST, avisos de 10 en 10, responde `{ avisos }`).
+- `app/sw.ts`: con la app abierta, un aviso cuya URL no es `/` llama a `navigate(url)` y luego `focus()`; con `/` solo enfoca, como antes.
+- Dashboard: `?plan=<uuid>` (validado como uuid con `planDeUrl` en `lib/navegar.ts`) abre la vista de planificación con ese plan y limpia la URL.
+
+### Prueba
+
+- **Función, en producción dentro de un bloque que se deshace** (11 nov): con un plan de mariela con día y noche para mañana y un viaje que empieza pasado mañana (4 prendas, 1 empacada) devolvió "Mañana: Look de oficina · Oficina · Prueba aviso semana" (el de día antes que el de noche) y "Empaca para Oaxaca · Te faltan 3 prendas por marcar en tu maleta.", con la URL de cada plan. Después no quedó ni la función, ni los planes, ni la tarea.
+- **Ruta, en local** con un `CRON_SECRET` y llaves VAPID generadas solo para la prueba (variables del proceso, sin tocar `.env.local`; se borraron al terminar): sin header o con un secreto malo, 401; con el secreto bueno pasa y llega a la base (500 porque la función aún no existe en producción). La ruta vieja con el secreto bueno responde `{ enviados: 0, vencidas: 0 }`, igual que antes.
+- **`?plan=`:** con un plan de prueba de mariela, `localhost:3100/?plan=<id>` abrió ese plan, marcó Planificación en la barra y dejó la URL en `/`. El plan se borró.
+- **No probado:** que el aviso llegue a un teléfono y que tocarlo con la app abierta navegue al plan. No hay forma hoy: ver abajo.
+
+### Lo que falta en producción (lo encontró esta fase)
+
+- **Vault no tiene `cron_secret`** (0 secretos). El recordatorio de las 18:00 UTC de hoy respondió **401 "No autorizado"** (`net._http_response`); no ha salido nunca. `08-cron.sql` ya lo marcaba como pendiente.
+- **Vercel (producción) no tiene `CRON_SECRET` ni las llaves VAPID** (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`). Sin la llave pública nadie puede activar las notificaciones: `push_suscripciones` tiene 0 filas. Ningún push de la app (recordatorio, Shop, planificación) funciona hoy en producción.
+- Pasos (Mauri; los valores no deben pasar por el agente):
+  1. Generar las llaves: `npx web-push generate-vapid-keys`.
+  2. En Vercel (producción): `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (por ejemplo `mailto:support@clossapp.com`) y `CRON_SECRET` (un valor largo al azar). Hace falta un deploy para que se lean.
+  3. En el SQL editor de Supabase: `select vault.create_secret('<el mismo valor que CRON_SECRET>', 'cron_secret');`
+- Mientras la ruta nueva no esté en producción (llega con el PR final), la tarea de las 21:00 recibirá 404; no hace daño.
