@@ -1,6 +1,6 @@
 # Fase 5: avisos push
 
-Estado: **hecha (11 nov 2026). La función de la 25 está en producción; la tarea de cron queda pendiente por decisión de Mauri, junto con la configuración del push (P5 del README).**
+Estado: **hecha e integrada en `integracion/elite` (merge `aab87bf`, 11 nov 2026). La función de la 25 está en producción; la tarea de cron queda pendiente por decisión de Mauri, junto con la configuración del push (P5 del README).**
 Rama: `feat/planificacion-avisos`. Depende de la fase 4 (usa `planId` en la navegación). Archivo nuevo: `supabase/25-avisos-planificacion.sql`.
 
 ## Objetivo
