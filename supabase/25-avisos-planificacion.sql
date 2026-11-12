@@ -53,25 +53,28 @@ $$;
 revoke all on function public.avisos_planificacion() from public, anon, authenticated;
 grant execute on function public.avisos_planificacion() to service_role;
 
--- 2. Todos los días a las 03:00 UTC = 21:00 en Ciudad de México (México ya no
---    cambia de horario). Mismo dominio y mismo secreto de Vault que
---    'clossapp-recordatorio-push' (08); sin el secreto, la ruta responde 401.
---    Con el mismo nombre, cron.schedule reemplaza la tarea si ya existía.
-select cron.schedule(
-  'clossapp-avisos-planificacion',
-  '0 3 * * *',
-  $$
-  select net.http_post(
-    url := 'https://clossapp.vercel.app/api/push/planificacion',
-    headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || coalesce((select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret'), ''),
-      'Content-Type', 'application/json'
-    ),
-    body := '{}'::jsonb
-  );
-  $$
-);
-
--- Ver la última ejecución:
---   select * from cron.job_run_details where jobid = (select jobid from cron.job
---   where jobname = 'clossapp-avisos-planificacion') order by start_time desc limit 1;
+-- 2. PENDIENTE (decisión de Mauri, 11 nov 2026): la tarea de cron no se programó
+--    al aplicar esta migración. Programarla cuando el push esté configurado en
+--    producción (P5 del README: llaves VAPID y CRON_SECRET en Vercel, 'cron_secret'
+--    en Vault) y la ruta /api/push/planificacion ya esté desplegada. Correr esto en
+--    el SQL editor (03:00 UTC = 21:00 en Ciudad de México; mismo dominio y secreto
+--    que 'clossapp-recordatorio-push' de 08):
+--
+--   select cron.schedule(
+--     'clossapp-avisos-planificacion',
+--     '0 3 * * *',
+--     $$
+--     select net.http_post(
+--       url := 'https://clossapp.vercel.app/api/push/planificacion',
+--       headers := jsonb_build_object(
+--         'Authorization', 'Bearer ' || coalesce((select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret'), ''),
+--         'Content-Type', 'application/json'
+--       ),
+--       body := '{}'::jsonb
+--     );
+--     $$
+--   );
+--
+--   -- Ver la última ejecución:
+--   --   select * from cron.job_run_details where jobid = (select jobid from cron.job
+--   --   where jobname = 'clossapp-avisos-planificacion') order by start_time desc limit 1;

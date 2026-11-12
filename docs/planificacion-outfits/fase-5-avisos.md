@@ -1,6 +1,6 @@
 # Fase 5: avisos push
 
-Estado: **código hecho en `feat/planificacion-avisos` (11 nov 2026). Falta el OK de Mauri para aplicar la 25 y, antes de que sirva de algo, configurar el push en producción (ver "Hecho").**
+Estado: **hecha (11 nov 2026). La función de la 25 está en producción; la tarea de cron queda pendiente por decisión de Mauri, junto con la configuración del push (P5 del README).**
 Rama: `feat/planificacion-avisos`. Depende de la fase 4 (usa `planId` en la navegación). Archivo nuevo: `supabase/25-avisos-planificacion.sql`.
 
 ## Objetivo
@@ -121,8 +121,8 @@ La función se probó contra producción el 11 nov 2026 dentro de un bloque que 
 
 ## Criterios de aceptación
 
-- [ ] La función y la tarea de cron están en producción, aplicadas con el OK de Mauri.
-- [ ] El primer día real, `select * from cron.job_run_details where jobid = (select jobid from cron.job where jobname = 'clossapp-avisos-planificacion') order by start_time desc limit 1;` muestra la llamada sin error.
+- [ ] La función y la tarea de cron están en producción, aplicadas con el OK de Mauri. **La función sí** (migración `avisos_planificacion`, 11 nov); **la tarea, pendiente** (decisión de Mauri).
+- [ ] (Cuando se programe la tarea) El primer día real, `select * from cron.job_run_details where jobid = (select jobid from cron.job where jobname = 'clossapp-avisos-planificacion') order by start_time desc limit 1;` muestra la llamada sin error.
 - [x] Las dos rutas de push usan `cronAutorizado`.
 
 ## Hecho
@@ -131,7 +131,8 @@ Rama `feat/planificacion-avisos` (sale de `5ee87ac`). Sin push.
 
 ### Qué se hizo
 
-- `supabase/25-avisos-planificacion.sql`: la función del documento (con `stable` y los nombres de tabla con `public.`) y la tarea `clossapp-avisos-planificacion` a las `0 3 * * *`, al mismo dominio que el recordatorio (`https://clossapp.vercel.app`). **Sin aplicar.**
+- `supabase/25-avisos-planificacion.sql`: la función del documento (con `stable` y los nombres de tabla con `public.`). **Aplicada en producción** con el OK de Mauri (migración `avisos_planificacion`). Revisado después: existe, `anon` y `authenticated` no la pueden ejecutar, `service_role` sí.
+- **Tarea de cron: pendiente (decisión de Mauri).** No se programó. Queda comentada al final de la 25, lista para correr en el SQL editor cuando el push esté configurado (P5) y la ruta esté desplegada: `clossapp-avisos-planificacion` a las `0 3 * * *`, al mismo dominio que el recordatorio (`https://clossapp.vercel.app`).
 - `cronAutorizado` en `lib/push.server.ts`, usado por `app/api/push/enviar` y por la ruta nueva `app/api/push/planificacion` (GET y POST, avisos de 10 en 10, responde `{ avisos }`).
 - `app/sw.ts`: con la app abierta, un aviso cuya URL no es `/` llama a `navigate(url)` y luego `focus()`; con `/` solo enfoca, como antes.
 - Dashboard: `?plan=<uuid>` (validado como uuid con `planDeUrl` en `lib/navegar.ts`) abre la vista de planificación con ese plan y limpia la URL.
@@ -151,4 +152,4 @@ Rama `feat/planificacion-avisos` (sale de `5ee87ac`). Sin push.
   1. Generar las llaves: `npx web-push generate-vapid-keys`.
   2. En Vercel (producción): `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (por ejemplo `mailto:support@clossapp.com`) y `CRON_SECRET` (un valor largo al azar). Hace falta un deploy para que se lean.
   3. En el SQL editor de Supabase: `select vault.create_secret('<el mismo valor que CRON_SECRET>', 'cron_secret');`
-- Mientras la ruta nueva no esté en producción (llega con el PR final), la tarea de las 21:00 recibirá 404; no hace daño.
+- La tarea de cron se programa después de esos pasos y del deploy (ver el final de la 25).
