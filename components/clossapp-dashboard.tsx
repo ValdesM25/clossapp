@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, type ReactElement } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from "react"
 import { AnimatePresence } from "framer-motion"
 import type { View } from "@/types"
 import { useKeyboard } from "@/hooks/use-keyboard"
@@ -136,8 +136,43 @@ function AuthenticatedShell() {
   const [planInicial, setPlanInicial] = useState<string | null>(() => planDeUrl(window.location.search))
 
   useEffect(() => {
-    if (peticionVenderDeUrl(window.location.search) || planDeUrl(window.location.search)) window.history.replaceState(null, "", window.location.pathname)
+    if (peticionVenderDeUrl(window.location.search) || planDeUrl(window.location.search)) window.history.replaceState(window.history.state, "", window.location.pathname)
   }, [])
+
+  // Cada cambio de vista deja una entrada en el historial: así el gesto "atrás" del teléfono
+  // regresa a la pantalla anterior en vez de salir de la app. La URL no cambia.
+  // Una vista nueva empieza arriba; al volver con "atrás" se recupera donde se quedó.
+  const contenedor = useRef<HTMLDivElement>(null)
+  const posiciones = useRef<Partial<Record<View, number>>>({})
+  const vistaActual = useRef(activeView)
+  const scrollDestino = useRef(0)
+  const mostrar = useCallback((vista: View, volviendo: boolean) => {
+    const c = contenedor.current
+    // Tocar la pestaña en la que ya se está sube al inicio, como en las apps nativas.
+    if (vista === vistaActual.current) { if (!volviendo) c?.scrollTo({ top: 0, behavior: "smooth" }); return }
+    if (c) posiciones.current[vistaActual.current] = c.scrollTop
+    scrollDestino.current = volviendo ? posiciones.current[vista] ?? 0 : 0
+    vistaActual.current = vista
+    setActiveView(vista)
+  }, [])
+  useLayoutEffect(() => { if (contenedor.current) contenedor.current.scrollTop = scrollDestino.current }, [activeView])
+
+  const irA = useCallback((vista: View) => {
+    const estado = window.history.state as { vista?: View; capas?: string[] } | null
+    // Con una capa abierta (modal, plan) se reemplaza su entrada: "atrás" no debe volver a una capa ya cerrada.
+    if (estado?.capas?.length) window.history.replaceState({ vista }, "")
+    else if (estado?.vista !== vista) window.history.pushState({ vista }, "")
+    mostrar(vista, false)
+  }, [mostrar])
+  useEffect(() => {
+    // Primera entrada (o recarga): el historial aún no sabe en qué vista estamos.
+    if ((window.history.state as { vista?: View } | null)?.vista !== activeView) window.history.replaceState({ ...window.history.state, vista: activeView }, "")
+  }, [activeView])
+  useEffect(() => {
+    const alVolver = (e: PopStateEvent) => mostrar((e.state as { vista?: View } | null)?.vista ?? "inicio", true)
+    window.addEventListener("popstate", alVolver)
+    return () => window.removeEventListener("popstate", alVolver)
+  }, [mostrar])
 
   useEffect(() => {
     const ir = (e: Event) => {
@@ -145,33 +180,33 @@ function AuthenticatedShell() {
       if (planId) setPlanInicial(planId)
       if (venderPrendaId) setPeticionVender({ prendaId: venderPrendaId })
       else if (verPrendaId) setPeticionVender({ verPrendaId })
-      setActiveView(vista)
+      irA(vista)
     }
     window.addEventListener(EVENTO_NAVEGAR, ir)
     return () => window.removeEventListener(EVENTO_NAVEGAR, ir)
-  }, [])
+  }, [irA])
 
   const views: Record<View, ReactElement> = {
-    inicio: <InicioView onNavigate={(view) => setActiveView(view)} />,
+    inicio: <InicioView onNavigate={irA} />,
     armario: <ArmarioView />,
-    simulador: <SimuladorView onElegir={() => setActiveView("armario")} />,
+    simulador: <SimuladorView onElegir={() => irA("armario")} />,
     marketplace: <MarketplaceView onApartar={refresh} peticion={peticionVender} onAtendida={() => setPeticionVender(null)} />,
     // En el plan gratis ese botón dice "Donar": solo lleva al Shop, que para ese plan es la pantalla de donar.
     estadisticas: <EstadisticasView onSellPrenda={(p) => navegarA("marketplace", plan === "gratis" ? undefined : { venderPrendaId: p.id })} />,
     planes: <PlanesView />,
     perfil: <PerfilView />,
     punto_recoleccion: <PuntoRecoleccionView />,
-    planificacion: <PlanificacionView planInicial={planInicial} onPlanAbierto={() => setPlanInicial(null)} onNavigate={(view) => setActiveView(view)} onBack={() => setActiveView("inicio")} />,
+    planificacion: <PlanificacionView planInicial={planInicial} onPlanAbierto={() => setPlanInicial(null)} onNavigate={irA} onBack={() => irA("inicio")} />,
   }
 
   return (
     <>
-      <div className="overflow-y-auto h-dvh overscroll-contain pb-40 lg:pb-48">
+      <div ref={contenedor} className="overflow-y-auto h-dvh overscroll-contain pb-40 lg:pb-48">
         <AnimatePresence mode="wait">
           <div key={activeView} className="mx-auto w-full max-w-6xl">
             {/* Estadísticas y Planes se abren desde Perfil: se vuelve a él. */}
             {(activeView === "estadisticas" || activeView === "planes") && (
-              <button type="button" onClick={() => setActiveView("perfil")}
+              <button type="button" onClick={() => irA("perfil")}
                 className="mx-4 mt-4 -mb-4 min-h-10 flex items-center gap-1.5 text-sm text-zinc-600 hover:text-zinc-900">
                 <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Perfil
               </button>
@@ -181,7 +216,7 @@ function AuthenticatedShell() {
           </div>
         </AnimatePresence>
       </div>
-      <BottomNav activeView={activeView} onNavigate={setActiveView} open={!keyboardOpen} />
+      <BottomNav activeView={activeView} onNavigate={irA} open={!keyboardOpen} />
     </>
   )
 }

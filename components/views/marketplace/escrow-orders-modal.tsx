@@ -1,5 +1,6 @@
 "use client"
 
+import { useAtras } from "@/hooks/use-atras"
 import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, ShieldCheck, QrCode, Clock, CheckCircle2, Store, Package, Trash2 } from "lucide-react"
@@ -17,6 +18,7 @@ interface EscrowOrdersModalProps {
 }
 
 export function EscrowOrdersModal({ open, onClose }: EscrowOrdersModalProps) {
+  useAtras(open, onClose)
   const { userId, userEmail } = useAuthContext()
   const supabase = createBrowserSupabaseClient()
 

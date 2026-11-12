@@ -4,11 +4,13 @@ import { motion, AnimatePresence } from "framer-motion"
 import { X } from "lucide-react"
 import { useSyncExternalStore, type ReactNode } from "react"
 import { createPortal } from "react-dom"
+import { useAtras } from "@/hooks/use-atras"
 
 const sinSuscripcion = () => () => {}
 
 export function CenteredModal({ open, isOpen, onClose, children }: { open?: boolean; isOpen?: boolean; onClose: () => void; children: ReactNode }) {
   const isVisible = open ?? isOpen ?? false
+  useAtras(isVisible, onClose)
   // En el servidor no hay document: el portal se monta ya en el navegador.
   const enCliente = useSyncExternalStore(sinSuscripcion, () => true, () => false)
   if (!enCliente) return null
