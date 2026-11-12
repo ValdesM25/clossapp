@@ -1,11 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Check, CloudRain, RotateCw, Sun, Moon, Sparkles } from "lucide-react"
+import { Check, CloudRain, RotateCw, Shirt, Sun, Moon, Sparkles } from "lucide-react"
 import type { Prenda } from "@/types"
 import { cn } from "@/lib/utils"
 import type { MomentoPlan } from "@/lib/planificacion"
-import { OutfitVisual } from "@/components/views/simulador/outfit-visual"
 import { SugerenciasShop } from "./sugerencias-shop"
 
 const boton = "h-10 px-3 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -50,12 +49,12 @@ export function MomentoCard({
           <p className="text-sm text-zinc-900 mt-0.5">{momento.actividad.trim() || "Día casual"}</p>
         </div>
         {clima && (
-          <p className="text-xs text-zinc-500 text-right shrink-0 flex items-center gap-1">
-            {clima.lluvia && <CloudRain className="w-3.5 h-3.5" aria-label="Lluvia" />}
-            <span>
-              {clima.min}-{clima.max} °C · {clima.texto}
-              {clima.fuente === "historico" && <span className="block">(clima típico)</span>}
+          <p className="text-xs text-zinc-500 text-right shrink-0 flex flex-col items-end gap-0.5">
+            <span className="flex items-center gap-1 text-sm text-zinc-900 font-medium tabular-nums">
+              {clima.lluvia && <CloudRain className="w-3.5 h-3.5" aria-label="Lluvia" />}
+              {clima.min}°–{clima.max}°
             </span>
+            <span>{clima.texto}{clima.fuente === "historico" && " (típico)"}</span>
           </p>
         )}
       </header>
@@ -85,14 +84,20 @@ export function MomentoCard({
 
         {momento.estado === "listo" && outfit && (
           <>
-            <h4 className="font-serif text-xl text-zinc-900 font-normal leading-snug">{outfit.titulo}</h4>
-            <p className="text-xs text-zinc-600">{outfit.descripcion}</p>
+            <h4 className="font-serif text-2xl text-zinc-900 font-normal leading-tight text-balance">{outfit.titulo}</h4>
+            <p className="text-sm text-zinc-600 leading-relaxed">{outfit.descripcion}</p>
             {faltanPrendas > 0 && <p className="text-xs text-zinc-700">Una prenda de este outfit ya no está en tu armario.</p>}
             {delOutfit.length >= 2 && (
-              <>
-                <OutfitVisual outfitPrendas={delOutfit} />
-                <p className="text-xs text-zinc-500">{delOutfit.map((p) => p.name).join(" · ")}</p>
-              </>
+              <ul className="grid grid-cols-4 sm:grid-cols-6 gap-2" aria-label="Prendas del outfit">
+                {delOutfit.map((p) => (
+                  <li key={p.id} className="flex flex-col gap-1.5 min-w-0">
+                    {p.image_url
+                      ? <img src={p.image_url} alt="" loading="lazy" className="w-full aspect-[3/4] object-cover bg-zinc-100" />
+                      : <div className="w-full aspect-[3/4] bg-zinc-100 flex items-center justify-center"><Shirt className="w-5 h-5 text-zinc-300" aria-hidden="true" /></div>}
+                    <span className="text-[11px] leading-tight text-zinc-700 line-clamp-2">{p.name}</span>
+                  </li>
+                ))}
+              </ul>
             )}
             {outfit.justificacion && (
               <div className="bg-zinc-50 border border-zinc-200/80 p-3 sm:p-3.5 flex items-start gap-2.5">
@@ -109,7 +114,7 @@ export function MomentoCard({
             )}
             {momento.faltante && <SugerenciasShop faltante={momento.faltante} items={itemsShop} userId={userId} />}
 
-            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-zinc-100">
+            <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-zinc-100 [&>button]:flex-1 [&>button]:h-11">
               {!soloLectura && (
                 <button type="button" onClick={onOtro} disabled={!!motivoSinOtro} className={cn(boton, "border border-zinc-300 hover:border-zinc-900 bg-white text-zinc-800")}>
                   <RotateCw className={cn("w-3.5 h-3.5", regenerando && "animate-spin")} aria-hidden="true" />

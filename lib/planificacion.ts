@@ -103,6 +103,19 @@ export function estadoPlan(plan: Pick<PlanOutfit, "fecha_inicio" | "fecha_fin">,
   return plan.fecha_inicio > hoy ? "proximo" : "en_curso"
 }
 
+/** "Faltan 3 días", "Mañana", "Hoy · día 2 de 4", "Hoy" (plan de un día) o "Terminado". */
+export function cuentaRegresiva(plan: Pick<PlanOutfit, "fecha_inicio" | "fecha_fin">, hoy: string): string {
+  const dias = (a: string, b: string) => Math.round((aUtc(b).getTime() - aUtc(a).getTime()) / MS_DIA)
+  const estado = estadoPlan(plan, hoy)
+  if (estado === "terminado") return "Terminado"
+  if (estado === "proximo") {
+    const faltan = dias(hoy, plan.fecha_inicio)
+    return faltan === 1 ? "Mañana" : `Faltan ${faltan} días`
+  }
+  const total = dias(plan.fecha_inicio, plan.fecha_fin) + 1
+  return total === 1 ? "Hoy" : `Hoy · día ${dias(plan.fecha_inicio, hoy) + 1} de ${total}`
+}
+
 /** Por fecha y, en el mismo día, el de día antes que el de noche. */
 export const ordenMomento = (a: MomentoPlan, b: MomentoPlan) =>
   a.fecha.localeCompare(b.fecha) || (a.momento === b.momento ? 0 : a.momento === "dia" ? -1 : 1)

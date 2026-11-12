@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { motion } from "framer-motion"
 import { ChevronLeft } from "lucide-react"
 import type { Prenda, View } from "@/types"
@@ -46,6 +46,10 @@ export function PlanificacionView({ onNavigate, onBack, planInicial, onPlanAbier
     setPantalla({ tipo: "detalle", id: planInicial })
     onPlanAbierto?.()
   }, [planInicial, onPlanAbierto])
+  // Cada pantalla (lista, crear, detalle) empieza arriba aunque la anterior quedara a media página.
+  const raiz = useRef<HTMLDivElement>(null)
+  const clavePantalla = pantalla.tipo === "detalle" ? pantalla.id : pantalla.tipo
+  useEffect(() => { raiz.current?.scrollIntoView({ block: "start" }) }, [clavePantalla])
   const [errorLocal, setErrorLocal] = useState<string | null>(null)
 
   const previa = isGuest || !!demo
@@ -136,7 +140,7 @@ export function PlanificacionView({ onNavigate, onBack, planInicial, onPlanAbier
   }
 
   return (
-    <motion.div {...pageProps} className="flex flex-col gap-6 pb-36 px-4 pt-6 sm:pt-8 max-w-6xl mx-auto w-full">
+    <motion.div ref={raiz} {...pageProps} className="flex flex-col gap-6 pb-36 px-4 pt-6 sm:pt-8 max-w-6xl mx-auto w-full">
       {pantalla.tipo !== "crear" && (
         <button type="button" onClick={volver} className="self-start h-10 pr-2 flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 transition-colors">
           <ChevronLeft className="w-4 h-4" aria-hidden="true" />
@@ -157,7 +161,7 @@ export function PlanificacionView({ onNavigate, onBack, planInicial, onPlanAbier
 
       {error && <p role="alert" className="text-xs text-red-700 border border-red-200 bg-red-50 p-3">{error}</p>}
 
-      {contenido}
+      <motion.div key={clavePantalla} {...pageProps}>{contenido}</motion.div>
     </motion.div>
   )
 }

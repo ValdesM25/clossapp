@@ -3,6 +3,7 @@
 import { Luggage } from "lucide-react"
 import type { Prenda } from "@/types"
 import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils"
 import { maletaDe, type PlanOutfit } from "@/lib/planificacion"
 
 /** Checklist para empacar (solo viajes). Funciona también en solo lectura. */
@@ -27,7 +28,7 @@ export function Maleta({ plan, prendas, onEmpacar }: {
             <div>
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <span className="uppercase tracking-widest text-zinc-500 font-semibold">Empacadas</span>
-                <span className="font-medium text-zinc-900">{empacadas} de {total}</span>
+                <span className="font-medium text-zinc-900 tabular-nums">{empacadas === total ? "Maleta lista" : `${empacadas} de ${total}`}</span>
               </div>
               <div className="w-full h-1.5 bg-zinc-100 overflow-hidden" aria-hidden="true">
                 <div className="h-full bg-zinc-900 transition-[width] duration-500" style={{ width: `${Math.round((empacadas / total) * 100)}%` }} />
@@ -39,17 +40,17 @@ export function Maleta({ plan, prendas, onEmpacar }: {
                 {g.prendas.map((p) => {
                   const id = `empacar-${plan.id}-${p.id}`
                   return (
-                    <label key={p.id} htmlFor={id} className="flex items-center gap-3 min-h-11 py-1 cursor-pointer">
+                    <label key={p.id} htmlFor={id} className="flex items-center gap-3 min-h-14 py-1.5 cursor-pointer border-b border-zinc-100 last:border-b-0 active:bg-zinc-50 transition-colors">
                       <Checkbox
                         id={id}
                         checked={p.empacada}
                         onCheckedChange={(v) => onEmpacar(p.id, v === true)}
-                        className="rounded-none"
+                        className="rounded-none size-5"
                       />
                       {p.image_url
-                        ? <img src={p.image_url} alt="" className="w-9 h-9 object-cover shrink-0" />
-                        : <div className="w-9 h-9 bg-zinc-100 shrink-0" />}
-                      <span className={p.empacada ? "text-xs text-zinc-400 line-through" : "text-xs text-zinc-800"}>{p.name}</span>
+                        ? <img src={p.image_url} alt="" className={cn("w-11 h-11 object-cover shrink-0 transition-opacity", p.empacada && "opacity-40")} />
+                        : <div className="w-11 h-11 bg-zinc-100 shrink-0" />}
+                      <span className={p.empacada ? "text-sm text-zinc-400 line-through" : "text-sm text-zinc-800"}>{p.name}</span>
                     </label>
                   )
                 })}
