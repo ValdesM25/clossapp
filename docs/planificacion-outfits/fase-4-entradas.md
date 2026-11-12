@@ -1,6 +1,6 @@
 # Fase 4: entradas (Inicio, Perfil, Simulador y /planes)
 
-Estado: **sin empezar.**
+Estado: **hecha (11 nov 2026) en `feat/planificacion-entradas`, sin integrar todavía. La barra inferior (paso 6) queda pendiente: Mauri lo decide después.**
 Rama: `feat/planificacion-entradas`. Depende de la fase 3.
 
 ## Objetivo
@@ -74,11 +74,39 @@ Si se quita, devolver `"planificacion"` a `incluye` de Perfil para que Perfil qu
 
 ## Criterios de aceptación
 
-- [ ] Las cuatro filas de la tabla de Inicio se ven bien.
-- [ ] El outfit planeado sustituye al del día sin gastar IA.
-- [ ] Perfil, Simulador y /planes con los textos nuevos.
-- [ ] La barra inferior quedó como dijo Mauri.
+- [x] Las cuatro filas de la tabla de Inicio se ven bien (capturas 19 a 21; el centro de acopio no ve Inicio).
+- [x] El outfit planeado sustituye al del día sin gastar IA (sin `POST /api/generate-outfits` en el log al recargar).
+- [x] Perfil, Simulador y /planes con los textos nuevos; la landing, en su rama de precios (sin subir).
+- [ ] La barra inferior quedó como dijo Mauri: **pendiente**, Mauri lo decide después. No se tocó `constants/navigation.ts`.
 
 ## Hecho
 
-(Lo llena quien ejecute la fase.)
+Rama `feat/planificacion-entradas` (sale de `5a131c4`), commit `99e0e57` más el de esta documentación. Sin push.
+
+### Qué se hizo
+
+- `navegarA` acepta `planId`. El dashboard lo guarda en `planInicial` y `PlanificacionView` abre ese plan una vez y avisa con `onPlanAbierto` para que se limpie; así, volver a Planificación desde la barra abre la lista y no el mismo plan.
+- **Inicio:** si hay un outfit listo para hoy, ocupa la tarjeta oscura del outfit del día: "Hoy tienes planeado · <plan>", título, actividad y descripción, las prendas, "Para la noche: <título>", "Me lo puse" y "Ver plan". Debajo, la tarjeta de planificación (próximo plan, "Planea tu semana" o la invitación con la etiqueta Elite).
+- **Perfil:** "Planificación de outfits" con su texto nuevo y la etiqueta Elite si la cuenta no es Elite.
+- **Simulador:** enlace secundario "Planear varios días" debajo del formulario, con la etiqueta Elite si no es Elite.
+- **/planes:** "Planifica tu semana, fechas importantes y viajes". En la app no quedaba el texto viejo en ningún otro lugar visible.
+- **Landing (`clossapp-landing`):** el mismo texto en `src/data.ts`, commit `9c90b2f` en la rama local `feat/precios-texto-planificacion`, que sale de `origin/feat/precios-89-159`. La rama de precios está abierta en el worktree de otra sesión, por eso no se commiteó ahí; sube como avance directo de `feat/precios-89-159` con el OK de Mauri.
+
+### Decisiones fuera del documento
+
+- **Una sola consulta para Inicio:** en vez de `fetchMomentosDeHoy`, Inicio usa `fetchPlanes` (ya existía) con `momentosDeHoy` y `proximoPlan` de `lib/planificacion.ts`. La tarjeta del próximo plan necesita los planes con sus momentos de todos modos.
+- **`usePlanesInicio`** marca la consulta como lista por usuario. Mientras no termina, el outfit del día no se genera y su tarjeta se ve cargando, para no gastar IA si resulta que hay uno planeado.
+- **Prendas en la tarjeta de Inicio:** se usa la misma cuadrícula de fotos del outfit del día en lugar de `OutfitVisual`; en la tarjeta oscura se lee mejor y sigue el diseño de Inicio.
+- **Centro de acopio:** no hace falta código; esas cuentas entran a otra pantalla (`userMode === "RECOLECCION"` en el dashboard) y no ven Inicio.
+- **Sin Elite con planes (solo lectura):** si tiene un plan vigente, la tarjeta muestra ese plan; si no, la invitación.
+
+### Barra inferior (P1)
+
+Se le presentaron a Mauri las opciones de la tabla y una recomendación (quitar Planificación y dejar 5 botones, porque lo diario ya sale en Inicio). Decidió pensarlo. La barra sigue con los 6 botones de `5c04812`.
+
+### Prueba (11 nov 2026, `next dev` en el puerto 3100, Chromium a 390×844, mariela@clossapp.com)
+
+- **Elite sin plan para hoy:** Inicio llama a `/api/generate-outfits` como antes (respondió 429 porque mariela ya había usado sus outfits del día, y se usó el look simple) y muestra "Planea tu semana" (19).
+- **Elite con plan para hoy** (fecha importante con día y noche, armado con la ruta): Inicio muestra el planeado con "Para la noche" (20) y, con la caché del outfit del día borrada, **no** hay `POST /api/generate-outfits` en el log ni se crea la caché. "Ver plan" y la tarjeta "Tu próximo plan" abren ese plan; volver por la barra abre la lista. "Me lo puse" cambia a "Usado".
+- **Plus sin planes:** la invitación con la etiqueta Elite en Inicio (21), la fila de Perfil (22) y el enlace del Simulador (23) llevan a la vista previa. Mariela regresó a `elite`; el plan de prueba se borró desde la pantalla.
+- Tokens (fila 13 de `uso_ia_registro`): 299 de entrada, 311 de salida y 3,901 escritos al caché, ~$0.24 MXN. Mariela quedó con 1 día usado.

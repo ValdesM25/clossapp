@@ -1,6 +1,6 @@
 # Tanda: Planificación de outfits (Elite)
 
-Estado: **en curso. Fases 0 y 1 hechas e integradas en `integracion/elite` (11 nov 2026); la migración 24 ya está en producción. Fase 2 hecha, probada e integrada (11 nov). Fase 3 hecha, probada e integrada (11 nov). Sigue la fase 4.**
+Estado: **en curso. Fases 0 y 1 hechas e integradas en `integracion/elite` (11 nov 2026); la migración 24 ya está en producción. Fase 2 hecha, probada e integrada (11 nov). Fase 3 hecha, probada e integrada (11 nov). Fase 4 hecha y probada en `feat/planificacion-entradas` (11 nov), falta integrarla; la barra inferior sigue pendiente (P1). Sigue la fase 5.**
 
 Este documento explica qué se construye, por qué y con qué reglas. Cada fase tiene su propio archivo con los pasos exactos. Está escrito para que un agente pueda ejecutar una fase sin haber leído la conversación donde se decidió.
 
