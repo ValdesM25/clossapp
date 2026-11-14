@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse, after } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
 import { exigirCuota, leerEstilo } from "@/lib/cuota.server"
+import { guardarActividad } from "@/lib/actividad.server"
 import { bloquePerfilPrompt } from "@/lib/estilo"
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -67,6 +68,11 @@ export async function POST(req: NextRequest) {
     const clean = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "")
     const parsed = JSON.parse(clean)
 
+    after(() => guardarActividad(req.headers, userId, "outfits_generados", {
+      contexto: corto(contexto, 120),
+      propuestas: Array.isArray(parsed?.outfits) ? parsed.outfits.length : 0,
+      prendas_en_armario: prendas.length,
+    }))
     return NextResponse.json(parsed)
   } catch (err) {
     console.error("[/api/generate-outfits]", err)

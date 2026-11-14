@@ -8,6 +8,7 @@ import { normalizarPlan, type Plan } from "@/constants/planes"
 import type { EstadoCobros } from "@/lib/marketplace"
 import type { EstiloPerfil, ModoOnboarding } from "@/constants/onboarding"
 import { entrarDemo, salirDemo, restaurarSiQuedoDemo, type TipoDemo } from "@/lib/demo"
+import { registrarActividad } from "@/lib/actividad"
 
 const GUEST = { id: "guest", name: "Visita" } as const
 const AVATAR_DEMO = "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80"
@@ -95,7 +96,18 @@ export function useAuth() {
     }
 
     // Supabase guarda la sesion en el navegador; esto la recupera al abrir.
-    conTimeout(supabase.auth.getSession().then(({ data }) => adopt(data.session?.user)))
+    conTimeout(supabase.auth.getSession().then(async ({ data }) => {
+      await adopt(data.session?.user)
+      // Una vez por pestaña: cuenta las aperturas de la app con sesión guardada.
+      if (data.session?.user) {
+        try {
+          if (!sessionStorage.getItem("clossapp-abierta")) {
+            sessionStorage.setItem("clossapp-abierta", "1")
+            void registrarActividad("app_abierta")
+          }
+        } catch { /* sin sessionStorage no se registra */ }
+      }
+    }))
       .catch((err) => {
         console.error("[auth] no se pudo restaurar la sesion", err instanceof Error ? err.message : err)
       })
@@ -140,6 +152,7 @@ export function useAuth() {
       try {
         const { uuid } = await signIn(supabase, email, password, captchaToken)
         await aplicarSesion({ id: uuid, email })
+        void registrarActividad("sesion_iniciada", { metodo: "contrasena" })
       } catch (err) {
         setError(err instanceof Error ? err.message : "Correo o contraseña incorrectos.")
         throw err
@@ -166,7 +179,13 @@ export function useAuth() {
 
   const register = useCallback(
     (email: string, password: string, captchaToken?: string) =>
-      conEstado(() => signUp(supabase, email, password, captchaToken)),
+      conEstado(async () => {
+        const r = await signUp(supabase, email, password, captchaToken)
+        // Con confirmación de correo aún no hay sesión: el evento entra sin usuario y se descarta;
+        // la cuenta se registra como "cuenta_confirmada" al abrir el enlace.
+        if (!r.requiereConfirmacion) void registrarActividad("registro")
+        return r
+      }),
     [supabase, conEstado]
   )
 
@@ -183,6 +202,7 @@ export function useAuth() {
   const clearError = useCallback(() => setError(null), [])
 
   const entrarModoDemo = useCallback((tipo: TipoDemo) => {
+    void registrarActividad("demo_iniciada", { tipo })
     entrarDemo(tipo)
     setDemo(tipo)
     setTourActivo(true)
@@ -217,6 +237,8 @@ export function useAuth() {
       setUserAvatarUrl("")
       return
     }
+    // Se manda antes de signOut: después ya no hay sesión para saber quién salió.
+    const aviso = registrarActividad("sesion_cerrada")
     // Primero se limpia la UI: si signOut se cuelga, el usuario igual ve el login.
     setUserMode(null)
     setUserId(GUEST.id)
@@ -230,6 +252,7 @@ export function useAuth() {
     setMostrarOnboarding(false)
     // La sesion sobrevive al cierre: sin signOut volveria sola en la proxima apertura.
     try {
+      await conTimeout(aviso, 1500).catch(() => {})
       await conTimeout(supabase.auth.signOut())
     } catch (err) {
       console.error("[auth] fallo el cierre de sesion", err instanceof Error ? err.message : err)
@@ -299,6 +322,10 @@ export function useAuth() {
       const { error: pwErr } = await supabase.auth.updateUser({ password: data.password })
       if (pwErr) throw new Error(pwErr.message)
     }
+
+    if (avatarUrl) void registrarActividad("foto_perfil_subida")
+    const campos = [data.name !== undefined && "nombre", data.phone !== undefined && "telefono", data.password && "contrasena"].filter(Boolean)
+    if (campos.length) void registrarActividad("perfil_actualizado", { campos: campos.join(",") })
   }, [userMode, userId, userAvatarUrl, supabase])
 
   return {
