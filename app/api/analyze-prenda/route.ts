@@ -4,6 +4,7 @@ import { exigirCuota } from "@/lib/cuota.server"
 import { guardarActividad } from "@/lib/actividad.server"
 import { MAX_IMAGENES, MIN_IMAGENES } from "@/constants/tasacion"
 import type { PrendaAnalysis, PrendaVentaAnalysis } from "@/types/analisis"
+import { LISTA_FAMILIAS_PROMPT, esFamiliaColor, normalizarColor } from "@/constants/colores"
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -17,7 +18,7 @@ const TIPOS_IMAGEN: unknown[] = ["image/jpeg", "image/png", "image/gif", "image/
 /** ~1.5 MB por foto en base64. */
 const MAX_BASE64 = 2_000_000
 
-const SISTEMA_ALTA = `Eres un analista de moda experto. Analiza la imagen de esta prenda y devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura: { "nombre": "Nombre descriptivo corto, ej. Blazer de Lino Negro", "categoria": "Top, Bottom, Calzado, Outerwear o Accesorio", "color_principal": "Color predominante", "estilo": "Ej. Minimalista, Business, Casual", "descripcion": "Breve descripción de corte y material" }. No incluyas markdown ni texto adicional.`
+const SISTEMA_ALTA = `Eres un analista de moda experto. Analiza la imagen de esta prenda y devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura: { "nombre": "Nombre descriptivo corto, ej. Blazer de Lino Negro", "categoria": "Top, Bottom, Calzado, Outerwear o Accesorio", "color_principal": "Color predominante con su matiz, ej. Camel, Azul petróleo, Gris perla", "color_familia": "Familia del color principal, exactamente una de: ${LISTA_FAMILIAS_PROMPT}", "estilo": "Ej. Minimalista, Business, Casual", "descripcion": "Breve descripción de corte y material" }. No incluyas markdown ni texto adicional.`
 
 const SISTEMA_VENTA = `Eres un analista de moda experto tasando una prenda de segunda mano para un marketplace mexicano. Recibirás varias fotos de LA MISMA prenda, tomadas desde distintos ángulos: frente, espalda, lateral y etiqueta, y posiblemente acercamientos adicionales. Úsalas en conjunto — cada ángulo revela desperfectos que los otros no muestran.
 
@@ -25,7 +26,8 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
 {
   "nombre": "Nombre descriptivo corto, ej. Blazer de Lino Negro",
   "categoria": "Top, Bottom, Calzado, Outerwear o Accesorio",
-  "color_principal": "Color predominante",
+  "color_principal": "Color predominante con su matiz, ej. Camel, Azul petróleo, Gris perla",
+  "color_familia": "Familia del color principal, exactamente una de: ${LISTA_FAMILIAS_PROMPT}",
   "estilo": "Ej. Minimalista, Business, Casual",
   "descripcion": "Breve descripción de corte y material",
   "descripcion_venta": "Descripción de 2 a 3 frases orientada a quien va a comprar: material, corte, caída, con qué combina y estado general. Honesta, sin exagerar.",
@@ -133,12 +135,23 @@ export async function POST(req: NextRequest) {
     const clean = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "")
     const parsed = JSON.parse(clean)
 
-    return NextResponse.json(esVenta ? normalizarVenta(parsed) : (parsed as PrendaAnalysis))
+    const conFamilia = conFamiliaColor(parsed as PrendaAnalysis)
+    return NextResponse.json(esVenta ? normalizarVenta(conFamilia as PrendaVentaAnalysis) : conFamilia)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error("[/api/analyze-prenda]", msg)
     return NextResponse.json({ error: "Error analizando la prenda" }, { status: 500 })
   }
+}
+
+/**
+ * La familia de color siempre sale de la lista fija: si la IA devuelve otra cosa
+ * (o nada), se deduce del color detallado; si tampoco se reconoce, queda vacía.
+ */
+function conFamiliaColor(parsed: PrendaAnalysis): PrendaAnalysis {
+  const dada = typeof parsed.color_familia === "string" ? parsed.color_familia.trim().toLowerCase().replace(/ /g, "_") : ""
+  const familia = esFamiliaColor(dada) ? dada : normalizarColor(dada) ?? normalizarColor(parsed.color_principal)
+  return { ...parsed, color_familia: familia ?? "" }
 }
 
 /**
