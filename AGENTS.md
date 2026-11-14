@@ -39,7 +39,7 @@ components/
     ├── armario/{armario-view,upload-modal,prenda-detail-modal,repair-form-modal,repair-list}.tsx
     ├── simulador/{simulador-view,outfit-form,outfit-card,outfit-visual}.tsx
     ├── marketplace/{marketplace-view,market-item-card,item-detail-modal,sell-form-modal,rent-date-picker}.tsx
-    └── estadisticas/{estadisticas-view,kpi-grid,top-prendas-list,forgotten-prendas-list}.tsx
+    └── estadisticas/{estadisticas-view,health-ring,kpi-grid,insights-list,rotation-bar,category-bars,color-palette,top-prendas-list,forgotten-prendas-list,section-title}.tsx + formato.ts
 context/
 ├── auth-context.tsx          # AuthProvider + useAuthContext (userMode, userId, user, isGuest)
 └── prendas-context.tsx       # PrendasProvider + usePrendasContext (prendas, refresh, loading)
@@ -73,7 +73,8 @@ constants/
 ├── navigation.ts             # navItems, filterChips
 ├── categories.ts             # FIXED_CATS, CATEGORIAS_RENTA, LAYER_ORDER
 ├── images.ts                 # fashionImages, outfitImages
-└── animation.ts              # pageVariants, pageProps
+├── animation.ts              # pageVariants, pageProps
+└── colores.ts                # FAMILIAS_COLOR + normalizarColor (color detallado → familia)
 ```
 
 ### Data Flow
