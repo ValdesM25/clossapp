@@ -2,8 +2,9 @@
 
 Estado: **hecho el 14 nov 2026 en la rama `claude/admiring-lovelace-h8z5gp`; migración 26 aplicada
 en producción el 14 nov con el OK de Mauri (migración `actividad`).** Migración 27 (anonimizar en vez
-de borrar) probada con rollback, **sin aplicar en producción**. Falta: aplicar la 27 con el OK de
-Mauri, revisar que `SUPABASE_SERVICE_ROLE_KEY` esté en Vercel y mergear el PR.
+de borrar) aplicada en producción el 14 nov con el OK de Mauri (migración `actividad_anonimizar`).
+`SUPABASE_SERVICE_ROLE_KEY` está en Vercel solo para producción: las vistas previas de los PR no
+registran actividad. Falta: mergear el PR.
 
 ## Qué pidió Mauri
 
