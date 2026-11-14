@@ -17,6 +17,7 @@ import { useImageUpload } from "@/hooks/use-image-upload"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { insertPrenda, registrarCompraReciente, type LugarCompra } from "@/services/prendas.service"
 import { NOMBRE_PLAN, TOPE_PRENDAS, mensajeTopePrendas } from "@/constants/planes"
+import { registrarActividad } from "@/lib/actividad"
 import type { Prenda, ReparacionDB } from "@/types"
 import { UploadModal } from "./upload-modal"
 import { PrendaDetailModal } from "./prenda-detail-modal"
@@ -94,6 +95,13 @@ export function ArmarioView() {
           estilo: previewForm.estilo,
           descripcion: previewForm.descripcion,
         },
+      })
+      void registrarActividad("prenda_subida", {
+        prenda_id: prendaId,
+        categoria: previewForm.categoria || "Sin categoría",
+        foto: publicUrl,
+        tamano_original_kb: Math.round(preview.file.size / 1024),
+        comprada_reciente: previewForm.comprada_reciente === "si",
       })
       // La prenda ya quedó guardada; si falla la parte de compra solo se avisa.
       if (previewForm.comprada_reciente === "si" && previewForm.compra_lugar && previewForm.compra_precio !== "") {

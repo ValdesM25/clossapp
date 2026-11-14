@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse, after } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
 import { exigirCuota } from "@/lib/cuota.server"
+import { guardarActividad } from "@/lib/actividad.server"
 import { MAX_IMAGENES, MIN_IMAGENES } from "@/constants/tasacion"
 import type { PrendaAnalysis, PrendaVentaAnalysis } from "@/types/analisis"
 
@@ -97,8 +98,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Se cobra después de validar: un pedido mal formado no gasta análisis.
-    const { bloqueo } = await exigirCuota("analisis")
+    const { bloqueo, userId } = await exigirCuota("analisis")
     if (bloqueo) return bloqueo
+    after(() => guardarActividad(req.headers, userId, "prenda_analizada", { modo: esVenta ? "venta" : "alta", fotos: imagenes.length }))
 
     const media = (mediaType ?? "image/jpeg") as MediaType
 
