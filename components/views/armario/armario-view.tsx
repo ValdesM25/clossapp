@@ -92,6 +92,8 @@ export function ArmarioView() {
           nombre: previewForm.nombre,
           categoria: previewForm.categoria,
           color_principal: previewForm.color_principal,
+          // Solo si la IA la dio; si no, las estadísticas la deducen del color detallado.
+          ...(previewForm.color_familia ? { color_familia: previewForm.color_familia } : {}),
           estilo: previewForm.estilo,
           descripcion: previewForm.descripcion,
         },

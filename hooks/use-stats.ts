@@ -1,30 +1,32 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
-import { fetchStats } from "@/services/stats.service"
-import type { PrendaExt } from "@/types"
+import { computeStats, fetchStats, type StatsResult } from "@/services/stats.service"
+import { GUEST_PRENDAS } from "@/constants/demo-data"
 
 const IS_UUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+const GUEST_OUTFITS = 3
 
 export function useStats(userId: string, userName: string, isGuest: boolean) {
-  const [stats, setStats] = useState({ total: 0, usos: 0, outfits: 0, sinUsar: 0 })
-  const [topPrendas, setTopPrendas] = useState<PrendaExt[]>([])
-  const [olvidadas, setOlvidadas] = useState<PrendaExt[]>([])
+  const [stats, setStats] = useState<StatsResult | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
-  const supabase = createBrowserSupabaseClient()
+  const supabase = useMemo(() => createBrowserSupabaseClient(), [])
+  // El demo pasa por el mismo cálculo que un usuario real, sin red.
+  const guestStats = useMemo(() => (isGuest ? computeStats(GUEST_PRENDAS, GUEST_OUTFITS) : null), [isGuest])
 
   const refresh = useCallback(async () => {
-    if (isGuest || !userId || !IS_UUID(userId)) { setLoading(false); return }
+    if (isGuest) return
+    if (!userId || !IS_UUID(userId)) { setLoading(false); return }
     setLoading(true)
+    setError(false)
     try {
-      const result = await fetchStats(supabase, userId, userName)
-      setStats({ total: result.total, usos: result.usos, outfits: result.outfits, sinUsar: result.sinUsar })
-      setTopPrendas(result.topPrendas)
-      setOlvidadas(result.olvidadas)
+      setStats(await fetchStats(supabase, userId, userName))
     } catch (err) {
       console.error("Error fetching stats:", err instanceof Error ? err.message : JSON.stringify(err))
+      setError(true)
     } finally {
       setLoading(false)
     }
@@ -32,5 +34,6 @@ export function useStats(userId: string, userName: string, isGuest: boolean) {
 
   useEffect(() => { refresh() }, [refresh])
 
-  return { stats, topPrendas, olvidadas, loading, refresh }
+  if (guestStats) return { stats: guestStats, loading: false, error: false, refresh }
+  return { stats, loading, error, refresh }
 }

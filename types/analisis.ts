@@ -12,6 +12,8 @@ export type PrendaAnalysis = {
   nombre: string
   categoria: string
   color_principal: string
+  /** Clave de FAMILIAS_COLOR, o "" si no se pudo determinar. La pone solo la IA. */
+  color_familia: string
   estilo: string
   descripcion: string
 }

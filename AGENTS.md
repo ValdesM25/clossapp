@@ -39,7 +39,7 @@ components/
     ├── armario/{armario-view,upload-modal,prenda-detail-modal,repair-form-modal,repair-list}.tsx
     ├── simulador/{simulador-view,outfit-form,outfit-card,outfit-visual}.tsx
     ├── marketplace/{marketplace-view,market-item-card,item-detail-modal,sell-form-modal,rent-date-picker}.tsx
-    └── estadisticas/{estadisticas-view,kpi-grid,top-prendas-list,forgotten-prendas-list}.tsx
+    └── estadisticas/{estadisticas-view,health-ring,kpi-grid,insights-list,rotation-bar,category-bars,color-palette,top-prendas-list,forgotten-prendas-list,section-title}.tsx + formato.ts
 context/
 ├── auth-context.tsx          # AuthProvider + useAuthContext (userMode, userId, user, isGuest)
 └── prendas-context.tsx       # PrendasProvider + usePrendasContext (prendas, refresh, loading)
@@ -71,9 +71,11 @@ types/
 constants/
 ├── demo-data.ts              # GUEST_PRENDAS, GUEST_REPARACIONES, DEMO_OUTFITS, etc.
 ├── navigation.ts             # navItems, filterChips
-├── categories.ts             # FIXED_CATS, CATEGORIAS_RENTA, LAYER_ORDER
+├── categories.ts             # FIXED_CATS, CATEGORIAS_RENTA, LAYER_ORDER, normalizarCategoria + etiquetas para estadísticas
 ├── images.ts                 # fashionImages, outfitImages
-└── animation.ts              # pageVariants, pageProps
+├── animation.ts              # pageVariants, pageProps
+├── colores.ts                # FAMILIAS_COLOR + normalizarColor (color detallado → familia)
+└── estadisticas.ts           # Grupos de rotación (activa/ocasional/dormida/nueva) y sus límites en días
 ```
 
 ### Data Flow
