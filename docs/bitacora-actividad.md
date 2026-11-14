@@ -1,10 +1,9 @@
 # Bitácora de actividad (panel de administración)
 
-Estado: **hecho el 14 nov 2026 en la rama `claude/admiring-lovelace-h8z5gp`; migración 26 aplicada
-en producción el 14 nov con el OK de Mauri (migración `actividad`).** Migración 27 (anonimizar en vez
-de borrar) aplicada en producción el 14 nov con el OK de Mauri (migración `actividad_anonimizar`).
+Estado: **en `main` desde el 14 nov 2026 (PR #65); migraciones 26 (`actividad`) y 27
+(`actividad_anonimizar`) aplicadas en producción el 14 nov con el OK de Mauri.**
 `SUPABASE_SERVICE_ROLE_KEY` está en Vercel solo para producción: las vistas previas de los PR no
-registran actividad. Falta: mergear el PR.
+registran actividad. Falta: probarlo con datos reales (entrar, subir una prenda y revisar el panel).
 
 ## Qué pidió Mauri
 
