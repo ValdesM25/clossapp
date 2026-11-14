@@ -39,7 +39,8 @@ interface Resumen {
   por_dia: { dia: string; usuarios: number; eventos: number }[]
 }
 
-const RANGOS = [1, 7, 30, 90] as const
+// actividad_resumen acepta hasta 365 días.
+const RANGOS = [1, 7, 30, 90, 365] as const
 const ICONO_DISPOSITIVO: Record<string, typeof Smartphone> = { movil: Smartphone, tablet: Tablet, escritorio: Monitor, bot: Bot }
 const NOMBRE_DISPOSITIVO: Record<string, string> = { movil: "Celular", tablet: "Tablet", escritorio: "Computadora", bot: "Bot", desconocido: "Desconocido" }
 
@@ -120,7 +121,7 @@ export default function ActividadPage() {
             {RANGOS.map((d) => (
               <button key={d} type="button" onClick={() => setDias(d)} aria-pressed={dias === d}
                 className={cn("h-9 px-3 text-xs", dias === d ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900")}>
-                {d === 1 ? "Hoy" : `${d} días`}
+                {d === 1 ? "Hoy" : d === 365 ? "1 año" : `${d} días`}
               </button>
             ))}
           </div>

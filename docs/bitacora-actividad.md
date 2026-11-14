@@ -1,8 +1,9 @@
 # Bitácora de actividad (panel de administración)
 
 Estado: **hecho el 14 nov 2026 en la rama `claude/admiring-lovelace-h8z5gp`; migración 26 aplicada
-en producción el 14 nov con el OK de Mauri (migración `actividad`).** Falta: revisar que
-`SUPABASE_SERVICE_ROLE_KEY` esté en Vercel y mergear el PR.
+en producción el 14 nov con el OK de Mauri (migración `actividad`).** Migración 27 (anonimizar en vez
+de borrar) probada con rollback, **sin aplicar en producción**. Falta: aplicar la 27 con el OK de
+Mauri, revisar que `SUPABASE_SERVICE_ROLE_KEY` esté en Vercel y mergear el PR.
 
 ## Qué pidió Mauri
 
@@ -18,9 +19,12 @@ con qué dispositivo y si sube fotos, con estadísticas para mostrar.
 - **Funciones para el panel:** `actividad_reciente` (lista con el correo de `auth.users`, filtro por
   evento y por cuenta, máx. 1000) y `actividad_resumen` (KPIs y conteos por dispositivo, sistema,
   ciudad, evento y día, en hora de CDMX). Las dos rechazan a quien no es admin.
-- **Retención de 90 días:** `limpiar_actividad()` y una tarea de pg_cron diaria (10:00 UTC) que se
-  programa solo si pg_cron está instalado (08). La IP y la ubicación son datos personales: conviene
-  mencionarlo en `/politicas`.
+- **Retención (decisión de Mauri, 14 nov, migración 27):** la bitácora se guarda siempre, pero a
+  los 90 días `limpiar_actividad()` borra la IP y el user agent; quedan evento, fecha, cuenta,
+  ciudad y dispositivo. Corre en la tarea de pg_cron diaria (10:00 UTC) que programa la 26. Antes
+  (26) borraba la fila completa a los 90 días; se cambió para tener estadísticas de más de 90 días
+  sin acumular datos personales. Conviene mencionarlo en `/politicas`.
+- El panel tiene rangos de Hoy, 7, 30 y 90 días y 1 año (`actividad_resumen` acepta hasta 365).
 - **Escritura** (`lib/actividad.server.ts`): IP de `x-forwarded-for`, ubicación de los headers
   `x-vercel-ip-*` (solo existen en Vercel; en local quedan vacías) y dispositivo leído del
   User-Agent (`leerUserAgent` en `lib/actividad.ts`, sin dependencias). Nunca lanza: si falla,
@@ -65,3 +69,7 @@ con qué dispositivo y si sube fotos, con estadísticas para mostrar.
   (`0 10 * * *`). Los avisos de seguridad de Supabase que salen para `actividad` son los mismos que
   ya tienen las demás tablas y funciones admin (visible en GraphQL para cuentas con sesión, pero RLS
   no devuelve filas; funciones `security definer` que revisan `es_admin()` adentro).
+- **Migración 27 con rollback (14 nov):** una fila de hace 120 días sigue existiendo, pierde IP y
+  user agent y conserva ciudad, dispositivo y evento; una fila de hoy queda intacta; una cuenta
+  normal no puede ejecutar la limpieza; la tarea de pg_cron sigue. Después se confirmó que la base
+  quedó como estaba.
