@@ -92,11 +92,11 @@ begin
     'fotos_subidas',      (select count(*) from a where evento in ('prenda_subida', 'foto_perfil_subida')),
     'outfits_generados',  (select count(*) from a where evento = 'outfits_generados'),
     'por_evento',     coalesce((select jsonb_object_agg(evento, n) from (select evento, count(*) n from a group by 1) x), '{}'::jsonb),
-    'por_dispositivo',coalesce((select jsonb_object_agg(k, n) from (select coalesce(dispositivo, 'desconocido') k, count(distinct user_id) n from a group by 1) x), '{}'::jsonb),
-    'por_so',         coalesce((select jsonb_object_agg(k, n) from (select coalesce(so, 'desconocido') k, count(distinct user_id) n from a group by 1) x), '{}'::jsonb),
+    'por_dispositivo',coalesce((select jsonb_object_agg(k, n) from (select coalesce(dispositivo, 'desconocido') k, count(distinct user_id) n from a where user_id is not null group by 1) x), '{}'::jsonb),
+    'por_so',         coalesce((select jsonb_object_agg(k, n) from (select coalesce(so, 'desconocido') k, count(distinct user_id) n from a where user_id is not null group by 1) x), '{}'::jsonb),
     'por_ciudad',     coalesce((select jsonb_agg(jsonb_build_object('ciudad', k, 'n', n) order by n desc)
                         from (select coalesce(ciudad || ', ' || pais, pais, 'desconocida') k, count(distinct user_id) n
-                              from a group by 1 order by 2 desc limit 10) x), '[]'::jsonb),
+                              from a where user_id is not null group by 1 order by 2 desc limit 10) x), '[]'::jsonb),
     'por_dia',        coalesce((select jsonb_agg(jsonb_build_object('dia', d, 'usuarios', u, 'eventos', e) order by d)
                         from (select (created_at at time zone 'America/Mexico_City')::date d,
                                      count(distinct user_id) u, count(*) e
