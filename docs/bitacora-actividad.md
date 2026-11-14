@@ -1,8 +1,8 @@
 # Bitácora de actividad (panel de administración)
 
-Estado: **hecho el 14 nov 2026 en la rama `claude/admiring-lovelace-h8z5gp`, sin aplicar en producción.**
-Falta: probar la migración 26 con rollback, aplicarla con el OK de Mauri y revisar que
-`SUPABASE_SERVICE_ROLE_KEY` esté en Vercel. La migración va **antes** del merge.
+Estado: **hecho el 14 nov 2026 en la rama `claude/admiring-lovelace-h8z5gp`; migración 26 probada
+con rollback en la base real, sin aplicar en producción.** Falta: aplicarla con el OK de Mauri y
+revisar que `SUPABASE_SERVICE_ROLE_KEY` esté en Vercel. La migración va **antes** del merge.
 
 ## Qué pidió Mauri
 
@@ -51,5 +51,12 @@ con qué dispositivo y si sube fotos, con estadísticas para mostrar.
 
 - `npx tsc --noEmit`, `node --test lib/*.test.mjs` (33/33) y `npx eslint` en los archivos tocados.
 - `leerUserAgent` con iPhone, Android, Windows/Edge y Mac/Safari.
+- **Migración 26 en la base real, dentro de un bloque que se deshace solo** (14 nov): se aplica
+  completa; service_role inserta; un evento fuera de la lista se rechaza; una cuenta normal ve 0
+  filas, no puede insertar, leer el resumen ni la lista, ni limpiar; anon no tiene acceso; admin ve
+  todo, el resumen y la lista traen datos correctos (con correos) y los filtros por evento y cuenta
+  funcionan; la tarea de pg_cron se programa. Después se confirmó que no quedó nada en la base.
+  Arreglo tras la prueba: las barras por dispositivo, sistema y ciudad ya no muestran
+  "desconocida: 0" por las visitas de la demo (solo cuentan cuentas).
 - Prueba visual a 390×844 con `next dev` y respuestas de Supabase simuladas en Playwright: sin
-  scroll horizontal. Sin probar contra la base real.
+  scroll horizontal. Sin probar el panel contra la base real.
