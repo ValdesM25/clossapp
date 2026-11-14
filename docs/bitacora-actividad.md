@@ -1,8 +1,8 @@
 # Bitácora de actividad (panel de administración)
 
-Estado: **hecho el 14 nov 2026 en la rama `claude/admiring-lovelace-h8z5gp`; migración 26 probada
-con rollback en la base real, sin aplicar en producción.** Falta: aplicarla con el OK de Mauri y
-revisar que `SUPABASE_SERVICE_ROLE_KEY` esté en Vercel. La migración va **antes** del merge.
+Estado: **hecho el 14 nov 2026 en la rama `claude/admiring-lovelace-h8z5gp`; migración 26 aplicada
+en producción el 14 nov con el OK de Mauri (migración `actividad`).** Falta: revisar que
+`SUPABASE_SERVICE_ROLE_KEY` esté en Vercel y mergear el PR.
 
 ## Qué pidió Mauri
 
@@ -60,3 +60,8 @@ con qué dispositivo y si sube fotos, con estadísticas para mostrar.
   "desconocida: 0" por las visitas de la demo (solo cuentan cuentas).
 - Prueba visual a 390×844 con `next dev` y respuestas de Supabase simuladas en Playwright: sin
   scroll horizontal. Sin probar el panel contra la base real.
+- **Producción (14 nov):** tabla con RLS y 0 filas; anon no lee, `authenticated` no inserta,
+  anon no ejecuta el resumen y nadie fuera del servidor ejecuta la limpieza; pg_cron programado
+  (`0 10 * * *`). Los avisos de seguridad de Supabase que salen para `actividad` son los mismos que
+  ya tienen las demás tablas y funciones admin (visible en GraphQL para cuentas con sesión, pero RLS
+  no devuelve filas; funciones `security definer` que revisan `es_admin()` adentro).
