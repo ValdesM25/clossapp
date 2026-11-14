@@ -1,29 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { PrendaExt } from "@/types"
 import { FAMILIAS_COLOR, familiaDePrenda, type FamiliaColor } from "@/constants/colores"
+import { NOMBRE_CATEGORIA, normalizarCategoria, type CategoriaStats } from "@/constants/categories"
+import { DIAS_ACTIVA, DIAS_NUEVA, DIAS_OCASIONAL, type Rotacion } from "@/constants/estadisticas"
 
 const DIA = 86_400_000
-
-/**
- * En qué punto de rotación está cada prenda:
- * - activa: usada en los últimos 30 días
- * - ocasional: usada hace 1 a 6 meses
- * - dormida: más de 6 meses sin usarse, o nunca usada
- * - nueva: nunca usada pero agregada hace menos de 30 días (aún no cuenta en contra)
- */
-export type Rotacion = "activa" | "ocasional" | "dormida" | "nueva"
-
-export const ROTACION_INFO: Record<Rotacion, { nombre: string; detalle: string }> = {
-  activa: { nombre: "Activas", detalle: "Usadas este mes" },
-  ocasional: { nombre: "Ocasionales", detalle: "Hace 1 a 6 meses" },
-  dormida: { nombre: "Dormidas", detalle: "Más de 6 meses o nunca" },
-  nueva: { nombre: "Nuevas", detalle: "Agregadas este mes" },
-}
-
-export const ORDEN_ROTACION: Rotacion[] = ["activa", "ocasional", "dormida", "nueva"]
-
-export const CATEGORIAS_STATS = ["Top", "Bottom", "Vestido", "Outerwear", "Calzado", "Accesorio", "Otro"] as const
-export type CategoriaStats = (typeof CATEGORIAS_STATS)[number]
 
 export interface CategoriaResumen {
   categoria: CategoriaStats
@@ -67,23 +48,6 @@ export interface StatsResult {
   insights: string[]
 }
 
-const CATEGORIA_SINONIMOS: [CategoriaStats, string[]][] = [
-  ["Vestido", ["vestido", "dress", "enterizo", "jumpsuit", "mono", "overol"]],
-  ["Outerwear", ["outerwear", "chaqueta", "chamarra", "abrigo", "blazer", "saco", "gabardina", "trench", "cardigan", "sueter", "sudadera", "hoodie", "chaleco", "jacket", "coat"]],
-  ["Calzado", ["calzado", "zapato", "tenis", "sneaker", "bota", "botin", "sandalia", "tacon", "mocasin", "flats", "shoe"]],
-  ["Accesorio", ["accesorio", "bolso", "bolsa", "cartera", "mochila", "joyeria", "collar", "arete", "pulsera", "anillo", "lentes", "gafas", "cinturon", "bufanda", "gorra", "sombrero", "reloj", "panuelo"]],
-  ["Bottom", ["bottom", "pantalon", "jean", "falda", "short", "bermuda", "legging", "jogger"]],
-  ["Top", ["top", "blusa", "camisa", "playera", "camiseta", "polo", "crop", "body", "tank", "shirt"]],
-]
-
-export function normalizarCategoria(texto?: string | null): CategoriaStats {
-  const t = (texto ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
-  for (const [cat, palabras] of CATEGORIA_SINONIMOS) {
-    if (palabras.some((p) => t.includes(p))) return cat
-  }
-  return "Otro"
-}
-
 function diasDesde(iso: string | null | undefined, ahora: number): number | null {
   if (!iso) return null
   const t = new Date(iso).getTime()
@@ -93,22 +57,12 @@ function diasDesde(iso: string | null | undefined, ahora: number): number | null
 export function rotacionDe(p: PrendaExt, ahora = Date.now()): Rotacion {
   const dias = (p.usos ?? 0) > 0 ? diasDesde(p.ultimo_uso, ahora) : null
   if (dias !== null) {
-    if (dias <= 30) return "activa"
-    if (dias <= 180) return "ocasional"
+    if (dias <= DIAS_ACTIVA) return "activa"
+    if (dias <= DIAS_OCASIONAL) return "ocasional"
     return "dormida"
   }
   const antiguedad = diasDesde(p.created_at, ahora)
-  return antiguedad !== null && antiguedad <= 30 ? "nueva" : "dormida"
-}
-
-const NOMBRE_CATEGORIA: Record<CategoriaStats, [string, string]> = {
-  Top: ["top", "tops"],
-  Bottom: ["prenda de abajo", "prendas de abajo"],
-  Vestido: ["vestido", "vestidos"],
-  Outerwear: ["prenda de abrigo", "prendas de abrigo"],
-  Calzado: ["par de zapatos", "pares de zapatos"],
-  Accesorio: ["accesorio", "accesorios"],
-  Otro: ["prenda", "prendas"],
+  return antiguedad !== null && antiguedad <= DIAS_NUEVA ? "nueva" : "dormida"
 }
 
 function plural(n: number, [uno, varios]: [string, string]) {

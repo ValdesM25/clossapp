@@ -71,10 +71,11 @@ types/
 constants/
 ├── demo-data.ts              # GUEST_PRENDAS, GUEST_REPARACIONES, DEMO_OUTFITS, etc.
 ├── navigation.ts             # navItems, filterChips
-├── categories.ts             # FIXED_CATS, CATEGORIAS_RENTA, LAYER_ORDER
+├── categories.ts             # FIXED_CATS, CATEGORIAS_RENTA, LAYER_ORDER, normalizarCategoria + etiquetas para estadísticas
 ├── images.ts                 # fashionImages, outfitImages
 ├── animation.ts              # pageVariants, pageProps
-└── colores.ts                # FAMILIAS_COLOR + normalizarColor (color detallado → familia)
+├── colores.ts                # FAMILIAS_COLOR + normalizarColor (color detallado → familia)
+└── estadisticas.ts           # Grupos de rotación (activa/ocasional/dormida/nueva) y sus límites en días
 ```
 
 ### Data Flow

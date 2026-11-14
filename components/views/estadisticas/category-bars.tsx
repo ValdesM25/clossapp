@@ -1,21 +1,12 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { ETIQUETA_CATEGORIA } from "@/constants/categories"
 import type { CategoriaResumen } from "@/services/stats.service"
 import { SectionTitle } from "./section-title"
 
 interface CategoryBarsProps {
   categorias: CategoriaResumen[]
-}
-
-const ETIQUETA: Record<CategoriaResumen["categoria"], string> = {
-  Top: "Tops",
-  Bottom: "Pantalones y faldas",
-  Vestido: "Vestidos",
-  Outerwear: "Abrigos y chaquetas",
-  Calzado: "Calzado",
-  Accesorio: "Accesorios",
-  Otro: "Otros",
 }
 
 /**
@@ -43,13 +34,13 @@ export function CategoryBars({ categorias }: CategoryBarsProps) {
           return (
             <li key={c.categoria}>
               <div className="flex items-baseline justify-between gap-3 mb-1.5">
-                <span className="text-xs font-medium text-zinc-900 truncate">{ETIQUETA[c.categoria]}</span>
+                <span className="text-xs font-medium text-zinc-900 truncate">{ETIQUETA_CATEGORIA[c.categoria]}</span>
                 <span className="text-[11px] text-zinc-500 shrink-0 tabular-nums">
                   <span className="text-zinc-900 font-medium">{c.enUso}</span> de {c.total} en uso · {c.usos} {c.usos === 1 ? "uso" : "usos"}
                 </span>
               </div>
               <motion.div className="flex h-2.5 gap-[2px]"
-                role="img" aria-label={`${ETIQUETA[c.categoria]}: ${c.enUso} de ${c.total} en uso`}
+                role="img" aria-label={`${ETIQUETA_CATEGORIA[c.categoria]}: ${c.enUso} de ${c.total} en uso`}
                 initial={{ width: 0 }} animate={{ width: `${ancho}%` }}
                 transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1], delay: 0.05 * i }}>
                 {c.enUso > 0 && (

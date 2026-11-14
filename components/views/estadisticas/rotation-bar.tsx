@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ORDEN_ROTACION, ROTACION_INFO, type PrendaConRotacion, type Rotacion } from "@/services/stats.service"
+import { ORDEN_ROTACION, ROTACION_INFO, type Rotacion } from "@/constants/estadisticas"
+import type { PrendaConRotacion } from "@/services/stats.service"
 import { SectionTitle } from "./section-title"
 import { formatoUltimoUso } from "./formato"
 
