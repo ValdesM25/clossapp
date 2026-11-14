@@ -9,12 +9,12 @@ export const DEMO_OUTFITS: OutfitRec[] = [
 const haceDias = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString()
 
 export const GUEST_PRENDAS: Prenda[] = [
-  { id: "g1", user_id: "guest", name: "Camisa Blanca", category: "Tops", image_url: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80", created_at: "", usos: 14, ultimo_uso: haceDias(2) },
-  { id: "g2", user_id: "guest", name: "Jeans Azul", category: "Pantalones", image_url: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&q=80", created_at: "", usos: 11, ultimo_uso: haceDias(1) },
-  { id: "g3", user_id: "guest", name: "Blazer Negro", category: "Chaquetas", image_url: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&q=80", created_at: "", usos: 3, ultimo_uso: haceDias(64) },
-  { id: "g4", user_id: "guest", name: "Vestido Floral", category: "Vestidos", image_url: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&q=80", created_at: "", usos: 1, ultimo_uso: haceDias(120) },
-  { id: "g5", user_id: "guest", name: "Sneakers Blancos", category: "Zapatos", image_url: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=400&q=80", created_at: "", usos: 9, ultimo_uso: haceDias(3) },
-  { id: "g6", user_id: "guest", name: "Bolso Tote", category: "Accesorios", image_url: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=400&q=80", created_at: "", usos: 2, ultimo_uso: haceDias(45) },
+  { id: "g1", user_id: "guest", name: "Camisa Blanca", category: "Tops", image_url: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80", created_at: "", usos: 14, ultimo_uso: haceDias(2), compra_precio: 490, metadata: { color_principal: "Blanco óptico", color_familia: "blanco" } },
+  { id: "g2", user_id: "guest", name: "Jeans Azul", category: "Pantalones", image_url: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&q=80", created_at: "", usos: 11, ultimo_uso: haceDias(1), compra_precio: 890, metadata: { color_principal: "Azul mezclilla", color_familia: "azul" } },
+  { id: "g3", user_id: "guest", name: "Blazer Negro", category: "Chaquetas", image_url: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&q=80", created_at: "", usos: 3, ultimo_uso: haceDias(64), metadata: { color_principal: "Negro", color_familia: "negro" } },
+  { id: "g4", user_id: "guest", name: "Vestido Floral", category: "Vestidos", image_url: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&q=80", created_at: "", usos: 1, ultimo_uso: haceDias(200), metadata: { color_principal: "Floral rosa", color_familia: "estampado" } },
+  { id: "g5", user_id: "guest", name: "Sneakers Blancos", category: "Zapatos", image_url: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=400&q=80", created_at: "", usos: 9, ultimo_uso: haceDias(3), metadata: { color_principal: "Blanco hueso", color_familia: "blanco" } },
+  { id: "g6", user_id: "guest", name: "Bolso Tote", category: "Accesorios", image_url: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=400&q=80", created_at: "", usos: 2, ultimo_uso: haceDias(45), metadata: { color_principal: "Camel", color_familia: "cafe" } },
 ]
 
 export const GUEST_REPARACIONES: ReparacionDB[] = [

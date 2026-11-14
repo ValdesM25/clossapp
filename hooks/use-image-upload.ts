@@ -10,6 +10,8 @@ export interface ImageUploadForm {
   nombre: string
   categoria: string
   color_principal: string
+  // La pone solo la IA; no se muestra ni se edita en el formulario.
+  color_familia: string
   estilo: string
   descripcion: string
   talla: string
@@ -23,7 +25,7 @@ export interface ImageUploadForm {
 }
 
 const FORM_VACIO: ImageUploadForm = {
-  nombre: "", categoria: "", color_principal: "", estilo: "", descripcion: "",
+  nombre: "", categoria: "", color_principal: "", color_familia: "", estilo: "", descripcion: "",
   talla: "", estado_uso: "",
   comprada_reciente: "", compra_lugar: "", compra_tienda: "", compra_precio: "", compra_fecha: "",
 }
@@ -54,6 +56,7 @@ export function useImageUpload(userId: string, isGuest: boolean) {
         nombre: data.nombre ?? "",
         categoria: data.categoria ?? "",
         color_principal: data.color_principal ?? "",
+        color_familia: data.color_familia ?? "",
         estilo: data.estilo ?? "",
         descripcion: data.descripcion ?? "",
       }))
