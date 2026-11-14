@@ -1,6 +1,7 @@
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse, after, type NextRequest } from "next/server"
 import type { EmailOtpType } from "@supabase/supabase-js"
 import { createClient } from "@/utils/supabase/server"
+import { guardarActividad } from "@/lib/actividad.server"
 
 /**
  * Vuelta del login social y de los enlaces de correo (confirmar cuenta,
@@ -34,6 +35,15 @@ export async function GET(request: NextRequest) {
   if (error) {
     console.error("[auth/callback]", error.message)
     return NextResponse.redirect(`${origin}/?auth_error=1`)
+  }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const proveedor = user.app_metadata?.provider
+    after(() => code
+      ? guardarActividad(request.headers, user.id, "sesion_social", { metodo: proveedor ?? "oauth" })
+      : type === "recovery"
+        ? guardarActividad(request.headers, user.id, "sesion_iniciada", { metodo: "recuperar_contrasena" })
+        : guardarActividad(request.headers, user.id, "cuenta_confirmada", { tipo: type ?? "" }))
   }
   return NextResponse.redirect(`${origin}${next}`)
 }

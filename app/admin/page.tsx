@@ -64,7 +64,10 @@ export default function AdminPage() {
             <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Administración</p>
             <h1 className="font-serif text-2xl text-zinc-900">Solicitudes de centros de acopio</h1>
           </div>
-          <Link href="/" className="text-xs underline underline-offset-2 text-zinc-600">Volver a la app</Link>
+          <div className="flex items-center gap-4 text-xs">
+            <Link href="/admin/actividad" className="underline underline-offset-2 text-zinc-600">Actividad</Link>
+            <Link href="/" className="underline underline-offset-2 text-zinc-600">Volver a la app</Link>
+          </div>
         </div>
         <nav className="max-w-4xl mx-auto px-4 flex gap-1" aria-label="Estado de las solicitudes">
           {PESTANAS.map((p) => (

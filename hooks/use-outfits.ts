@@ -4,6 +4,7 @@ import { useState, useCallback } from "react"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import { generateOutfits, mapWardrobe, registrarUso, incrementarOutfits } from "@/services/outfits.service"
 import { DEMO_OUTFITS } from "@/constants/demo-data"
+import { registrarActividad } from "@/lib/actividad"
 import type { Prenda } from "@/types"
 
 interface Outfit {
@@ -55,6 +56,7 @@ export function useOutfits(prendas: Prenda[], userName: string, isGuest: boolean
     ])
     setEligiendoIdx(null)
     setElegidoIdx(idx)
+    void registrarActividad("outfit_elegido", { titulo: outfit.titulo, prendas: outfit.prenda_ids.length })
   }, [isGuest, supabase, userName])
 
   return { outfits, generating, error, eligiendoIdx, elegidoIdx, generate, elegir, setElegidoIdx }
