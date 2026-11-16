@@ -295,7 +295,7 @@ export function ArmarioView() {
       <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
 
       <motion.button data-tour="armario-agregar" aria-label="Agregar prenda" whileTap={{ scale: 0.94 }} onClick={abrirSubida} disabled={uploading}
-        className={cn("fixed bottom-28 z-40 shadow-lg w-12 h-12 flex items-center justify-center fab-right",
+        className={cn("fixed bottom-[calc(8.5rem+env(safe-area-inset-bottom,0px))] z-40 shadow-lg w-12 h-12 flex items-center justify-center fab-right",
           isGuest ? "bg-zinc-200 cursor-default" : "bg-zinc-900 text-white disabled:opacity-50")}>
         {uploading ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : isGuest ? <Lock className="w-4 h-4 text-zinc-400" /> : <Plus className="w-5 h-5 text-white" />}
       </motion.button>
