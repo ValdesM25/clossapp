@@ -19,15 +19,17 @@ Pedido de Mauri (16 de noviembre de 2026): esta semana entran 30 a 100 usuarios 
 - **Inicio**: `AvisoPrueba` (`lib/prueba.ts` decide): los últimos 5 días "Tu prueba de Plus termina el …" y, ya en gratis, una semana con "Tu prueba terminó el …", los dos con "Si no quieres perder tus funciones, elige tu plan" y liga a `/planes`.
 
 ## Los códigos no van en el repo
-El repositorio es público, así que la migración no inserta ningún código. Se crean a mano en el SQL editor de Supabase (ajustar el texto del código antes de correrlo):
+El repositorio es público, así que ni la migración ni este doc traen los códigos reales. Se crean a mano en el SQL editor de Supabase, poniendo el texto del código solo ahí:
 
 ```sql
 insert into public.codigos_beta (codigo, plan, dias, usos_max, vence) values
-  ('InnovaTecnmClossapp', 'plus', 30, 100, '2026-11-30'),
-  ('InnovaTecnmElite', 'elite', 15, 100, '2026-11-30');
+  ('<codigo-plus>', 'plus', 30, 100, '2026-11-30'),
+  ('<codigo-elite>', 'elite', 15, 100, '2026-11-30');
 ```
 
-Cambiar tope o fecha: `update public.codigos_beta set usos_max = 150, vence = '2026-12-15' where codigo = 'InnovaTecnmClossapp';`
+Una versión anterior de este archivo sí traía los nombres reales; esos códigos se cambiaron en la base el 16 de noviembre (`update public.codigos_beta set codigo = '<nuevo>' where codigo = '<viejo>';`). Si un código se filtra, se cambia así: los canjes ya hechos no se tocan (`perfiles.codigo_beta` guarda el nombre viejo, y eso sigue contando como "ya canjeó").
+
+Cambiar tope o fecha: `update public.codigos_beta set usos_max = 150, vence = '2026-12-15' where codigo = '<codigo-plus>';`
 Ver cuántos lo usaron: `select codigo, usos, usos_max, vence from public.codigos_beta;`
 Quién lo canjeó y hasta cuándo: `select user_id, plan, codigo_beta, prueba_vence from public.perfiles where codigo_beta is not null;`
 
