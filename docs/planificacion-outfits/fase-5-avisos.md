@@ -150,6 +150,6 @@ Rama `feat/planificacion-avisos` (sale de `5ee87ac`). Sin push.
 - **Vercel (producción) no tiene `CRON_SECRET` ni las llaves VAPID** (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`). Sin la llave pública nadie puede activar las notificaciones: `push_suscripciones` tiene 0 filas. Ningún push de la app (recordatorio, Shop, planificación) funciona hoy en producción.
 - Pasos (Mauri; los valores no deben pasar por el agente):
   1. Generar las llaves: `npx web-push generate-vapid-keys`.
-  2. En Vercel (producción): `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (por ejemplo `mailto:support@clossapp.com`) y `CRON_SECRET` (un valor largo al azar). Hace falta un deploy para que se lean.
+  2. En Vercel (producción): `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (por ejemplo `mailto:me@mauvaldes.dev`) y `CRON_SECRET` (un valor largo al azar). Hace falta un deploy para que se lean.
   3. En el SQL editor de Supabase: `select vault.create_secret('<el mismo valor que CRON_SECRET>', 'cron_secret');`
 - La tarea de cron se programa después de esos pasos y del deploy (ver el final de la 25).
