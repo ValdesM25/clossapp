@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react"
 import Link from "next/link"
-import { Check, CheckCircle2, Loader2 } from "lucide-react"
+import { Check, CheckCircle2, Loader2, Users } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
+import { CenteredModal } from "@/components/shared/centered-modal"
 import { NOMBRE_PLAN, PLANES, esDePago, normalizarPlan, type Plan } from "@/constants/planes"
 import { fechaCorta } from "@/lib/prueba"
 import { cn } from "@/lib/utils"
@@ -133,23 +134,33 @@ export default function PlanesPage() {
               </p>
             )}
 
-            {bienvenida && pruebaVence ? (
-              <section role="status" className="border border-zinc-900 px-5 py-4 text-sm text-zinc-700 space-y-2 max-w-2xl mx-auto">
-                <p className="flex items-center gap-2 text-zinc-900">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
-                  Listo: tienes {NOMBRE_PLAN[bienvenida]} hasta el {fechaCorta(pruebaVence)}.
-                </p>
-                <p>
-                  Clossapp nació para acompañarte en algo que haces todos los días: elegir qué ponerte. Hoy tú acompañas
-                  a Clossapp en su camino al nacional del InnovaTecNM. Cada prenda que subas y cada outfit que armes es parte
-                  de lo que vamos a presentar. Esto ya no es un proyecto escolar: es tuyo también.
-                </p>
-                <p className="text-xs text-zinc-500">
-                  Si encuentras un error o tienes una idea para mejorar Clossapp, escríbenos{" "}
-                  <a href="mailto:me@mauvaldes.dev" className="underline underline-offset-2 text-zinc-900">aquí</a>.
-                </p>
-              </section>
-            ) : enPrueba && plan && pruebaVence ? (
+            {/* Bienvenida del código beta: sale encima de todo, como el detalle de una prenda en el Shop. */}
+            <CenteredModal open={!!bienvenida && !!pruebaVence} onClose={() => setBienvenida(null)}>
+              {bienvenida && pruebaVence && (
+                <div className="p-8 pt-10 flex flex-col items-center text-center gap-4">
+                  <div className="w-16 h-16 rounded-full border border-zinc-900 flex items-center justify-center">
+                    <Users className="w-7 h-7 text-zinc-900" aria-hidden="true" />
+                  </div>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Comunidad Clossapp</p>
+                  <h2 className="font-serif text-2xl text-zinc-900">Ya eres parte</h2>
+                  <p className="text-sm text-zinc-900">Tienes {NOMBRE_PLAN[bienvenida]} hasta el {fechaCorta(pruebaVence)}.</p>
+                  <p className="text-sm text-zinc-700 leading-relaxed">
+                    Clossapp nació para acompañarte en algo que haces todos los días: elegir qué ponerte. Hoy tú acompañas
+                    a Clossapp en su camino al nacional del InnovaTecNM. Cada prenda que subas y cada outfit que armes es parte
+                    de lo que vamos a presentar. Esto ya no es un proyecto escolar: es tuyo también.
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    Si algo falla o tienes una idea, escríbenos desde Soporte, al final de la app.
+                  </p>
+                  <button type="button" onClick={() => setBienvenida(null)}
+                    className="mt-2 h-11 w-full bg-zinc-900 text-white text-sm font-medium tracking-wide">
+                    Empezar
+                  </button>
+                </div>
+              )}
+            </CenteredModal>
+
+            {enPrueba && plan && pruebaVence ? (
               <p role="status" className="border border-zinc-200 px-4 py-3 text-sm text-zinc-700 text-center">
                 Tienes {NOMBRE_PLAN[plan]} de prueba hasta el {fechaCorta(pruebaVence)}. Si no quieres perder tus funciones, elige tu plan antes de esa fecha.
               </p>
