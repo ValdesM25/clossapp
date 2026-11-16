@@ -23,6 +23,8 @@ type AuthContextValue = {
   initializing: boolean
   /** Plan de la cuenta con sesion; null si no hay sesion o aun no se sabe. */
   plan: Plan | null
+  /** Fin de la prueba beta canjeada con código; null si no canjeó o ya paga con Stripe. */
+  pruebaVence: string | null
   /** Perfil de estilo guardado; null si no lo llenó. */
   estilo: EstiloPerfil | null
   /** Qué preguntas de estilo mostrar; false si no toca. */
