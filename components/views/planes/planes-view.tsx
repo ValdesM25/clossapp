@@ -114,9 +114,14 @@ export function PlanesView() {
             ? <>Dona prendas en desuso para ganar <strong>Puntos ClossApp</strong> y canjearlos por descuentos en tu mensualidad.</>
             : <>Elige la experiencia que mejor se adapte a tu guardarropa. Dona prendas en desuso para ganar <strong>Puntos ClossApp</strong> y canjearlos por descuentos en tu mensualidad.</>}
         </p>
-        {esPremium && (
+        {esPremium ? (
           <a href="/planes" className="self-start mt-2 min-h-10 inline-flex items-center text-sm font-medium text-zinc-900 underline underline-offset-4">
             Administrar suscripción
+          </a>
+        ) : !isGuest && (
+          // El código de prueba de la beta se canjea en /planes.
+          <a href="/planes" className="self-start mt-2 min-h-10 inline-flex items-center text-sm font-medium text-zinc-900 underline underline-offset-4">
+            ¿Tienes un código? Canjéalo aquí
           </a>
         )}
       </div>

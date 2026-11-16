@@ -1,13 +1,21 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react"
 import Link from "next/link"
 import { Check, CheckCircle2, Loader2 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { NOMBRE_PLAN, PLANES, esDePago, normalizarPlan, type Plan } from "@/constants/planes"
+import { fechaCorta } from "@/lib/prueba"
 import { cn } from "@/lib/utils"
 
 type Estado = "cargando" | "sin-sesion" | "listo"
+
+function mensajeCanje(m: string): string {
+  if (m.includes("YA_CANJEADO")) return "Tu cuenta ya usó un código."
+  if (m.includes("YA_TIENE_PLAN")) return "Ya tienes un plan de pago."
+  if (m.includes("CODIGO_INVALIDO")) return "Ese código no es válido o ya no está disponible."
+  return "No se pudo canjear el código. Intenta de nuevo."
+}
 
 /** Elegir o administrar el plan. Aquí se paga, fuera de cualquier tienda de apps. */
 export default function PlanesPage() {
@@ -21,6 +29,25 @@ export default function PlanesPage() {
   const [esperando, setEsperando] = useState(false)
   const [enviando, setEnviando] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Prueba beta canjeada con código: plan de pago sin Stripe, hasta esa fecha.
+  const [pruebaVence, setPruebaVence] = useState<string | null>(null)
+  const [codigoCanjeado, setCodigoCanjeado] = useState(false)
+  const [codigo, setCodigo] = useState("")
+  const [bienvenida, setBienvenida] = useState<Plan | null>(null)
+
+  const enPrueba = !!pruebaVence && esDePago(plan)
+
+  /** Devuelve si ya tiene un plan pagado de verdad (la prueba beta no cuenta). */
+  const leerPlan = useCallback(async (): Promise<boolean> => {
+    const { data } = await supabase.from("perfiles").select("*").maybeSingle()
+    const p = normalizarPlan(data?.plan) ?? "gratis"
+    const prueba: string | null = data?.prueba_vence ?? null
+    setPlan(p)
+    setPruebaVence(prueba)
+    setCodigoCanjeado(!!data?.codigo_beta)
+    setConSuscripcion(!!data?.stripe_customer_id && esDePago(p) && !prueba)
+    return esDePago(p) && !prueba
+  }, [supabase])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -29,34 +56,36 @@ export default function PlanesPage() {
     setVolvioDelPago(volvio)
     let activo = true
 
-    async function leerPlan(): Promise<Plan | null> {
-      // "*": stripe_customer_id no existe hasta aplicar 17-suscripciones.sql.
-      const { data } = await supabase.from("perfiles").select("*").maybeSingle()
-      if (!activo) return null
-      const p = normalizarPlan(data?.plan) ?? "gratis"
-      setPlan(p)
-      setConSuscripcion(!!data?.stripe_customer_id && esDePago(p))
-      return p
-    }
-
     ;(async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!activo) return
       if (!user) return setEstado("sin-sesion")
-      const p = await leerPlan()
+      const pagado = await leerPlan()
       if (!activo) return
       setEstado("listo")
-      if (!volvio || esDePago(p)) return setPagoOk(volvio)
+      if (!volvio || pagado) return setPagoOk(volvio)
       // El plan lo escribe el webhook de Stripe unos segundos después del pago.
       setEsperando(true)
       for (let i = 0; i < 10 && activo; i++) {
         await new Promise((r) => setTimeout(r, 2000))
-        if (esDePago(await leerPlan())) { if (activo) setPagoOk(true); break }
+        if (await leerPlan()) { if (activo) setPagoOk(true); break }
       }
       if (activo) setEsperando(false)
     })()
     return () => { activo = false }
-  }, [supabase])
+  }, [supabase, leerPlan])
+
+  async function canjear(e: FormEvent) {
+    e.preventDefault()
+    if (!codigo.trim()) return
+    setEnviando("codigo")
+    setError(null)
+    const { data, error: err } = await supabase.rpc("canjear_codigo", { p_codigo: codigo.trim() })
+    setEnviando(null)
+    if (err) return setError(mensajeCanje(err.message))
+    setBienvenida(normalizarPlan(data?.plan))
+    await leerPlan()
+  }
 
   async function ir(ruta: "checkout" | "portal", destino?: Plan) {
     setEnviando(destino ?? ruta)
@@ -104,6 +133,40 @@ export default function PlanesPage() {
               </p>
             )}
 
+            {bienvenida && pruebaVence ? (
+              <section role="status" className="border border-zinc-900 px-5 py-4 text-sm text-zinc-700 space-y-2 max-w-2xl mx-auto">
+                <p className="flex items-center gap-2 text-zinc-900">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
+                  Listo: tienes {NOMBRE_PLAN[bienvenida]} hasta el {fechaCorta(pruebaVence)}.
+                </p>
+                <p>
+                  Clossapp nació para acompañarte en algo que haces todos los días: elegir qué ponerte. Hoy tú acompañas
+                  a Clossapp en su camino al nacional del InnovaTecNM. Cada prenda que subas y cada outfit que armes es parte
+                  de lo que vamos a presentar. Esto ya no es un proyecto escolar: es tuyo también.
+                </p>
+                <p className="text-xs text-zinc-500">
+                  Si encuentras un error o tienes una idea para mejorar Clossapp, escríbenos{" "}
+                  <a href="mailto:me@mauvaldes.dev" className="underline underline-offset-2 text-zinc-900">aquí</a>.
+                </p>
+              </section>
+            ) : enPrueba && plan && pruebaVence ? (
+              <p role="status" className="border border-zinc-200 px-4 py-3 text-sm text-zinc-700 text-center">
+                Tienes {NOMBRE_PLAN[plan]} de prueba hasta el {fechaCorta(pruebaVence)}. Si no quieres perder tus funciones, elige tu plan antes de esa fecha.
+              </p>
+            ) : estado === "listo" && !esDePago(plan) && !codigoCanjeado ? (
+              <form onSubmit={canjear} className="max-w-sm mx-auto space-y-2">
+                <label htmlFor="codigo" className="block text-xs text-zinc-500 text-center">¿Tienes un código?</label>
+                <div className="flex gap-2">
+                  <input id="codigo" value={codigo} onChange={(e) => setCodigo(e.target.value)} autoComplete="off"
+                    className="h-11 flex-1 min-w-0 border border-zinc-200 px-3 text-sm text-zinc-900 focus:outline-none focus:border-zinc-900" />
+                  <button type="submit" disabled={!!enviando || !codigo.trim()}
+                    className="h-11 px-5 border border-zinc-900 text-sm font-medium tracking-wide text-zinc-900 disabled:opacity-50">
+                    {enviando === "codigo" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Canjear"}
+                  </button>
+                </div>
+              </form>
+            ) : null}
+
             <section className="grid gap-4 md:grid-cols-3">
               {PLANES.map((p) => {
                 const actual = p.id === plan
@@ -130,12 +193,13 @@ export default function PlanesPage() {
                           destacado ? "bg-zinc-900 text-white" : "border border-zinc-900 text-zinc-900")}>
                         {p.id === "gratis" ? "Crear cuenta gratis" : `Elegir ${NOMBRE_PLAN[p.id]}`}
                       </Link>
-                    ) : actual ? (
+                    ) : actual && !enPrueba ? (
                       <p className="h-11 flex items-center justify-center border border-zinc-200 text-sm text-zinc-500">Tu plan actual</p>
-                    ) : volvioDelPago && !esDePago(plan) ? (
+                    ) : volvioDelPago && (!esDePago(plan) || enPrueba) ? (
                       // Recién pagó y el webhook aún no llega: otro botón de pago aquí cobraría dos veces.
                       <p className="h-11 flex items-center justify-center text-xs text-zinc-500 text-center">Esperando la confirmación del pago</p>
-                    ) : esDePago(p.id) && !esDePago(plan) ? (
+                    ) : esDePago(p.id) && (!esDePago(plan) || enPrueba) ? (
+                      // En prueba beta también se puede pagar: la suscripción reemplaza la prueba.
                       <button type="button" onClick={() => ir("checkout", p.id)} disabled={!!enviando}
                         className={cn("h-11 text-sm font-medium tracking-wide flex items-center justify-center disabled:opacity-50",
                           destacado ? "bg-zinc-900 text-white" : "border border-zinc-900 text-zinc-900")}>

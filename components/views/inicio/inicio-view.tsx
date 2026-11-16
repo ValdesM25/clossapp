@@ -12,6 +12,7 @@ import { esDePago } from "@/constants/planes"
 import { RecordatorioArmario } from "./recordatorio-armario"
 import { PrimerosPasos } from "./primeros-pasos"
 import { CompletarPerfil } from "./completar-perfil"
+import { AvisoPrueba } from "./aviso-prueba"
 import { faltanPreguntasDespues } from "@/constants/onboarding"
 import { useOutfitDelDia } from "@/hooks/use-outfit-del-dia"
 import { usePlanesInicio } from "@/hooks/use-planificacion"
@@ -36,7 +37,7 @@ function diasSinUsar(p: Prenda): number {
 }
 
 export function InicioView({ onNavigate }: InicioViewProps) {
-  const { userName, userAvatarUrl, isGuest, userId, plan, estilo, abrirOnboarding } = useAuthContext()
+  const { userName, userAvatarUrl, isGuest, userId, plan, pruebaVence, estilo, abrirOnboarding } = useAuthContext()
   const { prendas, loading } = usePrendasContext()
   const [wornToday, setWornToday] = useState(false)
   // Si hay un outfit planeado para hoy, ese ocupa el lugar del outfit del día y no se gasta IA.
@@ -117,6 +118,8 @@ export function InicioView({ onNavigate }: InicioViewProps) {
       {!isGuest && !loading && prendas.length >= 3 && tieneEstilo && faltanPreguntasDespues(estilo) && (
         <CompletarPerfil userId={userId} onAbrir={() => abrirOnboarding("despues")} />
       )}
+
+      {!isGuest && <AvisoPrueba vence={pruebaVence} plan={plan} />}
 
       {!isGuest && <InstalarBanner />}
 

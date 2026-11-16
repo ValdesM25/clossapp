@@ -26,6 +26,8 @@ export function useAuth() {
   const [userAvatarUrl, setUserAvatarUrl] = useState("")
   // null mientras no se sabe (o si la tabla perfiles aun no existe): no se bloquea nada.
   const [plan, setPlan] = useState<Plan | null>(null)
+  // Fin de la prueba beta (código canjeado); null si nunca canjeó o ya paga.
+  const [pruebaVence, setPruebaVence] = useState<string | null>(null)
   const [estilo, setEstilo] = useState<EstiloPerfil | null>(null)
   // Solo muestra el acceso a /admin; los permisos reales los revisa la base.
   const [esAdmin, setEsAdmin] = useState(false)
@@ -58,7 +60,7 @@ export function useAuth() {
   const aplicarSesion = useCallback(async (user: { id: string; email?: string | null }) => {
     const { data } = await supabase
       .from("perfiles")
-      .select("plan, estilo, onboarding_completado, rol, punto_acopio_nombre, es_admin, nombre, telefono, avatar_url, cobros_activos, cobros_estado")
+      .select("plan, prueba_vence, estilo, onboarding_completado, rol, punto_acopio_nombre, es_admin, nombre, telefono, avatar_url, cobros_activos, cobros_estado")
       .eq("user_id", user.id)
       .maybeSingle()
     setUserId(user.id)
@@ -80,6 +82,7 @@ export function useAuth() {
     setCobrosActivos(!!data.cobros_activos)
     setCobrosEstado((data.cobros_estado as EstadoCobros | null) ?? (data.cobros_activos ? "activa" : "sin_cuenta"))
     setPlan(normalizarPlan(data.plan))
+    setPruebaVence(data.prueba_vence ?? null)
     setEstilo((data.estilo as EstiloPerfil | null) ?? null)
     if (!data.onboarding_completado) setMostrarOnboarding("inicial")
   }, [supabase])
@@ -114,6 +117,7 @@ export function useAuth() {
         setUserEmail("")
         setUserAvatarUrl("")
         setPlan(null)
+        setPruebaVence(null)
         setEstilo(null)
         setEsAdmin(false)
         setCobrosActivos(false)
@@ -224,6 +228,7 @@ export function useAuth() {
     setUserEmail("")
     setUserAvatarUrl("")
     setPlan(null)
+    setPruebaVence(null)
     setEstilo(null)
     setEsAdmin(false)
     setCobrosActivos(false)
@@ -303,7 +308,7 @@ export function useAuth() {
 
   return {
     userMode, userId, userName, userEmail, userPhone, userAvatarUrl, isGuest, isRecoleccion, isAuthenticated, initializing, plan,
-    estilo, mostrarOnboarding, abrirOnboarding, terminarOnboarding, esAdmin, cobrosActivos, cobrosEstado,
+    pruebaVence, estilo, mostrarOnboarding, abrirOnboarding, terminarOnboarding, esAdmin, cobrosActivos, cobrosEstado,
     demo, tourActivo, iniciarTour, cerrarTour, entrarModoDemo,
     login, register, loginWithProvider, resetPassword, clearError,
     logout, updateProfile, loading, error,

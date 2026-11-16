@@ -51,6 +51,8 @@ export async function sincronizarSuscripcion(sub: Stripe.Subscription): Promise<
     stripe_subscription_id: sub.id,
     suscripcion_estado: sub.status,
     suscripcion_vence: item ? new Date(item.current_period_end * 1000).toISOString() : null,
+    // Una suscripción real reemplaza la prueba beta; así el cron no la toca ni se avisa que "terminó".
+    prueba_vence: null,
     updated_at: new Date().toISOString(),
   }).eq("user_id", perfil.user_id)
   if (errUpdate) throw errUpdate

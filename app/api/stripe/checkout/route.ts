@@ -15,13 +15,14 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Inicia sesión para elegir un plan." }, { status: 401 })
 
-  const { data: perfil, error } = await supabase.from("perfiles").select("plan, stripe_customer_id").eq("user_id", user.id).maybeSingle()
+  const { data: perfil, error } = await supabase.from("perfiles").select("plan, stripe_customer_id, prueba_vence").eq("user_id", user.id).maybeSingle()
   if (error) {
     console.error("[stripe/checkout]", error.message)
     return NextResponse.json({ error: "No se pudo leer tu plan." }, { status: 500 })
   }
   // Un segundo pago crearía otra suscripción; el cambio de plan va por el portal.
-  if (esDePago(normalizarPlan(perfil?.plan))) {
+  // La prueba beta (código, sin Stripe) sí puede pagar: su plan lo reemplaza la suscripción.
+  if (esDePago(normalizarPlan(perfil?.plan)) && !perfil?.prueba_vence) {
     return NextResponse.json({ error: "Ya tienes un plan de pago. Cámbialo desde Administrar suscripción." }, { status: 409 })
   }
 
