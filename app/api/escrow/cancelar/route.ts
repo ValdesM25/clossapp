@@ -23,6 +23,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ...orden, stripe_reembolso_id: r.id })
   } catch (err) {
     console.error("[escrow/cancelar] reembolso", orden.id, err instanceof Error ? err.message : err)
-    return NextResponse.json({ error: "Se canceló tu pedido, pero el reembolso no salió. Escríbenos a support@clossapp.com." }, { status: 502 })
+    return NextResponse.json({ error: "Se canceló tu pedido, pero el reembolso no salió. Escríbenos a me@mauvaldes.dev." }, { status: 502 })
   }
 }

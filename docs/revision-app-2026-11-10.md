@@ -58,7 +58,7 @@ Lo que sí está bien en suscripciones: el webhook escucha `checkout.session.com
 
 ## Botones (recorrido automático de la demo de usuario)
 
-Se pulsaron 78 controles en Inicio, Armario, Outfit, Shop y Perfil (iPhone simulado, uno por uno, volviendo al estado inicial entre cada clic). Todos los enlaces llevan a donde dicen (`/politicas`, `mailto:support@clossapp.com`). Sin errores de JavaScript.
+Se pulsaron 78 controles en Inicio, Armario, Outfit, Shop y Perfil (iPhone simulado, uno por uno, volviendo al estado inicial entre cada clic). Todos los enlaces llevan a donde dicen (`/politicas`, `mailto:me@mauvaldes.dev`). Sin errores de JavaScript.
 
 Los que no cambiaron nada en pantalla:
 - Chips de ocasión y clima en Outfit, "Todos" y "COMPRAR" en Shop: son filtros que ya estaban activos o solo cambian de estilo. Funcionan bien.

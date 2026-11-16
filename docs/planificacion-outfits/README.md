@@ -88,7 +88,7 @@ Los pasos de Stripe se hacen con el **MCP de Stripe** (`mcp__stripe__*`), y cada
 3. **Vercel (producción):** cambiar `STRIPE_PRICE_PLUS` y `STRIPE_PRICE_ELITE` por los ids nuevos, con el MCP de Vercel (`edit_project_env`) o desde el panel, con OK de Mauri. **Ojo:** un precio que no esté en esas variables se trata como plan `gratis` (`lib/stripe.server.ts`), así que el cambio de variables y el deploy van juntos.
    **Push (P5), también antes del merge, con los valores fuera del agente:**
    - Generar las llaves con `npx web-push generate-vapid-keys`.
-   - En Vercel (producción): `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (por ejemplo `mailto:support@clossapp.com`) y `CRON_SECRET` (largo y al azar).
+   - En Vercel (producción): `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (por ejemplo `mailto:me@mauvaldes.dev`) y `CRON_SECRET` (largo y al azar).
    - En el SQL editor de Supabase: `select vault.create_secret('<el mismo valor que CRON_SECRET>', 'cron_secret');`
    - Las variables nuevas también se leen solo en el deploy nuevo (paso 4). Después, activar las notificaciones en un teléfono con una cuenta Elite para la prueba de la fase 6.
    - Después del deploy, programar la tarea de cron de los avisos (bloque comentado al final de `supabase/25-avisos-planificacion.sql`).

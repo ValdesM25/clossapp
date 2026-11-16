@@ -3,10 +3,10 @@
  *
  * LEGAL_CONTACTO debe apuntar SIEMPRE a un buzón que exista y se lea: es la
  * dirección por la que llegan las solicitudes de derechos ARCO, y la LFPDPPP
- * obliga a responderlas en 20 días hábiles. Cambiar a support@clossapp.com
- * únicamente cuando el dominio esté registrado y el buzón activo.
+ * obliga a responderlas en 20 días hábiles. Si se cambia el correo, confirmar
+ * antes que el buzón nuevo esté activo.
  */
-export const LEGAL_CONTACTO = "support@clossapp.com"
+export const LEGAL_CONTACTO = "me@mauvaldes.dev"
 
 /** Fecha de última actualización del aviso de privacidad y los términos. */
 export const LEGAL_VIGENCIA = "5 de noviembre de 2026"
