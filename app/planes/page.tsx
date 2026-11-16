@@ -152,10 +152,10 @@ export default function PlanesPage() {
                   <p className="text-xs text-zinc-500">
                     Si algo falla o tienes una idea, escríbenos desde Soporte, al final de la app.
                   </p>
-                  <button type="button" onClick={() => setBienvenida(null)}
-                    className="mt-2 h-11 w-full bg-zinc-900 text-white text-sm font-medium tracking-wide">
+                  {/* Recarga la app para que Inicio lea el plan nuevo. */}
+                  <Link href="/" className="mt-2 h-11 w-full bg-zinc-900 text-white text-sm font-medium tracking-wide flex items-center justify-center">
                     Empezar
-                  </button>
+                  </Link>
                 </div>
               )}
             </CenteredModal>
