@@ -14,28 +14,28 @@
 }
 
 /*
- * Paleta de marca (branding Clossapp): beige arena de base, negro grafito
- * para texto y botones, terracota de acento, blanco óptico en tarjetas.
+ * Paleta de marca (branding Clossapp): beige arena en fondo y tarjetas, negro
+ * grafito para texto y botones, terracota de acento.
  */
 :root {
   --background: #E8E3DC;
   --foreground: #1F1F1F;
-  --card: #FFFFFF;
+  --card: #E8E3DC;
   --card-foreground: #1F1F1F;
-  --popover: #FFFFFF;
+  --popover: #E8E3DC;
   --popover-foreground: #1F1F1F;
   --primary: #1F1F1F;
-  --primary-foreground: #FFFFFF;
-  --secondary: #F0ECE6;
+  --primary-foreground: #E8E3DC;
+  --secondary: #DBD4CA;
   --secondary-foreground: #1F1F1F;
-  --muted: #F0ECE6;
-  --muted-foreground: #6B645C;
-  --accent: #F0ECE6;
+  --muted: #DBD4CA;
+  --muted-foreground: #625B54;
+  --accent: #DBD4CA;
   --accent-foreground: #1F1F1F;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: #E3DDD5;
-  --input: #E3DDD5;
+  --border: #CFC6BA;
+  --input: #CFC6BA;
   --ring: #C97863;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -131,18 +131,20 @@
 }
 
 /*
- * La app pinta casi todo con clases zinc-* (más de 2,000 usos). Se redefine la
- * escala en tonos cálidos con la misma luminosidad que la original (los claros
- * siguen siendo superficies más claras que el beige del fondo) y 900 en negro
- * grafito. 500 queda en 4.5:1 sobre el beige.
+ * La app pinta casi todo con clases white y zinc-* (más de 2,000 usos). Se
+ * redefinen aquí para aplicar la marca sin tocar componentes: white pasa a ser
+ * el beige arena (tarjetas, modales y campos quedan beige) y la escala zinc
+ * baja desde ese beige hasta el negro grafito (900), con la misma jerarquía
+ * que tenía sobre blanco. 500 queda en 4.5:1 incluso sobre zinc-100.
  */
 @theme {
-  --color-zinc-50: #F7F5F2;
-  --color-zinc-100: #F0ECE6;
-  --color-zinc-200: #E3DDD5;
-  --color-zinc-300: #CFC7BC;
-  --color-zinc-400: #A39A90;
-  --color-zinc-500: #6B645C;
+  --color-white: #E8E3DC;
+  --color-zinc-50: #E2DCD4;
+  --color-zinc-100: #DBD4CA;
+  --color-zinc-200: #CFC6BA;
+  --color-zinc-300: #BCB2A5;
+  --color-zinc-400: #9C9389;
+  --color-zinc-500: #625B54;
   --color-zinc-600: #57514A;
   --color-zinc-700: #45403B;
   --color-zinc-800: #2E2B28;
@@ -193,7 +195,7 @@
 
   ::selection {
     background-color: var(--color-terracota);
-    color: #FFFFFF;
+    color: var(--color-zinc-900);
   }
 
   /* iOS hace zoom al enfocar un campo de menos de 16px y no regresa. */

@@ -138,3 +138,23 @@ y lista los elementos con borde cuyo fondo real termina en beige. Quedó solo el
 estado vacío punteado del Simulador (transparente a propósito). Donar con
 cuenta real, Vender y onboarding no se pueden abrir en la demo: se revisaron
 en el código.
+
+## Fase 6: tarjetas beige, no blancas
+
+**Decisión de Mauri:** las tarjetas van beige, no blancas ni gris claro. Dejar
+las tarjetas en "blanco óptico" había sido decisión mía y no era lo acordado.
+
+**Qué se cambió (solo `app/globals.css`):**
+
+- `--color-white` pasa a beige arena `#E8E3DC`. Todo lo que era blanco
+  (tarjetas, modales, campos, barra inferior, botones claros) queda beige, y
+  el texto blanco sobre botones grafito queda en beige (12.9:1).
+- La escala zinc baja desde ese beige: 50 `#E2DCD4`, 100 `#DBD4CA`, 200
+  `#CFC6BA` (bordes, se notan sobre el beige), 300 `#BCB2A5`, 400 `#9C9389`,
+  500 `#625B54` (4.5:1 incluso sobre zinc-100). Mantiene la jerarquía que tenía
+  la app sobre blanco: fondo < tintes < bordes < texto.
+- Tokens de shadcn (`--card`, `--popover`, `--muted`, `--border`, etc.)
+  alineados; la selección de texto usa texto grafito.
+
+Los `bg-white` agregados en la fase 5 se quedan: ahora pintan beige, igual que
+el resto.
