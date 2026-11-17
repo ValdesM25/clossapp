@@ -85,25 +85,25 @@ export function LoginView() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="min-h-dvh bg-white">
+      className="min-h-dvh bg-background">
       <div className="flex min-h-dvh w-full flex-col lg:flex-row">
         {/* Desktop: columna sticky con imagen completa */}
         <div className="hidden lg:block sticky top-0 h-dvh w-[50%]">
           <img src="/img_login_1mitad.jpg" alt="Imagen de bienvenida" className="h-full w-full object-cover" />
         </div>
 
-        {/* Móvil: imagen en la parte de arriba con degradado suave hacia blanco */}
+        {/* Móvil: imagen en la parte de arriba con degradado suave hacia el fondo */}
         <div className="block lg:hidden relative h-56 sm:h-64 w-full overflow-hidden shrink-0 bg-zinc-100">
           <img
             src="/img_login_1mitad.jpg"
             alt="Imagen de bienvenida"
             className="h-full w-full object-cover object-center"
           />
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
         </div>
 
         {/* Contenido / Formulario */}
-        <div className="flex w-full lg:w-[50%] flex-col justify-center bg-white px-6 pb-12 pt-0 sm:px-10 lg:px-16 lg:py-12">
+        <div className="flex w-full lg:w-[50%] flex-col justify-center bg-background px-6 pb-12 pt-0 sm:px-10 lg:px-16 lg:py-12">
           <div className="w-full max-w-sm mx-auto">
             {/* Logo en medio, posicionado con la transición de la imagen al blanco */}
             <div className="mb-6 text-center -mt-12 sm:-mt-14 relative z-10 lg:mt-0 lg:mb-8">

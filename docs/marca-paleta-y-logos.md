@@ -100,5 +100,6 @@ porque sobre beige da 2.5:1 y sobre blanco 3.2:1.
 - `plan-detalle.tsx`: chip "Hoy · día X de Y" del plan en curso.
 - `simulador-view.tsx` y `planificacion-inicio.tsx`: insignia "Elite".
 
-Las pantallas completas en blanco (login, onboarding, vender, carrito y
-páginas sueltas) siguen sin cambio: queda pendiente decidir si pasan a beige.
+El login pasa a beige (fondo, panel y degradado de la foto) a pedido de
+Mauri; campos y botones siguen blancos. Onboarding, vender, carrito y
+páginas sueltas siguen en blanco: queda pendiente decidir si pasan a beige.
