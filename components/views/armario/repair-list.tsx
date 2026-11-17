@@ -30,7 +30,7 @@ export function RepairList({ reparaciones, prendas, loading, onComplete }: Repai
         return (
           <motion.div key={rep.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             exit={{ opacity: 0, x: 40, transition: { duration: 0.2 } }}
-            className="flex items-center gap-3 border border-zinc-100 p-3">
+            className="flex items-center gap-3 bg-white border border-zinc-100 p-3">
             {prenda?.image_url
               ? <img src={prenda.image_url} alt={prenda.name} className="w-10 h-10 object-cover shrink-0" />
               : <div className="w-10 h-10 bg-zinc-100 flex items-center justify-center shrink-0"><Shirt className="w-4 h-4 text-zinc-300" /></div>}

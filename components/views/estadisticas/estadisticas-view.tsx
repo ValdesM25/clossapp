@@ -70,7 +70,7 @@ export function EstadisticasView({ onSellPrenda }: EstadisticasViewProps) {
       {loading && !stats ? (
         <Esqueleto />
       ) : error && !stats ? (
-        <div className="mx-4 border border-zinc-100 p-6 text-center">
+        <div className="mx-4 bg-white border border-zinc-100 p-6 text-center">
           <p className="text-sm text-zinc-900">No pudimos cargar tus estadísticas.</p>
           <button onClick={refresh} className="mt-3 text-xs border border-zinc-900 px-4 py-2 tracking-wide">Reintentar</button>
         </div>

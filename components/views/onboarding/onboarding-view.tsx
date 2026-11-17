@@ -50,7 +50,7 @@ export function OnboardingView({ modo, inicial, onTerminar }: OnboardingViewProp
   }
 
   return (
-    <div className="min-h-dvh bg-white flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <header className="px-6 pt-6 pb-4 max-w-xl w-full mx-auto">
         <div className="flex items-center justify-between">
           <button type="button" onClick={() => setPaso((p) => p - 1)} disabled={paso === 0}
@@ -99,7 +99,7 @@ export function OnboardingView({ modo, inicial, onTerminar }: OnboardingViewProp
                         <button key={opcion} type="button" aria-pressed={activo} onClick={() => elegir(campo, opcion)}
                           className={cn(
                             "min-h-11 px-4 text-sm border transition-colors flex items-center gap-1.5",
-                            activo ? "bg-zinc-900 border-zinc-900 text-white" : "border-zinc-300 text-zinc-700 hover:border-zinc-500",
+                            activo ? "bg-zinc-900 border-zinc-900 text-white" : "bg-white border-zinc-300 text-zinc-700 hover:border-zinc-500",
                           )}>
                           {activo && <Check className="w-3 h-3" aria-hidden="true" />}
                           {opcion}
@@ -114,7 +114,7 @@ export function OnboardingView({ modo, inicial, onTerminar }: OnboardingViewProp
         </AnimatePresence>
       </main>
 
-      <footer className="fixed bottom-0 inset-x-0 bg-white border-t border-zinc-100 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <footer className="fixed bottom-0 inset-x-0 bg-background border-t border-zinc-100 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="max-w-xl mx-auto">
           <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={siguiente}
             className="w-full h-12 bg-zinc-900 text-white text-sm font-medium">

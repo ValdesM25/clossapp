@@ -170,7 +170,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
 
             {/* Action button */}
             {isGuest ? (
-              <p className="text-xs text-zinc-500 border border-zinc-100 p-4 text-center">
+              <p className="text-xs text-zinc-500 bg-white border border-zinc-100 p-4 text-center">
                 Crea una cuenta para registrar tus donaciones en la base de datos y ganar puntos.
               </p>
             ) : (
@@ -352,7 +352,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
             </div>
 
             {disponibles.length === 0 ? (
-              <p className="text-xs text-zinc-500 border border-zinc-100 p-6 text-center">
+              <p className="text-xs text-zinc-500 bg-white border border-zinc-100 p-6 text-center">
                 No tienes prendas disponibles en tu armario para donar.
               </p>
             ) : (

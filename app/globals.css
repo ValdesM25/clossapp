@@ -26,16 +26,16 @@
   --popover-foreground: #1F1F1F;
   --primary: #1F1F1F;
   --primary-foreground: #FFFFFF;
-  --secondary: #DFD9D0;
+  --secondary: #F0ECE6;
   --secondary-foreground: #1F1F1F;
-  --muted: #DFD9D0;
+  --muted: #F0ECE6;
   --muted-foreground: #6B645C;
-  --accent: #DFD9D0;
+  --accent: #F0ECE6;
   --accent-foreground: #1F1F1F;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: #D3CBC0;
-  --input: #D3CBC0;
+  --border: #E3DDD5;
+  --input: #E3DDD5;
   --ring: #C97863;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -132,15 +132,16 @@
 
 /*
  * La app pinta casi todo con clases zinc-* (más de 2,000 usos). Se redefine la
- * escala aquí, cálida de beige arena (50) a negro grafito (900), para aplicar
- * la marca sin tocar componentes. 500 queda en 4.5:1 sobre el beige.
+ * escala en tonos cálidos con la misma luminosidad que la original (los claros
+ * siguen siendo superficies más claras que el beige del fondo) y 900 en negro
+ * grafito. 500 queda en 4.5:1 sobre el beige.
  */
 @theme {
-  --color-zinc-50: #E8E3DC;
-  --color-zinc-100: #DFD9D0;
-  --color-zinc-200: #D3CBC0;
-  --color-zinc-300: #BDB4A8;
-  --color-zinc-400: #9C9389;
+  --color-zinc-50: #F7F5F2;
+  --color-zinc-100: #F0ECE6;
+  --color-zinc-200: #E3DDD5;
+  --color-zinc-300: #CFC7BC;
+  --color-zinc-400: #A39A90;
   --color-zinc-500: #6B645C;
   --color-zinc-600: #57514A;
   --color-zinc-700: #45403B;

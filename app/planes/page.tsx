@@ -105,7 +105,7 @@ export default function PlanesPage() {
   const volverA = (id: Plan) => (id === "gratis" ? "/" : `/?volver=${encodeURIComponent(`/planes?plan=${id}`)}`)
 
   return (
-    <main className="min-h-dvh bg-white">
+    <main className="min-h-dvh bg-background">
       <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
         <header className="text-center space-y-3">
           <Link href="/" className="inline-block mb-2"><img src="/logo.svg" alt="Clossapp" className="mx-auto h-10 w-auto" /></Link>
@@ -122,14 +122,14 @@ export default function PlanesPage() {
         {estado !== "cargando" && (
           <>
             {plan && (pagoOk || esperando) && (
-              <p role="status" className="flex items-center justify-center gap-2 border border-zinc-200 px-4 py-3 text-sm text-zinc-700">
+              <p role="status" className="flex items-center justify-center gap-2 bg-white border border-zinc-200 px-4 py-3 text-sm text-zinc-700">
                 {pagoOk
                   ? <><CheckCircle2 className="w-4 h-4 text-emerald-600" aria-hidden="true" /> Listo, ya tienes el plan {NOMBRE_PLAN[plan]}.</>
                   : <><Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> Confirmando tu pago…</>}
               </p>
             )}
             {volvioDelPago && !pagoOk && !esperando && (
-              <p role="status" className="border border-zinc-200 px-4 py-3 text-sm text-zinc-700 text-center">
+              <p role="status" className="bg-white border border-zinc-200 px-4 py-3 text-sm text-zinc-700 text-center">
                 Tu pago se está procesando. Tu plan se activará en unos minutos.
               </p>
             )}
@@ -161,7 +161,7 @@ export default function PlanesPage() {
             </CenteredModal>
 
             {enPrueba && plan && pruebaVence ? (
-              <p role="status" className="border border-zinc-200 px-4 py-3 text-sm text-zinc-700 text-center">
+              <p role="status" className="bg-white border border-zinc-200 px-4 py-3 text-sm text-zinc-700 text-center">
                 Tienes {NOMBRE_PLAN[plan]} de prueba hasta el {fechaCorta(pruebaVence)}. Si no quieres perder tus funciones, elige tu plan antes de esa fecha.
               </p>
             ) : estado === "listo" && !esDePago(plan) && !codigoCanjeado ? (
@@ -169,7 +169,7 @@ export default function PlanesPage() {
                 <label htmlFor="codigo" className="block text-xs text-zinc-500 text-center">¿Tienes un código?</label>
                 <div className="flex gap-2">
                   <input id="codigo" value={codigo} onChange={(e) => setCodigo(e.target.value)} autoComplete="off"
-                    className="h-11 flex-1 min-w-0 border border-zinc-200 px-3 text-sm text-zinc-900 focus:outline-none focus:border-zinc-900" />
+                    className="h-11 flex-1 min-w-0 bg-white border border-zinc-200 px-3 text-sm text-zinc-900 focus:outline-none focus:border-zinc-900" />
                   <button type="submit" disabled={!!enviando || !codigo.trim()}
                     className="h-11 px-5 border border-zinc-900 text-sm font-medium tracking-wide text-zinc-900 disabled:opacity-50">
                     {enviando === "codigo" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Canjear"}
@@ -183,7 +183,7 @@ export default function PlanesPage() {
                 const actual = p.id === plan
                 const destacado = elegido ? p.id === elegido : p.id === "plus"
                 return (
-                  <article key={p.id} className={cn("flex flex-col border p-6", destacado ? "border-zinc-900" : "border-zinc-200")}>
+                  <article key={p.id} className={cn("flex flex-col bg-white border p-6", destacado ? "border-zinc-900" : "border-zinc-200")}>
                     <h2 className="font-serif text-xl text-zinc-900">{NOMBRE_PLAN[p.id]}</h2>
                     <p className="text-xs text-zinc-500 mt-1">{p.resumen}</p>
                     <p className="mt-5 mb-5 flex items-baseline gap-1">
@@ -205,7 +205,7 @@ export default function PlanesPage() {
                         {p.id === "gratis" ? "Crear cuenta gratis" : `Elegir ${NOMBRE_PLAN[p.id]}`}
                       </Link>
                     ) : actual && !enPrueba ? (
-                      <p className="h-11 flex items-center justify-center border border-zinc-200 text-sm text-zinc-500">Tu plan actual</p>
+                      <p className="h-11 flex items-center justify-center bg-white border border-zinc-200 text-sm text-zinc-500">Tu plan actual</p>
                     ) : volvioDelPago && (!esDePago(plan) || enPrueba) ? (
                       // Recién pagó y el webhook aún no llega: otro botón de pago aquí cobraría dos veces.
                       <p className="h-11 flex items-center justify-center text-xs text-zinc-500 text-center">Esperando la confirmación del pago</p>

@@ -211,7 +211,7 @@ export function PerfilView() {
 
       <div className="flex flex-col gap-2">
         <button type="button" onClick={() => void logout()}
-          className="h-12 border border-zinc-200 text-sm text-red-600 font-medium flex items-center justify-center gap-2 hover:border-red-300 transition-colors">
+          className="h-12 bg-white border border-zinc-200 text-sm text-red-600 font-medium flex items-center justify-center gap-2 hover:border-red-300 transition-colors">
           <LogOut className="w-4 h-4" aria-hidden="true" /> {isGuest ? "Salir de la demo" : "Cerrar sesión"}
         </button>
         {isGuest && <p className="text-xs text-zinc-500 text-center">En la demo puedes probar todo, pero nada se guarda.</p>}
@@ -375,7 +375,7 @@ function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode
   return (
     <section className="flex flex-col">
       <h2 className="text-xs text-zinc-500 uppercase tracking-widest mb-2">{titulo}</h2>
-      <div className="border border-zinc-200 divide-y divide-zinc-100">{children}</div>
+      <div className="bg-white border border-zinc-200 divide-y divide-zinc-100">{children}</div>
     </section>
   )
 }

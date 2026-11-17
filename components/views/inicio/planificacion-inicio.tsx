@@ -99,7 +99,7 @@ export function TarjetaPlanificacion({ planes, plan, previa, hoy }: {
   hoy: string
 }) {
   const proximo = previa ? null : proximoPlan(planes, hoy)
-  const tarjeta = "w-full border border-zinc-200 hover:border-zinc-900 p-5 text-left flex items-start gap-4 transition-colors"
+  const tarjeta = "w-full bg-white border border-zinc-200 hover:border-zinc-900 p-5 text-left flex items-start gap-4 transition-colors"
 
   if (proximo) {
     const listos = proximo.momentos.filter((m) => m.estado === "listo").length

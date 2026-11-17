@@ -150,7 +150,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
         ) : hayPlaneado ? (
           <OutfitPlaneado deHoy={deHoy} prendas={prendas} supabase={planes.supabase} onCambio={planes.recargar} />
         ) : sinOutfit && !isGuest ? (
-          <div className="border border-zinc-200 p-6 flex flex-col items-start gap-4">
+          <div className="bg-white border border-zinc-200 p-6 flex flex-col items-start gap-4">
             <div>
               <h2 className="font-serif text-xl text-zinc-900">Tu outfit del día aparece aquí</h2>
               <p className="text-sm text-zinc-500 mt-1 leading-relaxed">
@@ -247,7 +247,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 onClick={() => onNavigate?.("simulador")}
-                className="w-full mt-2 h-10 border border-zinc-300 text-zinc-900 text-xs font-medium flex items-center justify-center gap-1.5 hover:border-zinc-900 transition-colors"
+                className="w-full mt-2 h-10 bg-white border border-zinc-300 text-zinc-900 text-xs font-medium flex items-center justify-center gap-1.5 hover:border-zinc-900 transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Combinar
               </motion.button>

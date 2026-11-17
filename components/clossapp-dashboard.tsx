@@ -98,7 +98,7 @@ function Contenido() {
   // Collection Point / Punto de Recolección isolated portal mode
   if (isRecoleccion || userMode === "RECOLECCION") {
     return (
-      <div className="overflow-y-auto h-dvh overscroll-contain bg-zinc-50">
+      <div className="overflow-y-auto h-dvh overscroll-contain bg-background">
         <PuntoRecoleccionView />
         <BarraDemo abajo="bottom-4" />
         <GuiaDemo />

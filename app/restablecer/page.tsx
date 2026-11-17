@@ -41,7 +41,7 @@ export default function RestablecerPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white flex items-center justify-center px-6">
+    <main className="min-h-screen bg-background flex items-center justify-center px-6">
       <form onSubmit={guardar} className="w-full max-w-md space-y-4">
         <img src="/logo.svg" alt="Clossapp" className="mx-auto h-12 w-auto mb-8" />
         <h1 className="font-serif text-2xl text-zinc-900 text-center">Nueva contraseña</h1>

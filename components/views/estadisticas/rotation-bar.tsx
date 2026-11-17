@@ -64,7 +64,7 @@ export function RotationBar({ rotacion, prendas }: RotationBarProps) {
         {ORDEN_ROTACION.filter((r) => r !== "nueva" || rotacion.nueva > 0).map((r) => (
           <button key={r} type="button" onClick={() => rotacion[r] > 0 && alternar(r)}
             aria-pressed={elegida === r} disabled={rotacion[r] === 0}
-            className={`flex items-center gap-2.5 p-2.5 border text-left transition-colors disabled:opacity-50 ${elegida === r ? "border-zinc-900" : "border-zinc-100"}`}>
+            className={`flex items-center gap-2.5 p-2.5 bg-white border text-left transition-colors disabled:opacity-50 ${elegida === r ? "border-zinc-900" : "border-zinc-100"}`}>
             <span className="w-3 h-3 shrink-0 rounded-[2px]" style={RELLENO[r]} aria-hidden />
             <span className="min-w-0 flex-1">
               <span className="flex items-baseline justify-between gap-2">

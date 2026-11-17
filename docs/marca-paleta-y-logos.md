@@ -103,3 +103,38 @@ porque sobre beige da 2.5:1 y sobre blanco 3.2:1.
 El login pasa a beige (fondo, panel y degradado de la foto) a pedido de
 Mauri; campos y botones siguen blancos. Onboarding, vender, carrito y
 páginas sueltas siguen en blanco: queda pendiente decidir si pasan a beige.
+
+## Fase 5: tarjetas que se perdían en el beige y pantallas completas
+
+**Decisión de Mauri:** faltaban tarjetas (estadísticas, planificación, planes,
+perfil, donar) y pidió pasar a beige onboarding, vender, carrito y las páginas
+`/planes`, `/centros`, `/politicas`, `/restablecer` y `/offline`. El video de
+instalación en iOS se queda como está; lo rehace él después.
+
+**Causa:** en la fase 1 `zinc-50` quedó igual al beige del fondo, así que toda
+tarjeta con `bg-zinc-50` se volvía invisible; y las tarjetas sin fondo se veían
+blancas solo porque antes la página era blanca.
+
+**Qué se cambió:**
+
+- `globals.css`: la escala zinc vuelve a la luminosidad original en tonos
+  cálidos (50 `#F7F5F2`, 100 `#F0ECE6`, 200 `#E3DDD5`, 300 `#CFC7BC`, 400
+  `#A39A90`); 500 y los oscuros no cambian. El beige del fondo ya no sale de
+  `zinc-50` sino de `bg-background`. Tokens de shadcn alineados.
+- `components/ui/input.tsx`, `textarea.tsx`, `select.tsx`: fondo blanco en vez
+  de transparente, para que los campos se vean sobre el beige.
+- Tarjetas sin fondo pasan a `bg-white`: grupos de rotación y estado vacío de
+  Estadísticas, listas y botón Salir de Perfil, tarjeta de Planificación y
+  estado sin outfit de Inicio, reparaciones del Armario, selector de clima del
+  Simulador, avisos de Donar, tarjetas de Vender, planes de `/planes`, bloque
+  de solicitud de `/centros`, índice y tablas de `/politicas`, opciones del
+  onboarding.
+- Fondos de pantalla completa a `bg-background`: onboarding (y su pie),
+  vender e intro de vender (y su pie), carrito, `/planes`, `/centros`,
+  `/politicas`, `/restablecer`, `/offline`. El centro de acopio también.
+
+**Cómo se revisó:** un script en el navegador recorre cada pantalla de la demo
+y lista los elementos con borde cuyo fondo real termina en beige. Quedó solo el
+estado vacío punteado del Simulador (transparente a propósito). Donar con
+cuenta real, Vender y onboarding no se pueden abrir en la demo: se revisaron
+en el código.
