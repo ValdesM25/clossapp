@@ -136,7 +136,7 @@ export function TourGuiado({ pasos, onCerrar, accionFinal }: TourGuiadoProps) {
         {paso.interactivo && <p className="text-[11px] text-zinc-700 mt-2">Puedes tocar lo resaltado para probarlo.</p>}
 
         <div className="mt-5 h-0.5 bg-zinc-100" aria-hidden="true">
-          <div className="h-full bg-zinc-900 transition-[width] duration-300" style={{ width: `${((indice + 1) / pasos.length) * 100}%` }} />
+          <div className="h-full bg-terracota transition-[width] duration-300" style={{ width: `${((indice + 1) / pasos.length) * 100}%` }} />
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-2">

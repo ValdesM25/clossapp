@@ -139,7 +139,7 @@ export function TarjetaPlanificacion({ planes, plan, previa, hoy }: {
       <Luggage className="w-5 h-5 text-zinc-900 shrink-0 mt-0.5" aria-hidden="true" />
       <span className="flex-1 min-w-0 flex flex-col gap-1">
         <span className="font-serif text-xl text-zinc-900">Planifica tu semana y tus viajes</span>
-        <span className="self-start text-[11px] uppercase tracking-widest px-1.5 py-0.5 border border-zinc-300 text-zinc-700">Elite</span>
+        <span className="self-start text-[11px] uppercase tracking-widest px-1.5 py-0.5 bg-terracota text-zinc-900">Elite</span>
         <span className="text-xs text-zinc-600 leading-relaxed">Outfits para cada día, fechas importantes y tu maleta lista.</span>
       </span>
       <ArrowRight className="w-4 h-4 text-zinc-400 shrink-0 mt-1" aria-hidden="true" />

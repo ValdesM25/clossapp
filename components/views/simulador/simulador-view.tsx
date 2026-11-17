@@ -73,7 +73,7 @@ export function SimuladorView({ onElegir }: { onElegir: () => void }) {
         <Luggage className="w-4 h-4" aria-hidden="true" />
         <span className="underline underline-offset-4">Planear varios días</span>
         {plan !== "elite" && (
-          <span className="text-[11px] uppercase tracking-widest px-1.5 py-0.5 border border-zinc-300 text-zinc-600 no-underline">Elite</span>
+          <span className="text-[11px] uppercase tracking-widest px-1.5 py-0.5 bg-terracota text-zinc-900 no-underline">Elite</span>
         )}
       </button>
 

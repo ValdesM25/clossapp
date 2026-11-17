@@ -86,3 +86,19 @@ viaje en Planificación, que seguía en negro puro).
   beige a blanco).
 - Se dejan blancas a propósito las tarjetas, modales, menús y la barra de
   navegación: son el "blanco óptico" de la paleta.
+
+## Fase 4: dónde va la terracota
+
+**Decisión de Mauri:** opción B. La terracota significa "IA / Elite" y se usa
+como relleno con texto grafito (5.1:1), línea o ícono; nunca como texto chico,
+porque sobre beige da 2.5:1 y sobre blanco 3.2:1.
+
+- `bottom-nav.tsx`: raya del ícono activo y destellos del botón Outfit.
+- `tour-guiado.tsx`: barra de progreso de la guía.
+- `inicio-view.tsx`: insignia "Sugerencia IA de Hoy" y destellos de la
+  tarjeta del outfit del día.
+- `plan-detalle.tsx`: chip "Hoy · día X de Y" del plan en curso.
+- `simulador-view.tsx` y `planificacion-inicio.tsx`: insignia "Elite".
+
+Las pantallas completas en blanco (login, onboarding, vender, carrito y
+páginas sueltas) siguen sin cambio: queda pendiente decidir si pasan a beige.

@@ -80,7 +80,7 @@ export function PlanDetalle({
         <div>
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs tracking-widest text-zinc-400 uppercase font-semibold">{NOMBRE_TIPO[plan.tipo]}</p>
-            <p className={cn("text-xs px-2 py-1 shrink-0", estado === "en_curso" ? "bg-white text-zinc-900 font-medium" : "border border-white/20 text-zinc-300")}>
+            <p className={cn("text-xs px-2 py-1 shrink-0", estado === "en_curso" ? "bg-terracota text-zinc-900 font-medium" : "border border-white/20 text-zinc-300")}>
               {cuentaRegresiva(plan, hoy)}
             </p>
           </div>

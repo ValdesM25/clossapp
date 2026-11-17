@@ -166,7 +166,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
         <div className="bg-zinc-900 text-white p-5 sm:p-6">
           <div className="flex justify-between items-start mb-4 relative z-10">
             <div>
-              <span className="text-[11px] uppercase tracking-widest px-2 py-0.5 bg-white/10 text-zinc-300">
+              <span className="text-[11px] uppercase tracking-widest px-2 py-0.5 bg-terracota text-zinc-900">
                 {outfit && !esDePago(plan) ? "Sugerencia de Hoy" : "Sugerencia IA de Hoy"}
               </span>
               <h2 className="font-serif text-xl text-white mt-2">
@@ -176,7 +176,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
                 {outfit?.descripcion ?? "Una combinación cómoda con lo que ya tienes."}
               </p>
             </div>
-            <Sparkles className="w-5 h-5 text-zinc-400 shrink-0" aria-hidden="true" />
+            <Sparkles className="w-5 h-5 text-terracota shrink-0" aria-hidden="true" />
           </div>
 
           {/* Prendas que componen el outfit */}
