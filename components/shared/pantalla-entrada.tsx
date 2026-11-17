@@ -59,7 +59,7 @@ export function PantallaEntrada() {
       {activa && !lista && (
         <motion.div key="entrada" role="status" aria-label="Cargando Clossapp"
           exit={{ opacity: 0 }} transition={{ duration: reducir ? 0 : 0.35, ease: "easeOut" }}
-          className="fixed inset-0 z-[250] flex flex-col items-center justify-center gap-6 bg-white">
+          className="fixed inset-0 z-[250] flex flex-col items-center justify-center gap-6 bg-background">
           <motion.img src="/logo.svg" alt="Clossapp" className="h-12 w-auto"
             // transform en texto (no x/y/scale) para que corra en la GPU mientras la app carga.
             initial={reducir ? false : { opacity: 0, transform: "translateY(8px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }}

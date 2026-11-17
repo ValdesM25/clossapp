@@ -31,8 +31,8 @@ export function HealthRing({ salud, total }: HealthRingProps) {
         <div className="relative shrink-0" style={{ width: TAMANO, height: TAMANO }}
           role="img" aria-label={salud === null ? "Sin datos de uso todavía" : `Salud del armario: ${valor} de 100`}>
           <svg width={TAMANO} height={TAMANO} viewBox={`0 0 ${TAMANO} ${TAMANO}`} className="-rotate-90">
-            <circle cx={TAMANO / 2} cy={TAMANO / 2} r={RADIO} fill="none" stroke="#e4e4e7" strokeWidth={GROSOR} />
-            <motion.circle cx={TAMANO / 2} cy={TAMANO / 2} r={RADIO} fill="none" stroke="#18181b"
+            <circle cx={TAMANO / 2} cy={TAMANO / 2} r={RADIO} fill="none" stroke="var(--color-zinc-200)" strokeWidth={GROSOR} />
+            <motion.circle cx={TAMANO / 2} cy={TAMANO / 2} r={RADIO} fill="none" stroke="var(--color-zinc-900)"
               strokeWidth={GROSOR} strokeLinecap="round" strokeDasharray={CIRCUNFERENCIA}
               initial={{ strokeDashoffset: CIRCUNFERENCIA }}
               animate={{ strokeDashoffset: CIRCUNFERENCIA * (1 - valor / 100) }}

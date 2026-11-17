@@ -25,7 +25,7 @@ export function ColorPalette({ colores, sinColor }: ColorPaletteProps) {
         aria-label={colores.map((c) => `${FAMILIAS_COLOR[c.familia].nombre} ${c.total}`).join(", ")}>
         {colores.map((c, i) => (
           <motion.div key={c.familia} title={`${FAMILIAS_COLOR[c.familia].nombre}: ${c.total}`}
-            className={`h-full min-w-[6px] ${CLAROS.has(c.familia) ? "shadow-[inset_0_0_0_1px_#e4e4e7]" : ""}`}
+            className={`h-full min-w-[6px] ${CLAROS.has(c.familia) ? "shadow-[inset_0_0_0_1px_var(--color-zinc-200)]" : ""}`}
             style={{ background: FAMILIAS_COLOR[c.familia].hex, flexBasis: 0 }}
             initial={{ flexGrow: 0, opacity: 0 }} animate={{ flexGrow: c.total, opacity: 1 }}
             transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1], delay: 0.05 * i }} />

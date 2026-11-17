@@ -15,10 +15,10 @@ interface RotationBarProps {
 // Un solo tono de oscuro a claro: más oscuro = más uso. "Nueva" lleva trama porque
 // no es "menos uso", es "todavía sin historial".
 const RELLENO: Record<Rotacion, React.CSSProperties> = {
-  activa: { background: "#18181b" },
-  ocasional: { background: "#71717a" },
-  dormida: { background: "#d4d4d8" },
-  nueva: { background: "repeating-linear-gradient(135deg, #a1a1aa 0 1.5px, #f4f4f5 1.5px 5px)" },
+  activa: { background: "var(--color-zinc-900)" },
+  ocasional: { background: "var(--color-zinc-500)" },
+  dormida: { background: "var(--color-zinc-300)" },
+  nueva: { background: "repeating-linear-gradient(135deg, var(--color-zinc-400) 0 1.5px, var(--color-zinc-100) 1.5px 5px)" },
 }
 
 export function RotationBar({ rotacion, prendas }: RotationBarProps) {

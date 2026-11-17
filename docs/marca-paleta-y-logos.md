@@ -71,3 +71,18 @@ con fontTools + uharfbuzz y encajarlo en `WORDMARK_BOX` (base y=465, alto 134).
 - `public/logo_f.png` no se tocó: no lo usa ningún componente.
 - Los íconos de la PWA ya instalada en un teléfono se actualizan solos cuando
   el sistema relee el manifest; puede tardar días o requerir reinstalar.
+
+## Fase 3: colores fijos que se saltaban la paleta
+
+**Decisión de Mauri:** corregir lo que quedó fuera (señaló la tarjeta del
+viaje en Planificación, que seguía en negro puro).
+
+- `plan-detalle.tsx`: tarjeta del plan de `#121212` a `bg-zinc-900` (grafito).
+- Estadísticas (`rotation-bar`, `health-ring`, `color-palette`): los grises
+  zinc escritos en hex pasan a `var(--color-zinc-*)`, así siguen la escala.
+- Blancos sobre el beige dentro de la app pasan a `bg-background`: tira de
+  días y barra de acción en Planificación, barra fija de Donar, degradado de
+  la vista previa Elite y la pantalla de carga (para no saltar del splash
+  beige a blanco).
+- Se dejan blancas a propósito las tarjetas, modales, menús y la barra de
+  navegación: son el "blanco óptico" de la paleta.
