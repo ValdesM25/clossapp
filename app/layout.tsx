@@ -56,7 +56,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   // Sin bloquear el zoom (accesibilidad): el zoom al enfocar campos se evita con inputs de 16px.
-  themeColor: '#ffffff',
+  themeColor: '#E8E3DC',
   // Que el contenido llegue hasta los bordes en pantallas con notch; el
   // espacio del indicador de inicio lo maneja pb-safe en la barra inferior.
   viewportFit: 'cover',

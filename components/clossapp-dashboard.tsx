@@ -223,8 +223,8 @@ function AuthenticatedShell() {
 
 export function ClossappDashboard() {
   return (
-    <div className="min-h-screen bg-white">
-      <div className="min-h-screen w-full bg-white relative">
+    <div className="min-h-screen bg-background">
+      <div className="min-h-screen w-full bg-background relative">
         <AuthProvider>
           <PrendasProvider>
             <CartProvider>
