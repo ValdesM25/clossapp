@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Clossapp">
   <title>Clossapp</title>
-  <rect width="512" height="512" fill="#FFFFFF"/>
-  <g transform="translate(-43.748 -245.562) scale(2.067)" fill="none" stroke="#3A3A3B" stroke-width="9.585" stroke-linejoin="miter" stroke-linecap="butt" stroke-miterlimit="10">
-    <path d="M 38.5 301 L 251.5 301 L 251.5 294 L 145 238 L 38.5 294 Z"/>
-    <path d="M 130.25 197 A 12.75 12.75 0 0 1 155.75 197 L 155.75 206 C 155.75 212, 147 217, 145 220 L 145 238"/>
+  <rect width="512" height="512" fill="#E8E3DC"/>
+  <g transform="translate(-359.44 -12.225) scale(1.344)" fill="none" stroke="#1F1F1F" stroke-width="14.738" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M 456.5 186 L 302 284 Q 290 292 296 296 Q 299 298 306 298 L 610 298 Q 617 298 620 296 Q 625 291 612 284 Z"/>
+    <path d="M 430.6 136 A 26 26 0 1 1 468.8 149 C 461 153 456.5 156 456.5 164 L 456.5 186"/>
   </g>
 </svg>

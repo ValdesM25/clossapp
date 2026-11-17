@@ -9,9 +9,9 @@
  * ImageMagick en el PATH; si faltan, se avisa y se omiten (los archivos ya
  * generados estan versionados, asi que no hace falta correr esto para buildear).
  *
- * El grosor del trazo se ajusta por tamano: el logo original es una linea muy
- * fina (1.4% del ancho de la marca) que a 32px directamente desaparece, asi que
- * los tamanos chicos llevan mas peso optico.
+ * El grosor del trazo se ajusta por tamano: el logo original es una linea
+ * fina (2.4% del ancho de la marca) que a 32px casi desaparece, asi que los
+ * tamanos chicos llevan mas peso optico.
  */
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
@@ -20,29 +20,42 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { hangerSvg, hangerPaths, SOURCE } from './hanger.mjs'
-import { WORDMARK_PATH, WORDMARK_BOX, METRICS } from './wordmark.mjs'
+import { WORDMARK_PATH, WORDMARK_BOX } from './wordmark.mjs'
 
 const PUBLIC = join(dirname(fileURLToPath(import.meta.url)), '..', 'public')
-const STROKE = '#3A3A3B' // gris del trazo, medido sobre el PNG original
-const INK = '#000000'    // negro del wordmark
+const STROKE = '#1F1F1F' // negro grafito de la paleta de marca
 
-/** Lockup completo: percha + "clossapp", recortado al arte. */
-function lockupSvg() {
+/**
+ * Imagotipo: percha sobre "CLOSSAPP", recortado al arte. Con background se
+ * centra en un cuadrado de ese color (para logo.png de los correos).
+ */
+function lockupSvg({ background } = {}) {
   const pad = 2
-  const x = Math.min(SOURCE.box.x, WORDMARK_BOX.x) - SOURCE.strokeWidth / 2 - pad
-  const y = Math.min(SOURCE.box.y, WORDMARK_BOX.y) - METRICS.strokeWidth / 2 - pad
-  const right = Math.max(SOURCE.box.x + SOURCE.box.w, WORDMARK_BOX.x + WORDMARK_BOX.w) + METRICS.strokeWidth / 2 + pad
-  const bottom = Math.max(SOURCE.box.y + SOURCE.box.h, WORDMARK_BOX.y + WORDMARK_BOX.h) + METRICS.strokeWidth / 2 + pad
-  const w = +(right - x).toFixed(2)
-  const h = +(bottom - y).toFixed(2)
+  const half = SOURCE.strokeWidth / 2
+  const x = Math.min(SOURCE.box.x - half, WORDMARK_BOX.x) - pad
+  const y = Math.min(SOURCE.box.y - half, WORDMARK_BOX.y) - pad
+  const right = Math.max(SOURCE.box.x + SOURCE.box.w + half, WORDMARK_BOX.x + WORDMARK_BOX.w) + pad
+  const bottom = Math.max(SOURCE.box.y + SOURCE.box.h + half, WORDMARK_BOX.y + WORDMARK_BOX.h) + pad
+  let w = +(right - x).toFixed(2)
+  let h = +(bottom - y).toFixed(2)
+  let vx = x
+  let vy = y
+  if (background) {
+    // Cuadrado con 12% de margen alrededor del lado mayor.
+    const side = Math.max(w, h) * 1.24
+    vx = +(x - (side - w) / 2).toFixed(2)
+    vy = +(y - (side - h) / 2).toFixed(2)
+    w = h = +side.toFixed(2)
+  }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="Clossapp">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vx} ${vy} ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="Clossapp">
   <title>Clossapp</title>
-  <g fill="none" stroke="${STROKE}" stroke-width="${SOURCE.strokeWidth}" stroke-linejoin="miter" stroke-linecap="butt" stroke-miterlimit="10">
+  ${background ? `<rect x="${vx}" y="${vy}" width="${w}" height="${h}" fill="${background}"/>` : ''}
+  <g fill="none" stroke="${STROKE}" stroke-width="${SOURCE.strokeWidth}" stroke-linejoin="round" stroke-linecap="round">
     <path d="${SOURCE.body}"/>
     <path d="${SOURCE.hook}"/>
   </g>
-  <path d="${WORDMARK_PATH}" fill="none" stroke="${INK}" stroke-width="${METRICS.strokeWidth}" stroke-linecap="butt" stroke-linejoin="round"/>
+  <path d="${WORDMARK_PATH}" fill="${STROKE}"/>
 </svg>
 `
 }
@@ -57,7 +70,7 @@ const svgTargets = [
   { file: 'icon.svg', svg: () => hangerSvg({ size: 512, markWidth: 512 * 0.86, strokeRatio: 0.045, stroke: STROKE }) },
   // Marca sola, peso normal, para usar dentro de la interfaz.
   { file: 'logo-mark.svg', svg: () => hangerSvg({ size: 512, markWidth: 512 * 0.76, strokeRatio: 0.024, stroke: STROKE }) },
-  { file: 'logo.svg', svg: lockupSvg },
+  { file: 'logo.svg', svg: () => lockupSvg() },
 ]
 
 const pngTargets = [
@@ -96,6 +109,12 @@ try {
     console.log('png  ', file, `${size}x${size}`)
   }
 
+  // logo.png lo usan los correos de Supabase (fondo blanco del correo).
+  const logoSrc = join(tmp, 'logo.svg')
+  writeFileSync(logoSrc, lockupSvg({ background: '#FFFFFF' }))
+  execFileSync('rsvg-convert', ['-w', '500', '-h', '500', logoSrc, '-o', join(PUBLIC, 'logo.png')])
+  console.log('png   logo.png 500x500')
+
   // favicon.ico multi-resolucion para navegadores y bookmarks viejos.
   const icoSrc = join(tmp, 'ico.svg')
   writeFileSync(icoSrc, hangerSvg({ size: 512, markWidth: 512 * 0.88, strokeRatio: 0.05, stroke: STROKE }))
@@ -104,7 +123,7 @@ try {
     execFileSync('rsvg-convert', ['-w', String(s), '-h', String(s), icoSrc, '-o', out])
     return out
   })
-  // El icono es gris sobre blanco: 64 colores cubren de sobra el antialiasing
+  // El icono es grafito sobre beige: 64 colores cubren de sobra el antialiasing
   // y bajan el .ico a la mitad.
   execFileSync('magick', [...layers, '-colors', '64', join(PUBLIC, 'favicon.ico')])
   console.log('ico   favicon.ico 16/32/48')

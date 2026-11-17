@@ -1,123 +1,15 @@
 /**
- * Wordmark "clossapp" reconstruido como geometria monolineal.
+ * Wordmark "CLOSSAPP" del branding (imagotipo del PDF de marca).
  *
- * La tipografia del logo original es una mono geometrica: cada glifo es un
- * circulo/elipse o una recta con un trazo de grosor constante. Vectorizarla
- * con un tracer daba letras poligonales (la 'o' salia con forma de papa),
- * asi que se reconstruye a partir de las medidas subpixel de public/logo.png.
+ * La tipografia es Cinzel (Google Fonts, licencia OFL): mayuscula inicial
+ * grande y el resto en versalitas. Se convirtio a contornos con fontTools y
+ * HarfBuzz ("Clossapp", peso 400, tracking -29 unidades) y se encajo sobre la
+ * imagen del PDF, asi que no depende de tener la fuente instalada.
  *
- * Todas las coordenadas estan en el espacio original de 500x500.
+ * Las coordenadas comparten espacio con la percha de scripts/hanger.mjs
+ * (imagen de 944x612 del PDF): asi el lockup conserva las proporciones.
  */
 
-// Metricas medidas sobre el PNG original.
-export const METRICS = {
-  strokeWidth: 4,
-  advance: 35.35,        // paso monoespaciado entre centros de glifo
-  firstCenter: 166.0,    // centro de la 'c'
-  bowlCenterY: 234.2,    // centro vertical de los glifos redondos
-  rx: 12.2,              // los bowls son levemente mas altos que anchos
-  ry: 12.8,
-  baseline: 246.5,       // barra de la 'l'
-  ascender: 210.5,       // bandera de la 'l'
-  stemTop: 219.2,        // arranque de las astas de 'a' y 'p'
-  descender: 261,        // pie de las astas de 'p'
-}
+export const WORDMARK_BOX = { x: 46, y: 331, w: 820.8, h: 134 }
 
-const { advance, firstCenter, bowlCenterY: CY, rx, ry } = METRICS
-const cx = (i) => firstCenter + i * advance
-const n = (v) => Number(v.toFixed(2))
-
-/** Punto sobre la elipse del bowl en un angulo dado (grados, antihorario). */
-function onBowl(centerX, deg, rX = rx, rY = ry, centerY = CY) {
-  const t = (deg * Math.PI) / 180
-  return [n(centerX + rX * Math.cos(t)), n(centerY - rY * Math.sin(t))]
-}
-
-/** Elipse cerrada completa. */
-function ellipse(centerX, centerY = CY, rX = rx, rY = ry) {
-  return `M${n(centerX - rX)} ${n(centerY)}a${n(rX)} ${n(rY)} 0 1 1 ${n(rX * 2)} 0a${n(rX)} ${n(rY)} 0 1 1 ${n(-rX * 2)} 0`
-}
-
-/**
- * Arco abierto sobre el bowl, de startDeg a endDeg en sentido antihorario.
- */
-function arc(centerX, startDeg, endDeg, rX = rx, rY = ry, centerY = CY) {
-  const [x0, y0] = onBowl(centerX, startDeg, rX, rY, centerY)
-  const [x1, y1] = onBowl(centerX, endDeg, rX, rY, centerY)
-  let sweep = endDeg - startDeg
-  while (sweep <= 0) sweep += 360
-  const large = sweep > 180 ? 1 : 0
-  // sweep-flag 0 = antihorario en el sistema de coordenadas de SVG (y hacia abajo)
-  return `M${x0} ${y0}A${n(rX)} ${n(rY)} 0 ${large} 0 ${x1} ${y1}`
-}
-
-// --- glifos -----------------------------------------------------------------
-
-// 'c': arco de ~320 grados, abierto a la derecha con terminales casi verticales.
-const c = arc(cx(0), 20, -20)
-
-// 'l': bandera superior izquierda, asta y barra de base.
-const l = (() => {
-  const x = cx(1)
-  return (
-    `M${n(x - 10)} ${METRICS.ascender}H${n(x)}` +
-    `V${METRICS.baseline}` +
-    `M${n(x - 10.5)} ${METRICS.baseline}H${n(x + 10.5)}`
-  )
-})()
-
-// 'o': elipse completa.
-const o = ellipse(cx(2))
-
-/**
- * 's': dos arcos de bowl reducido encadenados. El superior baja por la
- * izquierda, la cintura cruza en diagonal y el inferior cierra por la derecha.
- */
-function s(index) {
-  const x = cx(index)
-  const r = 8.75          // radio horizontal de cada arco
-  const rv = 8.8          // radio vertical
-  const upperY = CY - 4   // centro del arco superior
-  const lowerY = CY + 4   // centro del arco inferior
-  const [ax, ay] = onBowl(x, 8, r, rv, upperY)     // terminal superior derecho
-  const [bx, by] = onBowl(x, 185, r, rv, upperY)   // fin del arco superior
-  const [dx, dy] = onBowl(x, 8, r, rv, lowerY)     // inicio del arco inferior
-  const [ex, ey] = onBowl(x, 185, r, rv, lowerY)   // terminal inferior izquierdo
-  return (
-    // sube por la derecha, cruza el techo y baja por la izquierda (177 grados)
-    `M${ax} ${ay}A${r} ${rv} 0 0 0 ${bx} ${by}` +
-    // cintura en diagonal
-    `L${dx} ${dy}` +
-    // baja por la derecha, cruza el piso y cierra a la izquierda (183 grados)
-    `A${r} ${rv} 0 1 1 ${ex} ${ey}`
-  )
-}
-
-// 'a': bowl completo mas asta derecha con un pequeno pie hacia afuera.
-const a = (() => {
-  const x = cx(5)
-  const stem = n(x + rx - 0.7)
-  return (
-    ellipse(x) +
-    `M${stem} ${METRICS.stemTop}V${n(METRICS.baseline - 2.5)}` +
-    `q0 3.5 3 4.3`
-  )
-})()
-
-// 'p': bowl completo mas asta izquierda que baja al descendente.
-function p(index) {
-  const x = cx(index)
-  const stem = n(x - rx + 0.5)
-  return ellipse(x) + `M${stem} ${METRICS.stemTop}V${METRICS.descender}`
-}
-
-/** Caja del wordmark medida sobre las lineas centrales del trazo. */
-export const WORDMARK_BOX = {
-  x: n(cx(0) - rx),
-  y: METRICS.ascender,
-  w: n(cx(7) + rx - (cx(0) - rx)),
-  h: n(METRICS.descender - METRICS.ascender),
-}
-
-/** Path completo de "clossapp" pensado para dibujarse con stroke, no fill. */
-export const WORDMARK_PATH = [c, l, o, s(3), s(4), a, p(6), p(7)].join('')
+export const WORDMARK_PATH = 'M165.6 408.7 163.4 437.6Q158.6 445.5 151.4 451.7Q144.1 457.8 134.3 461.4Q124.4 465 111.7 465Q92.6 464.8 77.7 456.5Q62.8 448.2 54.4 433.2Q46 418.2 46 397.8Q46 377.8 54.3 362.8Q62.6 347.8 77.6 339.4Q92.6 331 112.8 331Q126.4 331 137.4 334.6Q148.3 338.2 156.4 343.5L160.1 369.5H158.5Q154.4 353.3 141.9 344.9Q129.4 336.5 112.8 336.5Q96.6 336.5 84.7 344.2Q72.9 351.8 66.3 365.5Q59.8 379.2 59.8 397.6Q59.8 416 66.3 429.8Q72.9 443.6 84.6 451.4Q96.2 459.1 111.7 459.5Q124.8 459.5 135.9 454.6Q147.1 449.7 154.6 438.6Q162.1 427.5 164.2 408.7ZM204.7 352V462.4H192.9V352ZM254.2 456.7 253.8 462.4H204.3V456.7ZM264.5 436.1 254.4 462.4H226.4L232.6 456.7Q241.8 456.7 247.5 454Q253.1 451.4 256.6 446.7Q260.1 442 262.6 436.1ZM193.3 450.6 195.6 462.4H179.6V460.6Q179.6 460.6 180.9 460.6Q182.2 460.6 182.2 460.6Q186.8 460.6 189.8 457.6Q192.7 454.7 192.9 450.6ZM204.1 363.8V352H217.7V353.8Q217.7 353.8 216.6 353.8Q215.5 353.8 215.5 353.8Q211.1 353.8 207.9 356.7Q204.7 359.5 204.7 363.8ZM193.3 363.8H192.9Q192.7 359.5 189.6 356.7Q186.4 353.8 181.8 353.8Q181.8 353.8 180.7 353.8Q179.6 353.8 179.6 353.8V352H193.3ZM333.1 349.4Q346 349.4 357.3 353.5Q368.7 357.7 377.2 365.4Q385.8 373.2 390.6 383.7Q395.4 394.3 395.4 407.2Q395.4 420.1 390.6 430.7Q385.8 441.3 377.2 449Q368.7 456.7 357.3 460.9Q346 465 333.1 465Q320.3 465 309 460.9Q297.8 456.7 289.2 449Q280.7 441.3 275.9 430.7Q271.1 420.1 271.1 407.2Q271.1 394.3 275.9 383.7Q280.7 373.2 289.2 365.4Q297.8 357.7 309 353.5Q320.3 349.4 333.1 349.4ZM333.1 459.5Q346.8 459.5 357.8 452.9Q368.9 446.2 375.3 434.4Q381.7 422.7 381.7 407.2Q381.7 391.6 375.3 379.9Q368.9 368.2 357.8 361.6Q346.8 354.9 333.1 354.9Q319.7 354.9 308.7 361.6Q297.6 368.2 291.2 379.9Q284.7 391.6 284.7 407.2Q284.7 422.7 291.2 434.4Q297.6 446.2 308.7 452.9Q319.7 459.5 333.1 459.5ZM442.1 349.4Q447.3 349.4 451.1 349.8Q455 350.1 457.8 350.6Q460.7 351.1 462.8 351.7Q464.9 352.4 466.6 352.9L466.8 371.1H464.6Q464.6 363.6 459.4 359.3Q454.3 354.9 443.4 354.9Q434.2 354.9 427.7 360Q421.1 365.1 421.3 372.4Q421.3 374.8 422 377.3Q422.6 379.8 424.2 382.2Q425.7 384.6 428.5 387L465.7 415.7Q469.9 419.2 471.9 424.6Q474 430 474.1 435.4Q474.3 443.5 469.9 450.3Q465.5 457.1 458 461Q450.6 465 441.6 465Q436.2 465 430.1 464.1Q423.9 463.2 418.5 461.2Q413.2 459.3 409.7 456.3Q409.2 453.8 409.2 449.8Q409.2 445.9 409.8 441.4Q410.5 437 411.6 433.5H413.8Q413 441.8 416.2 447.7Q419.3 453.6 425.4 456.6Q431.4 459.7 439.5 459.5Q450.9 459.1 457.5 453.7Q464 448.2 464 439.2Q464 434.8 462.4 431.2Q460.9 427.6 457.4 424.5L420.6 396.2Q415.4 391.7 413.6 386.4Q411.7 381.1 411.7 376.3Q411.7 368.7 415.8 362.7Q419.8 356.6 426.7 353Q433.6 349.4 442.1 349.4ZM466.4 351.1 466.6 354.4H453.5V351.1ZM521.8 349.4Q527 349.4 530.8 349.8Q534.7 350.1 537.5 350.6Q540.4 351.1 542.5 351.7Q544.6 352.4 546.3 352.9L546.5 371.1H544.3Q544.3 363.6 539.1 359.3Q534 354.9 523.1 354.9Q513.9 354.9 507.4 360Q500.8 365.1 501 372.4Q501 374.8 501.7 377.3Q502.3 379.8 503.9 382.2Q505.4 384.6 508.2 387L545.4 415.7Q549.6 419.2 551.6 424.6Q553.7 430 553.8 435.4Q554 443.5 549.6 450.3Q545.2 457.1 537.7 461Q530.3 465 521.3 465Q515.9 465 509.8 464.1Q503.6 463.2 498.2 461.2Q492.9 459.3 489.4 456.3Q488.9 453.8 488.9 449.8Q488.9 445.9 489.5 441.4Q490.2 437 491.3 433.5H493.5Q492.7 441.8 495.9 447.7Q499 453.6 505.1 456.6Q511.1 459.7 519.2 459.5Q530.6 459.1 537.2 453.7Q543.7 448.2 543.7 439.2Q543.7 434.8 542.1 431.2Q540.6 427.6 537.1 424.5L500.3 396.2Q495.1 391.7 493.3 386.4Q491.4 381.1 491.4 376.3Q491.4 368.7 495.5 362.7Q499.5 356.6 506.4 353Q513.3 349.4 521.8 349.4ZM546.1 351.1 546.3 354.4H533.2V351.1ZM620.3 349.4 670.9 461.3H656.4L617.2 365.8ZM584.8 449Q582.7 454.5 585.3 457.5Q587.9 460.6 591.2 460.6H592.7V462.4H557.5V460.6Q557.5 460.6 558.3 460.6Q559 460.6 559 460.6Q562.9 460.6 566.9 457.9Q571 455.2 573.9 449ZM620.3 349.4 621.6 362.1 579.4 461.9H567.8L611.5 368.4Q611.5 368.4 612.5 366.2Q613.5 363.9 614.9 360.7Q616.2 357.5 617.3 354.4Q618.4 351.2 618.6 349.4ZM642 419.5V425.1H593.2V419.5ZM651.4 449H665.4Q668.1 455.2 672.2 457.9Q676.2 460.6 679.9 460.6Q679.9 460.6 680.7 460.6Q681.4 460.6 681.4 460.6V462.4H643.7V460.6H645.1Q648.3 460.6 650.8 457.5Q653.4 454.5 651.4 449ZM707.9 352H728.3Q741.2 352 750.6 355.8Q760 359.5 765.1 366.6Q770.3 373.7 770.3 383.5Q770.3 394 765.6 401.4Q760.9 408.9 753.2 412.8Q745.5 416.8 736.1 416.7Q726.7 416.6 717.3 412V410.1Q717.3 410.1 720.3 410.7Q723.4 411.3 728.1 411.2Q732.9 411.1 738.3 409.5Q743.6 407.9 748.3 403.7Q753 399.5 755.8 391.6Q756.5 389.5 756.8 386.8Q757 384 757 381.6Q757 370.4 749.3 363.9Q741.6 357.5 728 357.5H709.9Q709.9 357.5 709.5 356.1Q709 354.7 708.5 353.4Q707.9 352 707.9 352ZM710.3 352V462.4H698.5V352ZM698.9 450.6 701.3 462.4H685.3V460.6Q685.3 460.6 686.5 460.6Q687.8 460.6 687.8 460.6Q692.3 460.6 695.3 457.6Q698.3 454.7 698.5 450.6ZM698.9 363.6H698.5Q698.3 359.3 695.3 356.6Q692.3 353.8 687.8 353.8Q687.8 353.8 686.5 353.8Q685.3 353.8 685.3 353.8V352H701.3ZM709.7 450.6H710.1Q710.3 454.7 713.3 457.6Q716.4 460.6 720.8 460.6Q721 460.6 722.2 460.6Q723.4 460.6 723.4 460.6V462.4H707.3ZM804.4 352H824.8Q837.7 352 847.1 355.8Q856.4 359.5 861.6 366.6Q866.8 373.7 866.8 383.5Q866.8 394 862.1 401.4Q857.4 408.9 849.6 412.8Q841.9 416.8 832.5 416.7Q823.1 416.6 813.7 412V410.1Q813.7 410.1 816.8 410.7Q819.8 411.3 824.6 411.2Q829.4 411.1 834.7 409.5Q840.1 407.9 844.8 403.7Q849.4 399.5 852.2 391.6Q852.9 389.5 853.2 386.8Q853.5 384 853.5 381.6Q853.5 370.4 845.8 363.9Q838 357.5 824.4 357.5H806.4Q806.4 357.5 805.9 356.1Q805.5 354.7 804.9 353.4Q804.4 352 804.4 352ZM806.7 352V462.4H795V352ZM795.3 450.6 797.7 462.4H781.7V460.6Q781.7 460.6 783 460.6Q784.3 460.6 784.3 460.6Q788.7 460.6 791.7 457.6Q794.8 454.7 795 450.6ZM795.3 363.6H795Q794.8 359.3 791.7 356.6Q788.7 353.8 784.3 353.8Q784.3 353.8 783 353.8Q781.7 353.8 781.7 353.8V352H797.7ZM806.2 450.6H806.6Q806.7 454.7 809.8 457.6Q812.8 460.6 817.2 460.6Q817.4 460.6 818.6 460.6Q819.8 460.6 819.8 460.6V462.4H803.8Z'
