@@ -28,7 +28,7 @@ export function BottomNav({ activeView, onNavigate, open, flash }: BottomNavProp
                   aria-current={isActive ? "page" : undefined}
                   className="flex-1 min-h-12 flex flex-col items-center justify-center gap-1 relative px-0.5">
                   {isActive && !item.destacado && (
-                    <motion.span layoutId="nav-activo" aria-hidden="true" className="absolute top-0 h-0.5 w-6 bg-zinc-900"
+                    <motion.span layoutId="nav-activo" aria-hidden="true" className="absolute top-0 h-0.5 w-6 bg-terracota"
                       transition={{ type: "spring", stiffness: 500, damping: 40 }} />
                   )}
                   {isFlashing && (
@@ -37,7 +37,7 @@ export function BottomNav({ activeView, onNavigate, open, flash }: BottomNavProp
                   )}
                   {item.destacado ? (
                     <span className="w-12 h-12 -mt-6 bg-zinc-900 text-white flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.18)]">
-                      <item.icon aria-hidden="true" className="w-5 h-5" />
+                      <item.icon aria-hidden="true" className="w-5 h-5 text-terracota" />
                     </span>
                   ) : (
                     <item.icon aria-hidden="true" className={cn("w-5 h-5 transition-colors", isActive ? "text-zinc-900" : "text-zinc-500")} />

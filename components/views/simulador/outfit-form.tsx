@@ -74,7 +74,7 @@ export function OutfitForm({
 
       <fieldset className="px-4 min-w-0">
         <legend className="text-sm font-medium text-zinc-900 mb-3">Clima</legend>
-        <div className="grid grid-cols-4 border border-zinc-200 divide-x divide-zinc-200">
+        <div className="grid grid-cols-4 bg-white border border-zinc-200 divide-x divide-zinc-200">
           {CLIMAS.map(([nombre, Icono]) => {
             const activo = clima === nombre
             return (

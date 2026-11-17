@@ -15,10 +15,10 @@ interface RotationBarProps {
 // Un solo tono de oscuro a claro: más oscuro = más uso. "Nueva" lleva trama porque
 // no es "menos uso", es "todavía sin historial".
 const RELLENO: Record<Rotacion, React.CSSProperties> = {
-  activa: { background: "#18181b" },
-  ocasional: { background: "#71717a" },
-  dormida: { background: "#d4d4d8" },
-  nueva: { background: "repeating-linear-gradient(135deg, #a1a1aa 0 1.5px, #f4f4f5 1.5px 5px)" },
+  activa: { background: "var(--color-zinc-900)" },
+  ocasional: { background: "var(--color-zinc-500)" },
+  dormida: { background: "var(--color-zinc-300)" },
+  nueva: { background: "repeating-linear-gradient(135deg, var(--color-zinc-400) 0 1.5px, var(--color-zinc-100) 1.5px 5px)" },
 }
 
 export function RotationBar({ rotacion, prendas }: RotationBarProps) {
@@ -64,7 +64,7 @@ export function RotationBar({ rotacion, prendas }: RotationBarProps) {
         {ORDEN_ROTACION.filter((r) => r !== "nueva" || rotacion.nueva > 0).map((r) => (
           <button key={r} type="button" onClick={() => rotacion[r] > 0 && alternar(r)}
             aria-pressed={elegida === r} disabled={rotacion[r] === 0}
-            className={`flex items-center gap-2.5 p-2.5 border text-left transition-colors disabled:opacity-50 ${elegida === r ? "border-zinc-900" : "border-zinc-100"}`}>
+            className={`flex items-center gap-2.5 p-2.5 bg-white border text-left transition-colors disabled:opacity-50 ${elegida === r ? "border-zinc-900" : "border-zinc-100"}`}>
             <span className="w-3 h-3 shrink-0 rounded-[2px]" style={RELLENO[r]} aria-hidden />
             <span className="min-w-0 flex-1">
               <span className="flex items-baseline justify-between gap-2">

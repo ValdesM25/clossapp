@@ -13,26 +13,30 @@
   padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
 }
 
+/*
+ * Paleta de marca (branding Clossapp): beige arena en fondo y tarjetas, negro
+ * grafito para texto y botones, terracota de acento.
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --background: #E8E3DC;
+  --foreground: #1F1F1F;
+  --card: #E8E3DC;
+  --card-foreground: #1F1F1F;
+  --popover: #E8E3DC;
+  --popover-foreground: #1F1F1F;
+  --primary: #1F1F1F;
+  --primary-foreground: #E8E3DC;
+  --secondary: #DBD4CA;
+  --secondary-foreground: #1F1F1F;
+  --muted: #DBD4CA;
+  --muted-foreground: #625B54;
+  --accent: #DBD4CA;
+  --accent-foreground: #1F1F1F;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: #CFC6BA;
+  --input: #CFC6BA;
+  --ring: #C97863;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -126,6 +130,29 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/*
+ * La app pinta casi todo con clases white y zinc-* (más de 2,000 usos). Se
+ * redefinen aquí para aplicar la marca sin tocar componentes: white pasa a ser
+ * el beige arena (tarjetas, modales y campos quedan beige) y la escala zinc
+ * baja desde ese beige hasta el negro grafito (900), con la misma jerarquía
+ * que tenía sobre blanco. 500 queda en 4.5:1 incluso sobre zinc-100.
+ */
+@theme {
+  --color-white: #E8E3DC;
+  --color-zinc-50: #E2DCD4;
+  --color-zinc-100: #DBD4CA;
+  --color-zinc-200: #CFC6BA;
+  --color-zinc-300: #BCB2A5;
+  --color-zinc-400: #9C9389;
+  --color-zinc-500: #625B54;
+  --color-zinc-600: #57514A;
+  --color-zinc-700: #45403B;
+  --color-zinc-800: #2E2B28;
+  --color-zinc-900: #1F1F1F;
+  --color-zinc-950: #141414;
+  --color-terracota: #C97863;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -164,6 +191,11 @@
   :focus-visible {
     outline: 2px solid var(--foreground);
     outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-terracota);
+    color: var(--color-zinc-900);
   }
 
   /* iOS hace zoom al enfocar un campo de menos de 16px y no regresa. */

@@ -86,7 +86,7 @@ export function VenderIntro({ caso, pasoInicial = 1, onCerrar, onPublicar }: Ven
 
   // En body: la vista del Shop anima con transform, y un fixed dentro se mediría contra ella y no contra la pantalla.
   return createPortal(
-    <div ref={capa} role="dialog" aria-modal="true" aria-label="Vende en Clossapp" className="fixed inset-0 z-[90] bg-white flex flex-col overflow-y-auto">
+    <div ref={capa} role="dialog" aria-modal="true" aria-label="Vende en Clossapp" className="fixed inset-0 z-[90] bg-background flex flex-col overflow-y-auto">
       <header className="px-6 pt-6 pb-4 max-w-xl w-full mx-auto">
         <div className="flex items-center justify-between">
           <button type="button" onClick={() => setPaso((p) => p - 1)} disabled={paso === 1 || abriendo}
@@ -148,7 +148,7 @@ export function VenderIntro({ caso, pasoInicial = 1, onCerrar, onPublicar }: Ven
         </AnimatePresence>
       </main>
 
-      <footer className="fixed bottom-0 inset-x-0 bg-white border-t border-zinc-100 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <footer className="fixed bottom-0 inset-x-0 bg-background border-t border-zinc-100 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="max-w-xl mx-auto">
           <motion.button type="button" whileTap={{ scale: 0.98 }} disabled={abriendo}
             onClick={esUltimo ? accionFinal : () => setPaso((p) => p + 1)}

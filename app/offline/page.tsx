@@ -18,7 +18,7 @@ export default function OfflinePage() {
   }, [])
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
       <img src="/logo.svg" alt="Clossapp" className="h-12 w-auto opacity-40" />
 
       <h1 className="mt-12 text-sm uppercase tracking-widest text-zinc-900">

@@ -25,7 +25,7 @@ const TONO: Record<TonoVenta, string> = {
 const fechaCorta = (iso: string) => new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short" })
 
 function Vacio({ texto }: { texto: string }) {
-  return <p className="border border-zinc-100 py-10 px-4 text-center text-xs text-zinc-500">{texto}</p>
+  return <p className="bg-white border border-zinc-100 py-10 px-4 text-center text-xs text-zinc-500">{texto}</p>
 }
 
 function FilaVenta({ venta, cuentaActiva }: { venta: Venta; cuentaActiva: boolean }) {
@@ -34,7 +34,7 @@ function FilaVenta({ venta, cuentaActiva }: { venta: Venta; cuentaActiva: boolea
   if (!estado) return null
   const depositado = venta.pago?.estado === "enviado"
   return (
-    <li className="flex items-center gap-3 border border-zinc-100 p-3">
+    <li className="flex items-center gap-3 bg-white border border-zinc-100 p-3">
       {primera?.image_url && <img src={primera.image_url} alt="" className="w-12 h-12 object-cover shrink-0" />}
       <div className="flex-1 min-w-0">
         <p className="text-sm text-zinc-900 truncate">
@@ -82,7 +82,7 @@ function FilaPublicada({ prenda, ahora, cambiarPrecio, quitar }: {
   const dias = prenda.publicada_en ? diasPublicada(prenda.publicada_en, ahora) : null
 
   return (
-    <li className="border border-zinc-100 p-3 flex flex-col gap-3">
+    <li className="bg-white border border-zinc-100 p-3 flex flex-col gap-3">
       <div className="flex items-center gap-3">
         <img src={prenda.image_url} alt="" className="w-12 h-12 object-cover shrink-0" />
         <div className="flex-1 min-w-0">
@@ -181,7 +181,7 @@ export function VenderView({ onPublicar, onCerrar, aviso, bloqueada }: VenderVie
 
   // En body: la vista del Shop anima con transform, y un fixed dentro se mediría contra ella y no contra la pantalla.
   return createPortal(
-    <div ref={capa} role="dialog" aria-modal="true" aria-label="Vender" className="fixed inset-0 z-[90] bg-white overflow-y-auto">
+    <div ref={capa} role="dialog" aria-modal="true" aria-label="Vender" className="fixed inset-0 z-[90] bg-background overflow-y-auto">
       <div className="max-w-xl mx-auto px-4 pt-6 pb-[max(2rem,env(safe-area-inset-bottom))] flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <h1 ref={titulo} tabIndex={-1} className="font-serif text-2xl text-zinc-900 outline-none">Vender</h1>
@@ -202,7 +202,7 @@ export function VenderView({ onPublicar, onCerrar, aviso, bloqueada }: VenderVie
           <>
             <div className="grid grid-cols-3 gap-2">
               {([["Por cobrar", t.porCobrarCentavos], ["Cobrado este mes", t.cobradoMesCentavos], ["Cobrado en total", t.cobradoTotalCentavos]] as const).map(([etiqueta, centavos]) => (
-                <div key={etiqueta} className="border border-zinc-200 p-3 flex flex-col justify-between gap-1">
+                <div key={etiqueta} className="bg-white border border-zinc-200 p-3 flex flex-col justify-between gap-1">
                   <p className="text-[10px] text-zinc-500 uppercase tracking-widest leading-tight">{etiqueta}</p>
                   <p className="font-serif text-lg text-zinc-900 break-words">{pesos(centavos)}</p>
                 </div>
@@ -235,7 +235,7 @@ export function VenderView({ onPublicar, onCerrar, aviso, bloqueada }: VenderVie
               ) : (
                 <ul className="flex flex-col gap-2">
                   {rentasEnCurso.map(({ ordenId, item, compradora }) => (
-                    <li key={`${ordenId}-${item.id}`} className="flex items-center gap-3 border border-zinc-100 p-3">
+                    <li key={`${ordenId}-${item.id}`} className="flex items-center gap-3 bg-white border border-zinc-100 p-3">
                       <img src={item.prenda.image_url} alt="" className="w-12 h-12 object-cover shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-zinc-900 truncate">{item.prenda.name}</p>

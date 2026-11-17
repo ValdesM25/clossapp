@@ -170,7 +170,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
 
             {/* Action button */}
             {isGuest ? (
-              <p className="text-xs text-zinc-500 border border-zinc-100 p-4 text-center">
+              <p className="text-xs text-zinc-500 bg-white border border-zinc-100 p-4 text-center">
                 Crea una cuenta para registrar tus donaciones en la base de datos y ganar puntos.
               </p>
             ) : (
@@ -352,7 +352,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
             </div>
 
             {disponibles.length === 0 ? (
-              <p className="text-xs text-zinc-500 border border-zinc-100 p-6 text-center">
+              <p className="text-xs text-zinc-500 bg-white border border-zinc-100 p-6 text-center">
                 No tienes prendas disponibles en tu armario para donar.
               </p>
             ) : (
@@ -421,7 +421,7 @@ export function DonacionPanel({ prendas, isGuest }: DonacionPanelProps) {
             {/* Pegado abajo mientras se elige: con muchas prendas no hay que bajar hasta el final para continuar.
                 El pb-40 del contenedor de scroll lo dejaría flotando lejos de la barra de navegación: baja 3rem para
                 quedar justo arriba de ella, y el after tapa las prendas que pasarían por debajo. */}
-            <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)-3rem)] z-30 -mx-4 px-4 py-3 bg-white border-t border-zinc-100 after:absolute after:inset-x-0 after:top-full after:h-40 after:bg-white">
+            <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)-3rem)] z-30 -mx-4 px-4 py-3 bg-background border-t border-zinc-100 after:absolute after:inset-x-0 after:top-full after:h-40 after:bg-white">
               <motion.button
                 whileTap={{ scale: 0.98 }}
                 disabled={selectedIds.length === 0}

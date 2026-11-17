@@ -59,7 +59,7 @@ const etiqueta = "text-xs font-medium text-zinc-700"
 const principal = "h-12 bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-medium transition-[background-color,transform] active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
 // Queda a la vista sobre la barra inferior aunque el formulario sea largo. El contenedor con scroll
 // ya deja pb-40 abajo y sticky lo descuenta: el valor negativo la baja hasta quedar pegada a la barra.
-const barraAccion = "sticky -bottom-20 z-10 -mx-4 px-4 pt-3 pb-7 bg-white/95 backdrop-blur border-t border-zinc-200 flex flex-col gap-2"
+const barraAccion = "sticky -bottom-20 z-10 -mx-4 px-4 pt-3 pb-7 bg-background/95 backdrop-blur border-t border-zinc-200 flex flex-col gap-2"
 
 // El calendario trabaja con Date local; el plan guarda "aaaa-mm-dd".
 const aFecha = (f: string) => { const [a, m, d] = f.split("-").map(Number); return new Date(a, m - 1, d) }

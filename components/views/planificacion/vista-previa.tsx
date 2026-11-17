@@ -47,7 +47,7 @@ export function VistaPrevia({ hoy, conPago }: { hoy: string; conPago: boolean })
           userId="ejemplo"
           acciones={ACCIONES}
         />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-transparent to-white" />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-transparent to-background" />
       </div>
     </div>
   )

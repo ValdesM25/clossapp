@@ -45,7 +45,7 @@ function Sub({ titulo, children }: { titulo: string; children: React.ReactNode }
 
 export default function PoliticasPage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       <div className="mx-auto w-full max-w-3xl px-5 py-10 flex flex-col gap-8">
         <header className="flex flex-col gap-4">
           <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors w-fit">
@@ -62,7 +62,7 @@ export default function PoliticasPage() {
           <p className="text-xs text-zinc-500">Última actualización: {LEGAL_VIGENCIA}</p>
         </header>
 
-        <nav className="border border-zinc-200 p-4 flex flex-col gap-1.5">
+        <nav className="bg-white border border-zinc-200 p-4 flex flex-col gap-1.5">
           <p className="text-[11px] text-zinc-500 uppercase tracking-widest mb-1">Contenido</p>
           {secciones.map((s, i) => (
             <a key={s.id} href={`#${s.id}`}
@@ -121,7 +121,7 @@ export default function PoliticasPage() {
               Para operar, compartimos determinada información con proveedores que actúan
               como encargados del tratamiento. Ninguno de ellos comercializa tus datos.
             </p>
-            <div className="border border-zinc-200">
+            <div className="bg-white border border-zinc-200">
               <div className="border-b border-zinc-200 px-4 py-3">
                 <p className="text-sm font-medium text-zinc-900">Anthropic PBC (Estados Unidos)</p>
                 <p className="text-[14px] mt-1">
@@ -369,7 +369,7 @@ export default function PoliticasPage() {
         </Seccion>
 
         <Seccion id="planes" numero="04" titulo="Planes y pagos">
-          <div className="border border-zinc-200">
+          <div className="bg-white border border-zinc-200">
             {PLANES.map((p, i) => (
               <div key={p.id} className={i < PLANES.length - 1 ? "border-b border-zinc-200 px-4 py-4" : "px-4 py-4"}>
                 <p className="text-xs text-zinc-500 uppercase tracking-widest">{NOMBRE_PLAN[p.id]}</p>

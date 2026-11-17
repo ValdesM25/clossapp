@@ -76,11 +76,11 @@ export function PlanDetalle({
   return (
     <div className="flex flex-col gap-6">
       {/* Portada */}
-      <div className="bg-[#121212] text-white p-6 flex flex-col gap-4">
+      <div className="bg-zinc-900 text-white p-6 flex flex-col gap-4">
         <div>
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs tracking-widest text-zinc-400 uppercase font-semibold">{NOMBRE_TIPO[plan.tipo]}</p>
-            <p className={cn("text-xs px-2 py-1 shrink-0", estado === "en_curso" ? "bg-white text-zinc-900 font-medium" : "border border-white/20 text-zinc-300")}>
+            <p className={cn("text-xs px-2 py-1 shrink-0", estado === "en_curso" ? "bg-terracota text-zinc-900 font-medium" : "border border-white/20 text-zinc-300")}>
               {cuentaRegresiva(plan, hoy)}
             </p>
           </div>
@@ -152,7 +152,7 @@ export function PlanDetalle({
 
           {/* Selector de días: se queda arriba al bajar por los outfits. */}
           {fechas.length > 1 && (
-            <div ref={tira} className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-white/95 backdrop-blur border-b border-zinc-100 flex gap-2 overflow-x-auto snap-x scroll-px-4 [scrollbar-width:none] overscroll-x-contain">
+            <div ref={tira} className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-background/95 backdrop-blur border-b border-zinc-100 flex gap-2 overflow-x-auto snap-x scroll-px-4 [scrollbar-width:none] overscroll-x-contain">
               {fechas.map((f) => {
                 const delDia = plan.momentos.filter((m) => m.fecha === f)
                 const punto = delDia.some((m) => m.estado === "error") ? "bg-red-500"

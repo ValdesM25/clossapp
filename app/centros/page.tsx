@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { createClient } from "@/utils/supabase/client"
 import { validarSolicitud, SOLICITUD_VACIA, type SolicitudForm, type SolicitudDB } from "@/lib/solicitudes"
 
-const inputClass = "mt-1.5 h-11 w-full rounded-none border border-zinc-300 text-sm text-zinc-900 focus-visible:ring-0 focus-visible:border-zinc-900"
+const inputClass = "mt-1.5 h-11 w-full rounded-none bg-white border border-zinc-300 text-sm text-zinc-900 focus-visible:ring-0 focus-visible:border-zinc-900"
 
 const BENEFICIOS = [
   { icono: Users, titulo: "Más visitas", texto: "Cada donante y cada entrega del marketplace es una persona que entra a tu negocio." },
@@ -82,7 +82,7 @@ export default function CentrosPage() {
   }
 
   return (
-    <main className="min-h-dvh bg-white">
+    <main className="min-h-dvh bg-background">
       <div className="max-w-2xl mx-auto px-6 py-10 space-y-10">
         <header className="text-center space-y-3">
           <Link href="/" className="inline-block mb-2"><img src="/logo.svg" alt="Clossapp" className="mx-auto h-10 w-auto" /></Link>
@@ -94,7 +94,7 @@ export default function CentrosPage() {
 
         <section className="grid gap-3 sm:grid-cols-3">
           {BENEFICIOS.map(({ icono: Icono, titulo, texto }) => (
-            <div key={titulo} className="border border-zinc-200 p-4 space-y-1.5">
+            <div key={titulo} className="bg-white border border-zinc-200 p-4 space-y-1.5">
               <Icono className="w-4 h-4 text-zinc-900" aria-hidden="true" />
               <p className="text-sm font-medium text-zinc-900">{titulo}</p>
               <p className="text-xs text-zinc-500 leading-relaxed">{texto}</p>
@@ -102,7 +102,7 @@ export default function CentrosPage() {
           ))}
         </section>
 
-        <section className="border border-zinc-900 p-6">
+        <section className="bg-white border border-zinc-900 p-6">
           {estado === "cargando" && (
             <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-zinc-500" /></div>
           )}
@@ -135,7 +135,7 @@ export default function CentrosPage() {
               <div>
                 <h2 className="font-serif text-xl text-zinc-900">Quiero ser centro de acopio</h2>
                 {solicitud?.estado === "rechazada" && (
-                  <p className="mt-2 text-xs text-zinc-600 border border-zinc-200 px-3 py-2">
+                  <p className="mt-2 text-xs text-zinc-600 bg-white border border-zinc-200 px-3 py-2">
                     Tu solicitud anterior no se aprobó{solicitud.nota_admin ? `: ${solicitud.nota_admin}` : "."} Puedes enviar una nueva.
                   </p>
                 )}
@@ -156,7 +156,7 @@ export default function CentrosPage() {
                 <label htmlFor="mensaje" className="text-xs text-zinc-500 uppercase tracking-widest">Algo más que debamos saber (opcional)</label>
                 <textarea id="mensaje" value={form.mensaje} maxLength={600} rows={3}
                   onChange={(e) => campo("mensaje", e.target.value)}
-                  className="mt-1.5 w-full rounded-none border border-zinc-300 p-3 text-sm text-zinc-900 outline-none focus:border-zinc-900" />
+                  className="mt-1.5 w-full rounded-none bg-white border border-zinc-300 p-3 text-sm text-zinc-900 outline-none focus:border-zinc-900" />
               </div>
               {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
               <button type="submit" disabled={enviando}

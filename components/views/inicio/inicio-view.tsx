@@ -150,7 +150,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
         ) : hayPlaneado ? (
           <OutfitPlaneado deHoy={deHoy} prendas={prendas} supabase={planes.supabase} onCambio={planes.recargar} />
         ) : sinOutfit && !isGuest ? (
-          <div className="border border-zinc-200 p-6 flex flex-col items-start gap-4">
+          <div className="bg-white border border-zinc-200 p-6 flex flex-col items-start gap-4">
             <div>
               <h2 className="font-serif text-xl text-zinc-900">Tu outfit del día aparece aquí</h2>
               <p className="text-sm text-zinc-500 mt-1 leading-relaxed">
@@ -166,7 +166,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
         <div className="bg-zinc-900 text-white p-5 sm:p-6">
           <div className="flex justify-between items-start mb-4 relative z-10">
             <div>
-              <span className="text-[11px] uppercase tracking-widest px-2 py-0.5 bg-white/10 text-zinc-300">
+              <span className="text-[11px] uppercase tracking-widest px-2 py-0.5 bg-terracota text-zinc-900">
                 {outfit && !esDePago(plan) ? "Sugerencia de Hoy" : "Sugerencia IA de Hoy"}
               </span>
               <h2 className="font-serif text-xl text-white mt-2">
@@ -176,7 +176,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
                 {outfit?.descripcion ?? "Una combinación cómoda con lo que ya tienes."}
               </p>
             </div>
-            <Sparkles className="w-5 h-5 text-zinc-400 shrink-0" aria-hidden="true" />
+            <Sparkles className="w-5 h-5 text-terracota shrink-0" aria-hidden="true" />
           </div>
 
           {/* Prendas que componen el outfit */}
@@ -247,7 +247,7 @@ export function InicioView({ onNavigate }: InicioViewProps) {
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 onClick={() => onNavigate?.("simulador")}
-                className="w-full mt-2 h-10 border border-zinc-300 text-zinc-900 text-xs font-medium flex items-center justify-center gap-1.5 hover:border-zinc-900 transition-colors"
+                className="w-full mt-2 h-10 bg-white border border-zinc-300 text-zinc-900 text-xs font-medium flex items-center justify-center gap-1.5 hover:border-zinc-900 transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Combinar
               </motion.button>

@@ -53,7 +53,7 @@ export function CartDrawer({ onCheckout, onOpenOrders }: CartDrawerProps) {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 w-full sm:max-w-md bg-white z-[110] flex flex-col shadow-2xl border-l border-zinc-200"
+            className="fixed right-0 top-0 bottom-0 w-full sm:max-w-md bg-background z-[110] flex flex-col shadow-2xl border-l border-zinc-200"
           >
             {/* Header */}
             <div className="p-3.5 sm:p-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-900 text-white shrink-0">
