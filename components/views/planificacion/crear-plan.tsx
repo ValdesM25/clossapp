@@ -10,6 +10,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { buscarLugares, type Lugar } from "@/lib/clima"
 import { diasEntre, fechaCorta, MAX_DIAS_PLAN, prellenar, rangoFechas, sumarDias, type Momento, type TipoPlan } from "@/lib/planificacion"
 import type { DatosPlan } from "@/services/planificacion.service"
+import { CrearViaje } from "./crear-viaje"
 
 export const TIPOS: { tipo: TipoPlan; titulo: string; texto: string; icono: LucideIcon }[] = [
   { tipo: "semana", titulo: "Mi semana", texto: "Lo que te pondrás cada día, según tu agenda.", icono: CalendarDays },
@@ -211,6 +212,17 @@ export function CrearPlan({ hoy, tipoInicial, cuota, onCancelar, onCrear }: {
   }
 
   const atras = () => paso === 1 || (paso === 2 && tipoInicial) ? onCancelar() : setPaso((p) => (p - 1) as 1 | 2)
+
+  if (paso >= 2 && esViaje) {
+    return (
+      <CrearViaje
+        hoy={hoy}
+        cuota={cuota}
+        onAtras={() => (tipoInicial ? onCancelar() : setPaso(1))}
+        onCrear={onCrear}
+      />
+    )
+  }
 
   const calendario = {
     locale: es,

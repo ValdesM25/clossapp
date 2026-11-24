@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { MomentoCard } from "./momento-card"
 import { Maleta } from "./maleta"
+import { ViajeDetalle } from "./viaje-detalle"
 
 export const NOMBRE_TIPO: Record<TipoPlan, string> = { semana: "Mi semana", fecha: "Fecha importante", viaje: "Viaje" }
 
@@ -71,6 +72,24 @@ export function PlanDetalle({
     if (n < 0 || n >= fechas.length) return
     setDia(fechas[n])
     if (subir) seccion.current?.scrollIntoView({ block: "start" })
+  }
+
+  if (esViaje) {
+    return (
+      <ViajeDetalle
+        plan={plan}
+        prendas={prendas}
+        hoy={hoy}
+        soloLectura={soloLectura}
+        generando={generando}
+        regenerando={regenerando}
+        cuota={cuota}
+        avisoCuota={avisoCuota}
+        itemsShop={itemsShop}
+        userId={userId}
+        acciones={acciones}
+      />
+    )
   }
 
   return (
