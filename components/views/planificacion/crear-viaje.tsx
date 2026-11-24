@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ArrowRight, ArrowUpRight, Check, ChevronLeft, Plus, Search, X } from "lucide-react"
+import { ArrowRight, ArrowUpRight, Check, ChevronLeft, MapPin, Plus, Search, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { buscarLugares, type Lugar } from "@/lib/clima"
+import { obtenerDestinoReal, type DestinoReal } from "@/lib/destinos"
 import { diasEntre, MAX_DIAS_PLAN, prellenar, sumarDias, type Momento } from "@/lib/planificacion"
 import type { DatosPlan } from "@/services/planificacion.service"
 import {
@@ -12,7 +13,6 @@ import {
   INTERESES_VIAJE,
   ciudadCorta,
   formatearCoordenadas,
-  obtenerInfoDestino,
   rangoFechasEditorial,
   type CategoriaLugar,
   type LugarSugerido,
@@ -20,6 +20,7 @@ import {
 import { ViajeStepper } from "./viaje-stepper"
 
 const NUMEROS_TEXTO = ["NINGÚN LUGAR", "UN LUGAR", "DOS LUGARES", "TRES LUGARES", "CUATRO LUGARES", "CINCO LUGARES"]
+const DESTINO_PREVIA_DEFAULT: Lugar = CIUDADES_DESTACADAS[2] // París, Francia
 
 function etiquetaCantidadLugares(n: number): string {
   const base = NUMEROS_TEXTO[n] ?? `${n} LUGARES`
@@ -28,7 +29,8 @@ function etiquetaCantidadLugares(n: number): string {
 
 /**
  * Flujo editorial en 2 pasos para crear un Viaje (Paso 1: Destino, Paso 2: Lugares).
- * Al pulsar "Crear mis outfits", crea el plan en Supabase y pasa a Paso 3 (Outfits en PlanDetalle).
+ * Consulta ciudades reales (Open-Meteo filtrado por ciudad/población) y fotos/lugares reales
+ * (Wikipedia / Wikimedia Commons). Al pulsar "Crear mis outfits", guarda en Supabase y pasa a Paso 3.
  */
 export function CrearViaje({
   hoy,
@@ -46,45 +48,62 @@ export function CrearViaje({
   const [lugar, setLugar] = useState<Lugar | null>(null)
   const [busqueda, setBusqueda] = useState("")
   const [resultados, setResultados] = useState<Lugar[]>([])
+  const [buscandoCiudad, setBuscandoCiudad] = useState(false)
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false)
   const [inicio, setInicio] = useState(inicial.inicio)
   const [fin, setFin] = useState(inicial.fin)
   const [intereses, setIntereses] = useState<string[]>(["Arte y cultura", "Paseos"])
   const [filtro, setFiltro] = useState<"Para ti" | CategoriaLugar>("Para ti")
+  const [destinoReal, setDestinoReal] = useState<DestinoReal | null>(null)
+  const [cargandoDestino, setCargandoDestino] = useState(true)
   const [seleccionados, setSeleccionados] = useState<LugarSugerido[]>([])
   const [personalizado, setPersonalizado] = useState("")
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const infoDestino = useMemo(() => obtenerInfoDestino(lugar?.nombre ?? busqueda), [lugar?.nombre, busqueda])
-
-  // Búsqueda de ciudades con Open-Meteo
+  // Búsqueda de ciudades reales con Open-Meteo
   useEffect(() => {
     if (lugar) return
     let vigente = true
     const t = setTimeout(async () => {
       if (busqueda.trim().length < 2) {
-        if (vigente) setResultados([])
+        if (vigente) { setResultados([]); setBuscandoCiudad(false) }
         return
       }
+      setBuscandoCiudad(true)
       const r = await buscarLugares(busqueda)
-      if (vigente) setResultados(r)
-    }, 300)
+      if (vigente) {
+        setResultados(r)
+        setBuscandoCiudad(false)
+      }
+    }, 280)
     return () => { vigente = false; clearTimeout(t) }
   }, [busqueda, lugar])
 
-  // Al cambiar de destino, preselecciona los 2 primeros lugares recomendados
+  // Foto real de la ciudad + lugares reales cercanos con sus fotografías reales
+  const objetivoFoto = lugar ?? DESTINO_PREVIA_DEFAULT
   useEffect(() => {
-    setSeleccionados(infoDestino.lugares.slice(0, 2))
-    setFiltro("Para ti")
-  }, [infoDestino])
+    let vigente = true
+    setCargandoDestino(true)
+    obtenerDestinoReal(objetivoFoto)
+      .then((info) => {
+        if (!vigente) return
+        setDestinoReal(info)
+        setSeleccionados(info.lugares.slice(0, 2))
+        setFiltro("Para ti")
+      })
+      .finally(() => {
+        if (vigente) setCargandoDestino(false)
+      })
+    return () => { vigente = false }
+  }, [objetivoFoto])
 
   const maxFin = sumarDias(inicio, MAX_DIAS_PLAN - 1)
   const fechas = inicio && fin && fin >= inicio ? diasEntre(inicio, fin) : []
   const quedaHoy = cuota ? Math.min(cuota.hoy, cuota.mes) : null
 
   const errorPaso1 =
-    !lugar ? "Elige una ciudad de la lista para conocer su clima."
+    !lugar ? "Elige una ciudad de la lista para conocer su clima y lugares."
     : !inicio || inicio < hoy ? "Elige fechas a partir de hoy."
     : !fin || fin < inicio ? "La fecha de vuelta no puede ser antes de la de ida."
     : fin > maxFin ? "Un viaje puede durar hasta 30 días."
@@ -109,17 +128,18 @@ export function CrearViaje({
       categoria: "Barrios con encanto",
       descripcion: "Plan personalizado añadido a tu itinerario.",
       detalles: "A tu ritmo · Personalizado",
-      imagen: infoDestino.imagen,
+      imagen: destinoReal?.imagen ?? null,
     }
     setSeleccionados((prev) => [...prev, nuevo])
     setPersonalizado("")
   }
 
   const todosLosLugares = useMemo(() => {
-    const idsCatalogo = new Set(infoDestino.lugares.map((l) => l.id))
-    const extras = seleccionados.filter((s) => !idsCatalogo.has(s.id))
-    return [...infoDestino.lugares, ...extras]
-  }, [infoDestino.lugares, seleccionados])
+    const base = destinoReal?.lugares ?? []
+    const idsBase = new Set(base.map((l) => l.id))
+    const extras = seleccionados.filter((s) => !idsBase.has(s.id))
+    return [...base, ...extras]
+  }, [destinoReal?.lugares, seleccionados])
 
   const lugaresFiltrados = useMemo(() => {
     if (filtro === "Para ti") return todosLosLugares
@@ -134,13 +154,11 @@ export function CrearViaje({
       ? seleccionados.map((s) => s.nombre)
       : ["Paseo y exploración por el destino"]
 
-    // Mapea los lugares seleccionados a los días del viaje (respetando unique (plan_id, fecha, momento))
     const momentos: { fecha: string; momento: Momento; actividad: string }[] = []
     fechas.forEach((f, idx) => {
       const actDia = actividades[idx % actividades.length]
       momentos.push({ fecha: f, momento: "dia", actividad: actDia.slice(0, 120) })
     })
-    // Si seleccionó más lugares que días, los adicionales se agregan como momento de noche
     if (actividades.length > fechas.length) {
       const sobrantes = actividades.slice(fechas.length)
       sobrantes.forEach((act, idx) => {
@@ -159,9 +177,9 @@ export function CrearViaje({
     }
   }
 
-  const coordenadas = lugar
-    ? formatearCoordenadas(lugar.lat, lugar.lon)
-    : formatearCoordenadas(48.8566, 2.3522)
+  const coordenadas = formatearCoordenadas(objetivoFoto.lat, objetivoFoto.lon)
+  const fraseDestino = destinoReal?.frase ?? `${ciudadCorta(objetivoFoto.nombre)}, siempre es buena idea.`
+  const subtituloDestino = destinoReal?.subtitulo ?? "Un café, un museo, una calle por descubrir."
 
   return (
     <div className="flex flex-col gap-5 sm:gap-8 w-full max-w-full min-w-0 overflow-x-hidden">
@@ -223,29 +241,33 @@ export function CrearViaje({
                     onFocus={() => setMostrarSugerencias(true)}
                     onBlur={() => setTimeout(() => setMostrarSugerencias(false), 180)}
                     onChange={(e) => { setBusqueda(e.target.value); setMostrarSugerencias(true) }}
-                    placeholder="París, Francia · CDMX · Oaxaca…"
+                    placeholder="Ciudad de México, Oaxaca, París…"
                     className="h-12 w-full min-w-0 max-w-full box-border border border-zinc-300 bg-[#F4F0E9] pl-3.5 pr-10 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 rounded-none"
                   />
                   <Search className="w-4 h-4 text-zinc-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
 
-                  {mostrarSugerencias && (resultados.length > 0 || busqueda.trim().length < 2) && (
+                  {mostrarSugerencias && (buscandoCiudad || resultados.length > 0 || busqueda.trim().length < 2) && (
                     <ul
                       className="absolute z-20 left-0 right-0 top-full w-full max-w-full border border-t-0 border-zinc-300 bg-[#F4F0E9] shadow-md max-h-60 overflow-y-auto overflow-x-hidden"
-                      aria-label="Destinos sugeridos"
+                      aria-label="Ciudades encontradas"
                     >
-                      {(resultados.length > 0 ? resultados : CIUDADES_DESTACADAS).map((r) => (
-                        <li key={`${r.lat},${r.lon}`} className="w-full min-w-0">
-                          <button
-                            type="button"
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => { setLugar(r); setBusqueda(r.nombre); setMostrarSugerencias(false) }}
-                            className="w-full min-h-11 px-3.5 py-2.5 text-left text-sm text-zinc-800 hover:bg-zinc-100 border-b border-zinc-200/60 last:border-b-0 flex items-center justify-between gap-2 min-w-0"
-                          >
-                            <span className="truncate min-w-0">{r.nombre}</span>
-                            <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />
-                          </button>
-                        </li>
-                      ))}
+                      {buscandoCiudad ? (
+                        <li className="px-3.5 py-3 text-xs text-zinc-500">Buscando ciudades…</li>
+                      ) : (
+                        (resultados.length > 0 ? resultados : CIUDADES_DESTACADAS).map((r) => (
+                          <li key={`${r.lat},${r.lon}`} className="w-full min-w-0">
+                            <button
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => { setLugar(r); setBusqueda(r.nombre); setMostrarSugerencias(false) }}
+                              className="w-full min-h-11 px-3.5 py-2.5 text-left text-sm text-zinc-800 hover:bg-zinc-100 border-b border-zinc-200/60 last:border-b-0 flex items-center justify-between gap-2 min-w-0"
+                            >
+                              <span className="truncate min-w-0">{r.nombre}</span>
+                              <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />
+                            </button>
+                          </li>
+                        ))
+                      )}
                     </ul>
                   )}
                 </div>
@@ -334,24 +356,33 @@ export function CrearViaje({
             </div>
           </div>
 
-          {/* Columna derecha: tarjeta editorial del destino */}
+          {/* Columna derecha: tarjeta editorial del destino con foto real */}
           <div className="bg-zinc-900 text-white flex flex-col overflow-hidden w-full min-w-0">
             <div className="pr-0 sm:pr-6 lg:pr-8 bg-zinc-900 w-full">
-              <div className="aspect-[16/10] sm:aspect-[4/3] lg:aspect-[4/4.2] w-full overflow-hidden bg-zinc-800">
-                <img
-                  src={infoDestino.imagen}
-                  alt={lugar?.nombre ?? "Destino destacado"}
-                  className="w-full h-full object-cover"
-                />
+              <div className="aspect-[16/10] sm:aspect-[4/3] lg:aspect-[4/4.2] w-full overflow-hidden bg-zinc-800 flex items-center justify-center">
+                {cargandoDestino ? (
+                  <div className="w-full h-full bg-zinc-800 animate-pulse" />
+                ) : destinoReal?.imagen ? (
+                  <img
+                    src={destinoReal.imagen}
+                    alt={objetivoFoto.nombre}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-zinc-400">
+                    <MapPin className="w-6 h-6" aria-hidden="true" />
+                    <span className="text-xs">{ciudadCorta(objetivoFoto.nombre)}</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="p-4 sm:p-6 flex items-end justify-between gap-4 min-w-0">
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase truncate">{coordenadas}</p>
                 <p className="font-serif text-xl sm:text-2xl text-white font-normal mt-1.5 leading-snug break-words">
-                  {infoDestino.frase}
+                  {fraseDestino}
                 </p>
-                <p className="text-xs text-zinc-400 mt-1">{infoDestino.subtitulo}</p>
+                <p className="text-xs text-zinc-400 mt-1">{subtituloDestino}</p>
               </div>
               <ArrowUpRight className="w-5 h-5 text-terracota shrink-0 mb-1" aria-hidden="true" />
             </div>
@@ -359,13 +390,13 @@ export function CrearViaje({
         </div>
       )}
 
-      {/* PASO 2: LUGARES */}
+      {/* PASO 2: LUGARES REALES */}
       {paso === 2 && lugar && (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 w-full min-w-0">
           {/* Encabezado */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div className="flex flex-col gap-1.5">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-terracota font-medium">
+            <div className="flex flex-col gap-1.5 min-w-0">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-terracota font-medium truncate">
                 {lugar.nombre.toUpperCase()} / {rangoFechasEditorial(inicio, fin)}
               </p>
               <h1 className="font-serif text-3xl sm:text-4xl text-zinc-900 font-normal leading-tight">
@@ -406,70 +437,97 @@ export function CrearViaje({
               )
             })}
             <span className="text-xs text-zinc-500 pl-2 shrink-0">
-              {lugaresFiltrados.length} {lugaresFiltrados.length === 1 ? "lugar recomendado" : "lugares recomendados"}
+              {cargandoDestino
+                ? "Buscando lugares reales…"
+                : `${lugaresFiltrados.length} ${lugaresFiltrados.length === 1 ? "lugar recomendado" : "lugares recomendados"}`}
             </span>
           </div>
 
-          {/* Cuadrícula de lugares */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {lugaresFiltrados.map((item) => {
-              const estaSeleccionado = seleccionados.some((s) => s.id === item.id)
-              return (
-                <article
-                  key={item.id}
-                  onClick={() => toggleLugar(item)}
-                  className={cn(
-                    "group cursor-pointer bg-[#F4F0E9] border flex flex-col overflow-hidden transition-colors",
-                    estaSeleccionado ? "border-terracota" : "border-zinc-200 hover:border-zinc-400"
-                  )}
-                >
-                  <div className="aspect-[16/10] w-full overflow-hidden bg-zinc-100">
-                    <img
-                      src={item.imagen}
-                      alt={item.nombre}
-                      className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                    />
+          {/* Cuadrícula de lugares reales */}
+          {cargandoDestino ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" aria-busy="true">
+              {[0, 1, 2].map((k) => (
+                <div key={k} className="bg-[#F4F0E9] border border-zinc-200 flex flex-col overflow-hidden">
+                  <div className="aspect-[16/10] w-full bg-zinc-200 animate-pulse" />
+                  <div className="p-5 flex flex-col gap-3">
+                    <div className="h-3 w-24 bg-zinc-200 animate-pulse" />
+                    <div className="h-6 w-3/4 bg-zinc-200 animate-pulse" />
+                    <div className="h-4 w-full bg-zinc-200 animate-pulse" />
                   </div>
-                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.14em] font-semibold">
-                        <span className="text-zinc-500">{item.categoria}</span>
-                        <span className={estaSeleccionado ? "text-terracota" : "text-zinc-500"}>
-                          {estaSeleccionado ? "✓ Seleccionado" : "+ Añadir"}
+                </div>
+              ))}
+            </div>
+          ) : lugaresFiltrados.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {lugaresFiltrados.map((item) => {
+                const estaSeleccionado = seleccionados.some((s) => s.id === item.id)
+                return (
+                  <article
+                    key={item.id}
+                    onClick={() => toggleLugar(item)}
+                    className={cn(
+                      "group cursor-pointer bg-[#F4F0E9] border flex flex-col overflow-hidden transition-colors",
+                      estaSeleccionado ? "border-terracota" : "border-zinc-200 hover:border-zinc-400"
+                    )}
+                  >
+                    <div className="aspect-[16/10] w-full overflow-hidden bg-zinc-100 flex items-center justify-center">
+                      {item.imagen ? (
+                        <img
+                          src={item.imagen}
+                          alt={item.nombre}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                        />
+                      ) : (
+                        <MapPin className="w-6 h-6 text-zinc-400" aria-hidden="true" />
+                      )}
+                    </div>
+                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.14em] font-semibold">
+                          <span className="text-zinc-500 truncate">{item.categoria}</span>
+                          <span className={cn("shrink-0", estaSeleccionado ? "text-terracota" : "text-zinc-500")}>
+                            {estaSeleccionado ? "✓ Seleccionado" : "+ Añadir"}
+                          </span>
+                        </div>
+                        <h3 className="font-serif text-xl sm:text-2xl text-zinc-900 font-normal leading-snug mt-0.5">
+                          {item.nombre}
+                        </h3>
+                        <p className="text-xs text-zinc-600 leading-relaxed">{item.descripcion}</p>
+                        <p className="text-[11px] text-zinc-500 mt-1">{item.detalles}</p>
+                      </div>
+
+                      <div className="pt-3 border-t border-zinc-200/80">
+                        <span
+                          className={cn(
+                            "text-xs font-medium inline-flex items-center gap-1.5",
+                            estaSeleccionado ? "text-terracota" : "text-zinc-800"
+                          )}
+                        >
+                          {estaSeleccionado ? (
+                            <>
+                              <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                              Quitar de mi viaje
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                              Añadir a mi viaje
+                            </>
+                          )}
                         </span>
                       </div>
-                      <h3 className="font-serif text-xl sm:text-2xl text-zinc-900 font-normal leading-snug mt-0.5">
-                        {item.nombre}
-                      </h3>
-                      <p className="text-xs text-zinc-600 leading-relaxed">{item.descripcion}</p>
-                      <p className="text-[11px] text-zinc-500 mt-1">{item.detalles}</p>
                     </div>
-
-                    <div className="pt-3 border-t border-zinc-200/80">
-                      <span
-                        className={cn(
-                          "text-xs font-medium inline-flex items-center gap-1.5",
-                          estaSeleccionado ? "text-terracota" : "text-zinc-800"
-                        )}
-                      >
-                        {estaSeleccionado ? (
-                          <>
-                            <Check className="w-3.5 h-3.5" aria-hidden="true" />
-                            Quitar de mi viaje
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                            Añadir a mi viaje
-                          </>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
+                  </article>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="border border-zinc-200 bg-[#F4F0E9] p-6 text-center">
+              <p className="text-sm text-zinc-700">No encontramos lugares en esta categoría para {ciudadCorta(lugar.nombre)}.</p>
+              <p className="text-xs text-zinc-500 mt-1">Prueba con el filtro «Para ti» o escribe tus propios planes abajo.</p>
+            </div>
+          )}
 
           {/* Añadir lugar personalizado */}
           <div className="border border-zinc-200 bg-[#F4F0E9] p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -480,7 +538,7 @@ export function CrearViaje({
               onChange={(e) => setPersonalizado(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); agregarPersonalizado() } }}
               placeholder="¿Tienes otro plan? Ej. Pirámides de Teotihuacán, cena especial…"
-              className="h-10 flex-1 border border-zinc-300 bg-white px-3 text-xs sm:text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900"
+              className="h-10 flex-1 min-w-0 border border-zinc-300 bg-white px-3 text-xs sm:text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 rounded-none"
             />
             <button
               type="button"

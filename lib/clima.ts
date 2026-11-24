@@ -100,23 +100,59 @@ export async function climaParaFechas(lugar: Lugar, fechas: string[], hoy: strin
   return resultado
 }
 
-/** Lugares para el formulario del plan; [] con menos de 2 letras o si falla. */
+const CODIGOS_CIUDAD = new Set(["PPLC", "PPLA", "PPLA2", "PPLA3", "PPLA4"])
+
+/** Lugares (ciudades reales) para el formulario del plan; [] con menos de 2 letras o si falla. */
 export async function buscarLugares(texto: string): Promise<Lugar[]> {
   const q = texto.trim()
   if (q.length < 2) return []
   try {
     const res = await fetch(
-      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=es&format=json`,
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=20&language=es&format=json`,
       { signal: AbortSignal.timeout(8000) }
     )
     if (!res.ok) return []
     const { results } = await res.json()
-    return ((results ?? []) as { name?: string; admin1?: string; country?: string; latitude: number; longitude: number; timezone?: string }[])
-      .map((r) => {
-        const partes: string[] = []
-        for (const p of [r.name, r.admin1, r.country]) if (p && !partes.includes(p)) partes.push(p)
-        return { nombre: partes.join(", "), lat: r.latitude, lon: r.longitude, zona: r.timezone }
-      })
+    type GeoItem = {
+      name?: string
+      admin1?: string
+      country?: string
+      latitude: number
+      longitude: number
+      timezone?: string
+      population?: number
+      feature_code?: string
+    }
+    const lista = (results ?? []) as GeoItem[]
+    // Priorizar ciudades reales (capitales o poblaciones >= 5,000) para evitar rancherías con el mismo nombre.
+    const principales = lista.filter(
+      (r) => (r.feature_code && CODIGOS_CIUDAD.has(r.feature_code)) || (r.population ?? 0) >= 5000
+    )
+    const filtrados = principales.length > 0
+      ? principales
+      : lista.filter((r) => r.feature_code?.startsWith("PPL") || (r.population ?? 0) > 0)
+
+    const ordenados = [...(filtrados.length > 0 ? filtrados : lista)].sort((a, b) => {
+      const popA = a.population ?? 0
+      const popB = b.population ?? 0
+      const capA = a.feature_code === "PPLC" || a.feature_code === "PPLA" ? 1 : 0
+      const capB = b.feature_code === "PPLC" || b.feature_code === "PPLA" ? 1 : 0
+      if (capB !== capA) return capB - capA
+      return popB - popA
+    })
+
+    const vistos = new Set<string>()
+    const salida: Lugar[] = []
+    for (const r of ordenados) {
+      const partes: string[] = []
+      for (const p of [r.name, r.admin1, r.country]) if (p && !partes.includes(p)) partes.push(p)
+      const nombre = partes.join(", ")
+      if (!nombre || vistos.has(nombre)) continue
+      vistos.add(nombre)
+      salida.push({ nombre, lat: r.latitude, lon: r.longitude, zona: r.timezone })
+      if (salida.length >= 6) break
+    }
+    return salida
   } catch {
     return []
   }
