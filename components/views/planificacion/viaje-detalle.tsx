@@ -124,7 +124,7 @@ export function ViajeDetalle({
   }
 
   return (
-    <div ref={refOutfits} className="flex flex-col gap-6 sm:gap-7">
+    <div ref={refOutfits} className="flex flex-col gap-6 sm:gap-7 w-full max-w-full min-w-0 overflow-x-hidden">
       <ViajeStepper pasoActual={3} />
 
       {/* Encabezado editorial */}
@@ -186,7 +186,7 @@ export function ViajeDetalle({
 
       {/* Pestañas de lugares + clima de referencia */}
       {momentosOrdenados.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 [scrollbar-width:none] overscroll-x-contain">
+        <div className="w-full max-w-full flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] overscroll-x-contain">
           {momentosOrdenados.map((m, i) => {
             const esActivo = i === idxSeguro
             const etiqueta = m.actividad.trim() || (m.momento === "noche" ? "Plan de noche" : `Día ${i + 1}`)

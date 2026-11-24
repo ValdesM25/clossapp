@@ -164,7 +164,7 @@ export function CrearViaje({
     : formatearCoordenadas(48.8566, 2.3522)
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8">
+    <div className="flex flex-col gap-5 sm:gap-8 w-full max-w-full min-w-0 overflow-x-hidden">
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
@@ -180,31 +180,31 @@ export function CrearViaje({
 
       {/* PASO 1: DESTINO */}
       {paso === 1 && (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr] gap-8 lg:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr] gap-6 sm:gap-8 lg:gap-12 items-start w-full min-w-0">
           {/* Columna izquierda: formulario */}
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-3">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-terracota font-medium">
+          <div className="flex flex-col gap-5 sm:gap-6 w-full min-w-0">
+            <div className="flex flex-col gap-2.5 sm:gap-3 min-w-0">
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.16em] sm:tracking-[0.18em] text-terracota font-medium">
                 Un viaje, muchas versiones de ti.
               </p>
-              <h1 className="font-serif text-3xl sm:text-4xl lg:text-[2.75rem] text-zinc-900 font-normal leading-[1.1] tracking-tight">
+              <h1 className="font-serif text-[1.9rem] sm:text-4xl lg:text-[2.75rem] text-zinc-900 font-normal leading-[1.1] tracking-tight break-words">
                 Tu próximo destino,
                 <br />
                 tu próximo outfit.
               </h1>
-              <p className="text-sm text-zinc-600 leading-relaxed max-w-md">
+              <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed max-w-md">
                 Descubre qué visitar y qué ponerte. Creamos looks con tu armario para cada plan de tu viaje.
               </p>
             </div>
 
             {/* Buscador de destino */}
-            <div className="flex flex-col gap-1.5 relative">
+            <div className="flex flex-col gap-1.5 relative w-full min-w-0">
               <label htmlFor="viaje-destino" className="text-[10px] uppercase tracking-[0.16em] text-zinc-500 font-semibold">
                 ¿A dónde viajas?
               </label>
               {lugar ? (
-                <div className="h-12 w-full border border-zinc-300 bg-[#F4F0E9] px-3.5 flex items-center justify-between gap-2">
-                  <span className="text-sm text-zinc-900 truncate">{lugar.nombre}</span>
+                <div className="h-12 w-full min-w-0 border border-zinc-300 bg-[#F4F0E9] px-3.5 flex items-center justify-between gap-2 box-border">
+                  <span className="text-sm text-zinc-900 truncate min-w-0">{lugar.nombre}</span>
                   <button
                     type="button"
                     onClick={() => { setLugar(null); setBusqueda(""); setMostrarSugerencias(true) }}
@@ -215,7 +215,7 @@ export function CrearViaje({
                   </button>
                 </div>
               ) : (
-                <div className="relative">
+                <div className="relative w-full min-w-0">
                   <input
                     id="viaje-destino"
                     type="search"
@@ -223,26 +223,26 @@ export function CrearViaje({
                     onFocus={() => setMostrarSugerencias(true)}
                     onBlur={() => setTimeout(() => setMostrarSugerencias(false), 180)}
                     onChange={(e) => { setBusqueda(e.target.value); setMostrarSugerencias(true) }}
-                    placeholder="París, Francia · Ciudad de México · Oaxaca…"
-                    className="h-12 w-full border border-zinc-300 bg-[#F4F0E9] pl-3.5 pr-10 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900"
+                    placeholder="París, Francia · CDMX · Oaxaca…"
+                    className="h-12 w-full min-w-0 max-w-full box-border border border-zinc-300 bg-[#F4F0E9] pl-3.5 pr-10 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 rounded-none"
                   />
                   <Search className="w-4 h-4 text-zinc-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
 
                   {mostrarSugerencias && (resultados.length > 0 || busqueda.trim().length < 2) && (
                     <ul
-                      className="absolute z-20 left-0 right-0 top-full border border-t-0 border-zinc-300 bg-[#F4F0E9] shadow-md max-h-60 overflow-y-auto"
+                      className="absolute z-20 left-0 right-0 top-full w-full max-w-full border border-t-0 border-zinc-300 bg-[#F4F0E9] shadow-md max-h-60 overflow-y-auto overflow-x-hidden"
                       aria-label="Destinos sugeridos"
                     >
                       {(resultados.length > 0 ? resultados : CIUDADES_DESTACADAS).map((r) => (
-                        <li key={`${r.lat},${r.lon}`}>
+                        <li key={`${r.lat},${r.lon}`} className="w-full min-w-0">
                           <button
                             type="button"
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => { setLugar(r); setBusqueda(r.nombre); setMostrarSugerencias(false) }}
-                            className="w-full min-h-11 px-3.5 py-2.5 text-left text-sm text-zinc-800 hover:bg-zinc-100 border-b border-zinc-200/60 last:border-b-0 flex items-center justify-between"
+                            className="w-full min-h-11 px-3.5 py-2.5 text-left text-sm text-zinc-800 hover:bg-zinc-100 border-b border-zinc-200/60 last:border-b-0 flex items-center justify-between gap-2 min-w-0"
                           >
-                            <span>{r.nombre}</span>
-                            <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400" aria-hidden="true" />
+                            <span className="truncate min-w-0">{r.nombre}</span>
+                            <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />
                           </button>
                         </li>
                       ))}
@@ -253,8 +253,8 @@ export function CrearViaje({
             </div>
 
             {/* Fechas */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full min-w-0">
+              <div className="flex flex-col gap-1.5 min-w-0 w-full">
                 <label htmlFor="viaje-ida" className="text-[10px] uppercase tracking-[0.16em] text-zinc-500 font-semibold">
                   Fecha de ida
                 </label>
@@ -268,10 +268,10 @@ export function CrearViaje({
                     setInicio(v)
                     if (!fin || fin < v || fin > sumarDias(v, MAX_DIAS_PLAN - 1)) setFin(sumarDias(v, 3))
                   }}
-                  className="h-12 w-full border border-zinc-300 bg-[#F4F0E9] px-3.5 text-sm text-zinc-900 focus:outline-none focus:border-zinc-900"
+                  className="h-12 w-full min-w-0 max-w-full box-border appearance-none border border-zinc-300 bg-[#F4F0E9] px-3 text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 rounded-none"
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 min-w-0 w-full">
                 <label htmlFor="viaje-vuelta" className="text-[10px] uppercase tracking-[0.16em] text-zinc-500 font-semibold">
                   Fecha de vuelta
                 </label>
@@ -282,17 +282,17 @@ export function CrearViaje({
                   max={maxFin}
                   value={fin}
                   onChange={(e) => setFin(e.target.value)}
-                  className="h-12 w-full border border-zinc-300 bg-[#F4F0E9] px-3.5 text-sm text-zinc-900 focus:outline-none focus:border-zinc-900"
+                  className="h-12 w-full min-w-0 max-w-full box-border appearance-none border border-zinc-300 bg-[#F4F0E9] px-3 text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 rounded-none"
                 />
               </div>
             </div>
 
             {/* Cómo te gusta viajar */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 w-full min-w-0">
               <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-500 font-semibold">
                 ¿Cómo te gusta viajar?
               </span>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 w-full min-w-0">
                 {INTERESES_VIAJE.map((item) => {
                   const activo = intereses.includes(item)
                   return (
@@ -301,14 +301,14 @@ export function CrearViaje({
                       type="button"
                       onClick={() => toggleInteres(item)}
                       className={cn(
-                        "h-9 px-3.5 text-xs font-medium flex items-center gap-1.5 border transition-colors",
+                        "h-9 px-3 text-xs font-medium flex items-center gap-1.5 border transition-colors max-w-full",
                         activo
                           ? "bg-zinc-900 text-white border-zinc-900"
                           : "bg-[#F4F0E9] text-zinc-700 border-zinc-300 hover:border-zinc-900"
                       )}
                     >
-                      {activo ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Plus className="w-3.5 h-3.5" aria-hidden="true" />}
-                      {item}
+                      {activo ? <Check className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> : <Plus className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
+                      <span className="truncate">{item}</span>
                     </button>
                   )
                 })}
@@ -316,7 +316,7 @@ export function CrearViaje({
             </div>
 
             {/* Botón principal */}
-            <div className="flex flex-col gap-2 pt-1">
+            <div className="flex flex-col gap-2 pt-1 w-full min-w-0">
               <button
                 type="button"
                 disabled={!!errorPaso1}
@@ -324,7 +324,7 @@ export function CrearViaje({
                 className="h-12 w-full bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-medium px-5 flex items-center justify-between transition-colors disabled:opacity-45"
               >
                 <span>Descubrir lugares</span>
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                <ArrowRight className="w-4 h-4 shrink-0" aria-hidden="true" />
               </button>
               {errorPaso1 ? (
                 <p className="text-xs text-zinc-500">{errorPaso1}</p>
@@ -335,8 +335,8 @@ export function CrearViaje({
           </div>
 
           {/* Columna derecha: tarjeta editorial del destino */}
-          <div className="bg-zinc-900 text-white flex flex-col overflow-hidden">
-            <div className="pr-0 sm:pr-6 lg:pr-8 bg-zinc-900">
+          <div className="bg-zinc-900 text-white flex flex-col overflow-hidden w-full min-w-0">
+            <div className="pr-0 sm:pr-6 lg:pr-8 bg-zinc-900 w-full">
               <div className="aspect-[16/10] sm:aspect-[4/3] lg:aspect-[4/4.2] w-full overflow-hidden bg-zinc-800">
                 <img
                   src={infoDestino.imagen}
@@ -345,10 +345,10 @@ export function CrearViaje({
                 />
               </div>
             </div>
-            <div className="p-5 sm:p-6 flex items-end justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">{coordenadas}</p>
-                <p className="font-serif text-xl sm:text-2xl text-white font-normal mt-1.5 leading-snug">
+            <div className="p-4 sm:p-6 flex items-end justify-between gap-4 min-w-0">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase truncate">{coordenadas}</p>
+                <p className="font-serif text-xl sm:text-2xl text-white font-normal mt-1.5 leading-snug break-words">
                   {infoDestino.frase}
                 </p>
                 <p className="text-xs text-zinc-400 mt-1">{infoDestino.subtitulo}</p>
@@ -386,7 +386,7 @@ export function CrearViaje({
           </div>
 
           {/* Filtros */}
-          <div className="flex items-center gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 [scrollbar-width:none] overscroll-x-contain">
+          <div className="w-full max-w-full flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] overscroll-x-contain">
             {FILTROS_LUGARES.map((cat) => {
               const activo = filtro === cat
               return (

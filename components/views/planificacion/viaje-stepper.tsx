@@ -18,40 +18,40 @@ export function ViajeStepper({
   onPaso?: (paso: 1 | 2 | 3) => void
 }) {
   return (
-    <div className="border-b border-zinc-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="w-full min-w-0 border-b border-zinc-200 pb-3.5 sm:pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-zinc-500 font-medium shrink-0">
         Planifica tu viaje
       </span>
 
-      <ol className="flex items-center justify-between sm:justify-end sm:flex-1 gap-2 sm:gap-8 md:gap-14" aria-label="Pasos del viaje">
+      <ol className="w-full sm:w-auto flex items-center justify-between sm:justify-end sm:flex-1 gap-2 sm:gap-8 md:gap-14 min-w-0" aria-label="Pasos del viaje">
         {PASOS.map(({ num, label }) => {
           const completado = num < pasoActual
           const activo = num === pasoActual
           const clickable = Boolean(onPaso && num < pasoActual)
           return (
-            <li key={num} className="flex items-center">
+            <li key={num} className="flex items-center min-w-0">
               <button
                 type="button"
                 disabled={!clickable}
                 onClick={() => clickable && onPaso?.(num)}
                 className={cn(
-                  "flex items-center gap-2 text-xs transition-colors disabled:cursor-default",
+                  "flex items-center gap-1.5 sm:gap-2 text-xs transition-colors disabled:cursor-default min-w-0",
                   clickable && "hover:opacity-80 cursor-pointer"
                 )}
               >
                 <span
                   className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-medium transition-colors shrink-0",
+                    "w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] font-medium transition-colors shrink-0",
                     completado || activo
                       ? "bg-zinc-900 text-white"
                       : "border border-zinc-300 text-zinc-500 bg-transparent"
                   )}
                 >
-                  {completado ? <Check className="w-3.5 h-3.5 stroke-[2.5]" aria-hidden="true" /> : num}
+                  {completado ? <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5]" aria-hidden="true" /> : num}
                 </span>
                 <span
                   className={cn(
-                    "text-xs tracking-wide",
+                    "text-[11px] sm:text-xs tracking-wide truncate",
                     activo || completado ? "text-zinc-900 font-medium" : "text-zinc-500"
                   )}
                 >
