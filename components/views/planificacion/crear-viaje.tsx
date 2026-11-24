@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ArrowRight, ArrowUpRight, Check, ChevronLeft, MapPin, Moon, Plus, Search, Sun, X } from "lucide-react"
+import { ArrowRight, ArrowUpRight, Check, ChevronLeft, MapPin, Moon, Plus, Search, Sun, UtensilsCrossed, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { buscarLugares, type Lugar } from "@/lib/clima"
 import { obtenerDestinoReal, type DestinoReal } from "@/lib/destinos"
@@ -647,6 +647,8 @@ export function CrearViaje({
                           loading="lazy"
                           className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                         />
+                      ) : item.categoria === "Gastronomía" ? (
+                        <UtensilsCrossed className="w-6 h-6 text-zinc-400" aria-hidden="true" />
                       ) : (
                         <MapPin className="w-6 h-6 text-zinc-400" aria-hidden="true" />
                       )}

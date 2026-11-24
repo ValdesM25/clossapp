@@ -199,16 +199,33 @@ async function fetchLugaresWiki(lat: number, lon: number, ciudad: string, lang: 
   }
 }
 
-/** Obtiene foto real de la ciudad y lugares turísticos reales cercanos con sus fotografías reales. */
+async function fetchRestaurantes(nombreLugar: string): Promise<LugarSugerido[]> {
+  try {
+    const res = await fetch("/api/planificacion/gastronomia", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ciudad: nombreLugar }),
+      signal: AbortSignal.timeout(12000),
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    return Array.isArray(data?.lugares) ? (data.lugares as LugarSugerido[]) : []
+  } catch {
+    return []
+  }
+}
+
+/** Obtiene foto real de la ciudad, lugares turísticos reales y restaurantes reales recomendados. */
 export async function obtenerDestinoReal(lugar: Lugar): Promise<DestinoReal> {
   const clave = `${lugar.lat.toFixed(3)},${lugar.lon.toFixed(3)}`
   const enCache = cacheDestinos.get(clave)
   if (enCache) return enCache
 
   const ciudad = ciudadCorta(lugar.nombre)
-  const [fotoEs, lugaresEs] = await Promise.all([
+  const [fotoEs, lugaresEs, restaurantes] = await Promise.all([
     fetchFotoCiudad(lugar.nombre, "es"),
     fetchLugaresWiki(lugar.lat, lugar.lon, ciudad, "es"),
+    fetchRestaurantes(lugar.nombre),
   ])
 
   const imagen = fotoEs ?? (await fetchFotoCiudad(lugar.nombre, "en"))
@@ -221,8 +238,16 @@ export async function obtenerDestinoReal(lugar: Lugar): Promise<DestinoReal> {
         lugares.push(l)
         vistos.add(normalizar(l.nombre))
       }
-      if (lugares.length >= 9) break
+      if (lugares.length >= 12) break
     }
+  }
+
+  // Combinar restaurantes recomendados reales (prioridad en la categoría Gastronomía)
+  if (restaurantes.length > 0) {
+    const sinGastroGenerico = lugares.filter((l) => l.categoria !== "Gastronomía")
+    const vistos = new Set(sinGastroGenerico.map((l) => normalizar(l.nombre)))
+    const restosUnicos = restaurantes.filter((r) => !vistos.has(normalizar(r.nombre)))
+    lugares = [...sinGastroGenerico, ...restosUnicos]
   }
 
   const resultado: DestinoReal = {
