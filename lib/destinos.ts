@@ -18,12 +18,18 @@ interface WikiPage {
   description?: string
   extract?: string
   thumbnail?: { source?: string; width?: number; height?: number }
+  coordinates?: { lat: number; lon: number }[]
 }
 
 const cacheDestinos = new Map<string, DestinoReal>()
 
-const IMAGEN_INVALIDA = /\.(svg|gif)(\?|$)|escudo|coat_of_arms|flag_of|bandera|logo|map|mapa|locator|location|diagram|blank|portrait|signature/i
-const TITULO_EXCLUIDO = /\b(universidad|escuela|colegio|instituto tecnol|hospital|clínica|aeropuerto|estación|metro |municipio|estado de |ayuntamiento|gobierno|prisión|cárcel|cementerio|panteón|estadio|arena |elecciones|arquidiócesis|diócesis|radio |televisión|periódico|batalla de|sitio de|masacre|terremoto|sismo|línea \d|anexo:)\b/i
+// Rechaza SVGs (incluidos .svg.png), mapas, escudos, banderas y mapas electorales/municipales.
+const IMAGEN_INVALIDA = /\.svg|gif(\?|$)|escudo|coat_of_arms|flag_of|bandera|logo|map|mapa|locator|location|diagram|blank|portrait|signature|distrito|electoral|municip|ubicacion|inegi|en_m/i
+
+const EXCLUIDO = /\b(distrito|electoral|elecciones|municipio|zona metropolitana|area metropolitana|ayuntamiento|gobierno|universidad|escuela|colegio|instituto tecnol|hospital|clinica|aeropuerto|estacion|prision|carcel|cementerio|panteon|estadio|arena|arquidiocesis|diocesis|radio|television|periodico|batalla|masacre|terremoto|sismo|linea \d|anexo:|anillo periferico|carretera|autopista|canal|senador|diputado|gobernador|presidente|futbol|beisbol|club|parroquia civil)\b/i
+
+// Lista blanca estricta: solo lugares reales de interés turístico, cultural, natural o gastronómico.
+const TURISTICO = /\b(museo|galeria|teatro|palacio|catedral|templo|basilica|exconvento|convento|castillo|monumento|centro cultural|bellas artes|opera|planetario|acuario|auditorio|observatorio|piramide|zona arqueologica|ruinas|parque|jardin|bosque|playa|mirador|lago|laguna|cascada|volcan|cerro|canon|malecon|isla|cenote|reserva|alameda|zoologico|bioparque|grutas|dunas|centro historico|barrio|plaza|zocalo|paseo|andador|callejon|puente|fuente|torre|arco|portales|mercado|vinedo|bodega|hacienda|cristo|santuario|museum|gallery|theatre|theater|palace|cathedral|basilica|castle|monument|park|garden|beach|ruins|pyramid|tower|square|market|old town|botanical)\b/i
 
 function esFotoValida(url: string | undefined): url is string {
   if (!url) return false
@@ -38,22 +44,29 @@ function normalizar(t: string): string {
   return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
 }
 
+function distanciaKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLon = ((lon2 - lon1) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 function clasificarLugar(titulo: string, texto: string): { categoria: CategoriaLugar; detalles: string; prioridad: number } {
   const s = normalizar(`${titulo} ${texto}`)
 
-  if (/(mercado|gastronomia|restaurante|cafe |cafeteria|bodega|vinedo|cantina|cocina)/.test(s)) {
+  if (/(mercado|gastronomia|restaurante|cafe |cafeteria|bodega|vinedo|cantina|hacienda|market|winery)/.test(s)) {
     return { categoria: "Gastronomía", detalles: "Paseo urbano · Interior y terraza", prioridad: 3 }
   }
-  if (/(piramide|zona arqueologica|ruinas|parque|jardin|bosque|playa|mirador|lago|laguna|cascada|volcan|montana|malecon|isla|cenote|reserva|alameda)/.test(s)) {
+  if (/(piramide|zona arqueologica|ruinas|parque|jardin|bosque|playa|mirador|lago|laguna|cascada|volcan|cerro|malecon|isla|cenote|reserva|alameda|zoologico|grutas|dunas|cristo|santuario|park|garden|beach|ruins|pyramid)/.test(s)) {
     return { categoria: "Al aire libre", detalles: "Caminata media · Exterior", prioridad: 4 }
   }
-  if (/(museo|galeria|teatro|palacio|catedral|templo|basilica|iglesia|exconvento|convento|castillo|monumento|biblioteca|centro cultural|bellas artes|arte|opera)/.test(s)) {
+  if (/(museo|galeria|teatro|palacio|catedral|templo|basilica|exconvento|convento|castillo|monumento|centro cultural|bellas artes|opera|planetario|acuario|museum|gallery|palace|cathedral|castle|monument)/.test(s)) {
     return { categoria: "Arte y cultura", detalles: "Caminata suave · Interior y arquitectura", prioridad: 4 }
   }
-  if (/(barrio|colonia|centro historico|plaza|zocalo|calle|avenida|paseo|puente|fuente|pueblo|callejon|arco|torre|portales|andador)/.test(s)) {
-    return { categoria: "Barrios con encanto", detalles: "Caminata larga · Exterior", prioridad: 3 }
-  }
-  return { categoria: "Arte y cultura", detalles: "Paseo urbano · Destacado", prioridad: 1 }
+  return { categoria: "Barrios con encanto", detalles: "Caminata larga · Exterior", prioridad: 3 }
 }
 
 function resumirDescripcion(page: WikiPage, categoria: CategoriaLugar): string {
@@ -91,22 +104,45 @@ async function fetchFotoCiudad(nombreLugar: string, lang: "es" | "en"): Promise<
 
 async function fetchLugaresWiki(lat: number, lon: number, ciudad: string, lang: "es" | "en"): Promise<LugarSugerido[]> {
   try {
-    const url = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=geosearch&ggscoord=${lat}|${lon}&ggsradius=10000&ggslimit=40&prop=pageimages|description|extracts&piprop=thumbnail&pithumbsize=720&exintro=1&explaintext=1&exsentences=2&format=json&origin=*`
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
-    if (!res.ok) return []
-    const data = await res.json()
-    const pages = Object.values((data.query?.pages ?? {}) as Record<string, WikiPage>)
-    const ciudadNorm = normalizar(ciudad)
+    const queryBusqueda = lang === "es"
+      ? `${ciudad} museo OR parque OR catedral OR plaza OR teatro OR mirador OR monumento`
+      : `${ciudad} museum OR park OR cathedral OR palace OR square OR monument`
 
+    const geoUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=geosearch&ggscoord=${lat}|${lon}&ggsradius=10000&ggslimit=50&prop=pageimages|description|extracts|coordinates&piprop=thumbnail&pithumbsize=720&exintro=1&explaintext=1&exsentences=2&format=json&origin=*`
+    const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(queryBusqueda)}&gsrlimit=20&prop=pageimages|description|extracts|coordinates&piprop=thumbnail&pithumbsize=720&exintro=1&explaintext=1&exsentences=2&format=json&origin=*`
+
+    const [geoRes, searchRes] = await Promise.all([
+      fetch(geoUrl, { signal: AbortSignal.timeout(8000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch(searchUrl, { signal: AbortSignal.timeout(8000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ])
+
+    const geoPages = Object.values((geoRes?.query?.pages ?? {}) as Record<string, WikiPage>).map((p) => ({ page: p, deGeo: true }))
+    const searchPages = Object.values((searchRes?.query?.pages ?? {}) as Record<string, WikiPage>).map((p) => ({ page: p, deGeo: false }))
+
+    const ciudadNorm = normalizar(ciudad)
     const candidatos: (LugarSugerido & { _score: number })[] = []
     const titulosVistos = new Set<string>()
 
-    for (const p of pages) {
+    for (const { page: p, deGeo } of [...geoPages, ...searchPages]) {
       if (!p.title || !esFotoValida(p.thumbnail?.source)) continue
       const limpio = limpiarTitulo(p.title)
       const norm = normalizar(limpio)
       if (!limpio || norm === ciudadNorm || norm === `${ciudadNorm} de juarez` || titulosVistos.has(norm)) continue
-      if (TITULO_EXCLUIDO.test(p.title) || TITULO_EXCLUIDO.test(p.description ?? "")) continue
+
+      const textoBase = normalizar(`${limpio} ${p.description ?? ""}`)
+      const textoCompleto = normalizar(`${limpio} ${p.description ?? ""} ${p.extract ?? ""}`)
+      if (EXCLUIDO.test(textoBase)) continue
+      // Lista blanca estricta: debe ser un lugar turístico/cultural/natural real
+      if (!TURISTICO.test(textoBase)) continue
+
+      // Para resultados de búsqueda (no geosearch), verificar que pertenezcan realmente a la ciudad
+      if (!deGeo) {
+        const coord = p.coordinates?.[0]
+        const cercaPorCoord = coord ? distanciaKm(lat, lon, coord.lat, coord.lon) <= 55 : false
+        const mencionaCiudad = textoCompleto.includes(ciudadNorm)
+        if (!cercaPorCoord && !mencionaCiudad) continue
+        if (coord && !cercaPorCoord) continue
+      }
 
       const { categoria, detalles, prioridad } = clasificarLugar(limpio, `${p.description ?? ""} ${p.extract ?? ""}`)
       titulosVistos.add(norm)
@@ -117,7 +153,7 @@ async function fetchLugaresWiki(lat: number, lon: number, ciudad: string, lang: 
         descripcion: resumirDescripcion(p, categoria),
         detalles,
         imagen: p.thumbnail.source,
-        _score: prioridad,
+        _score: prioridad + (deGeo ? 1 : 0),
       })
     }
 
@@ -130,7 +166,7 @@ async function fetchLugaresWiki(lat: number, lon: number, ciudad: string, lang: 
   }
 }
 
-/** Obtiene foto real de la ciudad y lugares reales cercanos con sus fotografías reales. */
+/** Obtiene foto real de la ciudad y lugares turísticos reales cercanos con sus fotografías reales. */
 export async function obtenerDestinoReal(lugar: Lugar): Promise<DestinoReal> {
   const clave = `${lugar.lat.toFixed(3)},${lugar.lon.toFixed(3)}`
   const enCache = cacheDestinos.get(clave)
