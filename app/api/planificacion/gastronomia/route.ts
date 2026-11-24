@@ -6,33 +6,45 @@ import type { LugarSugerido } from "@/constants/viajes-lugares"
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
 
 const cacheGastro = new Map<string, LugarSugerido[]>()
-const IMAGEN_INVALIDA = /\.svg|gif(\?|$)|escudo|coat_of_arms|flag_of|bandera|logo|map|mapa|locator|location|diagram|blank|portrait|signature/i
+const ARCHIVO_INVALIDO = /\.svg|gif(\?|$)|portrait|chef|person|owner|author|actress|actor|singer|writer|logo|menu|sign|map|mapa|flag|escudo|coat_of_arms|grave|tomb|stamp|coin|book|cover|poster/i
 
 const normalizar = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
 
-async function buscarFotoWiki(query: string): Promise<string | null> {
-  for (const lang of ["es", "en"] as const) {
-    try {
-      const url = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=3&prop=pageimages&piprop=thumbnail&pithumbsize=720&format=json`
-      const res = await fetch(url, { signal: AbortSignal.timeout(4500) })
-      if (!res.ok) continue
-      const data = await res.json()
-      const pages = Object.values((data.query?.pages ?? {}) as Record<string, { thumbnail?: { source?: string } }>)
-      for (const p of pages) {
-        if (p.thumbnail?.source && !IMAGEN_INVALIDA.test(p.thumbnail.source)) {
-          return p.thumbnail.source
-        }
-      }
-    } catch {
-      // continuar
+interface CommonsPage {
+  title?: string
+  imageinfo?: { thumburl?: string; url?: string; width?: number; height?: number }[]
+}
+
+/**
+ * Busca fotografías reales (horizontales) de lugares en Wikimedia Commons (namespace File:),
+ * descartando retratos verticales, personas, mapas, logos y archivos SVG.
+ */
+async function buscarFotosCommons(query: string, limite = 6): Promise<string[]> {
+  try {
+    const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(`filetype:bitmap ${query}`)}&gsrlimit=${limite}&prop=imageinfo&iiprop=url|size&iiurlwidth=720&format=json`
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
+    if (!res.ok) return []
+    const data = await res.json()
+    const pages = Object.values((data.query?.pages ?? {}) as Record<string, CommonsPage>)
+    const salida: string[] = []
+    for (const p of pages) {
+      const ii = p.imageinfo?.[0]
+      const foto = ii?.thumburl ?? ii?.url
+      if (!foto || !ii?.width || !ii?.height) continue
+      // Solo fotos horizontales o cuadradas (evita retratos de personas) y sin palabras prohibidas
+      if (ii.width < ii.height * 0.95) continue
+      if (ARCHIVO_INVALIDO.test(p.title ?? "") || ARCHIVO_INVALIDO.test(foto)) continue
+      salida.push(foto)
     }
+    return salida
+  } catch {
+    return []
   }
-  return null
 }
 
 /**
  * Devuelve restaurantes y cafés reales recomendados para una ciudad usando Claude Haiku
- * y fotos reales de Wikimedia Commons (del restaurante o de su cocina típica).
+ * y fotografías reales de los lugares desde Wikimedia Commons.
  */
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -47,51 +59,85 @@ export async function POST(req: NextRequest) {
   const enCache = cacheGastro.get(clave)
   if (enCache) return NextResponse.json({ lugares: enCache })
 
+  const ciudadSimple = ciudad.split(",")[0]?.trim() || ciudad
+
   try {
     const message = await client.messages.create({
       model: "claude-haiku-5-5",
-      max_tokens: 1200,
+      max_tokens: 1600,
       output_config: { effort: "low" },
-      system: `Eres un guía gastronómico experto. Recomienda exactamente 4 restaurantes o cafés REALES, conocidos y bien valorados para visitar en la ciudad indicada (variando entre desayuno/café, comida típica y cena).
+      system: `Eres un guía gastronómico experto. Recomienda 7 restaurantes, cafés o mercados gastronómicos REALES, icónicos y muy conocidos para visitar en la ciudad indicada (variando entre café/desayuno, comida típica y cena). Prioriza lugares emblemáticos y famosos de la ciudad.
 Devuelve ÚNICAMENTE un JSON válido sin markdown con esta estructura:
 {
   "restaurantes": [
     {
       "nombre": "Nombre real del restaurante o café",
-      "descripcion": "Frase corta y editorial en español de México (máx. 95 caracteres) sobre su cocina y ambiente.",
-      "detalles": "Código de vestimenta y espacio (ej. Casual chic · Terraza / Relajado · Café y panadería)",
-      "busqueda_foto": "Nombre exacto del platillo típico principal o tipo de cocina para foto real (ej. Mole oaxaqueño, Croissant café, Tacos al pastor)"
+      "descripcion": "Frase corta y editorial en español de México (máx. 90 caracteres) sobre su cocina y ambiente.",
+      "detalles": "Código de vestimenta y espacio (máx. 45 caracteres, ej. Casual chic · Terraza)"
     }
   ]
 }
-Solo restaurantes reales que existan en esa ciudad. Nunca inventes nombres.`,
+Solo lugares reales que existan en esa ciudad. Nunca inventes nombres.`,
       messages: [{ role: "user", content: `Ciudad: ${ciudad}` }],
     })
 
     const raw = message.content.find((b) => b.type === "text")?.text.trim() ?? ""
     const clean = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "")
     const parsed = JSON.parse(clean) as {
-      restaurantes?: { nombre?: string; descripcion?: string; detalles?: string; busqueda_foto?: string }[]
+      restaurantes?: { nombre?: string; descripcion?: string; detalles?: string }[]
     }
 
-    const lista = Array.isArray(parsed?.restaurantes) ? parsed.restaurantes.slice(0, 4) : []
-    const lugares: LugarSugerido[] = await Promise.all(
-      lista
-        .filter((r) => typeof r.nombre === "string" && r.nombre.trim().length > 1)
-        .map(async (r, idx) => {
+    const lista = Array.isArray(parsed?.restaurantes)
+      ? parsed.restaurantes.filter((r) => typeof r.nombre === "string" && r.nombre.trim().length > 1).slice(0, 7)
+      : []
+
+    // Buscar fotos reales de cada lugar en Wikimedia Commons en paralelo + fotos reales de restaurantes/cafés de la ciudad como respaldo
+    const [fotosPorLugar, fotosAmbienteCiudad] = await Promise.all([
+      Promise.all(
+        lista.map(async (r) => {
           const nombre = r.nombre!.trim().slice(0, 80)
-          const fotoRestaurante = await buscarFotoWiki(`${nombre} ${ciudad.split(",")[0]}`)
-          const fotoPlato = !fotoRestaurante && r.busqueda_foto ? await buscarFotoWiki(r.busqueda_foto) : null
-          return {
-            id: `gastro-${clave.slice(0, 16)}-${idx}`,
-            nombre,
-            categoria: "Gastronomía" as const,
-            descripcion: (r.descripcion ?? "Restaurante recomendado en tu destino.").trim().slice(0, 115),
-            detalles: (r.detalles ?? "Casual chic · Restaurante").trim().slice(0, 60),
-            imagen: fotoRestaurante ?? fotoPlato,
-          }
+          const fotos = await buscarFotosCommons(`${nombre} ${ciudadSimple}`, 4)
+          return { r, nombre, fotoExacta: fotos[0] ?? null }
         })
-    )
+      ),
+      buscarFotosCommons(`restaurant OR cafe ${ciudadSimple}`, 8),
+    ])
+
+    const urlsUsadas = new Set<string>()
+    const conFotoExacta: LugarSugerido[] = []
+    const sinFotoExacta: { r: { descripcion?: string; detalles?: string }; nombre: string; idx: number }[] = []
+
+    fotosPorLugar.forEach(({ r, nombre, fotoExacta }, idx) => {
+      if (fotoExacta && !urlsUsadas.has(fotoExacta)) {
+        urlsUsadas.add(fotoExacta)
+        conFotoExacta.push({
+          id: `gastro-${clave.slice(0, 16)}-${idx}`,
+          nombre,
+          categoria: "Gastronomía",
+          descripcion: (r.descripcion ?? "Restaurante recomendado en tu destino.").trim().slice(0, 110),
+          detalles: (r.detalles ?? "Casual chic · Restaurante").trim().slice(0, 50),
+          imagen: fotoExacta,
+        })
+      } else {
+        sinFotoExacta.push({ r, nombre, idx })
+      }
+    })
+
+    // Priorizar los que tienen foto exacta del restaurante; completar hasta 4 con fotos reales de restaurantes/cafés de la misma ciudad
+    const lugares: LugarSugerido[] = [...conFotoExacta.slice(0, 4)]
+    for (const item of sinFotoExacta) {
+      if (lugares.length >= 4) break
+      const fotoRespaldo = fotosAmbienteCiudad.find((u) => !urlsUsadas.has(u)) ?? null
+      if (fotoRespaldo) urlsUsadas.add(fotoRespaldo)
+      lugares.push({
+        id: `gastro-${clave.slice(0, 16)}-${item.idx}`,
+        nombre: item.nombre,
+        categoria: "Gastronomía",
+        descripcion: (item.r.descripcion ?? "Restaurante recomendado en tu destino.").trim().slice(0, 110),
+        detalles: (item.r.detalles ?? "Casual chic · Restaurante").trim().slice(0, 50),
+        imagen: fotoRespaldo,
+      })
+    }
 
     if (lugares.length > 0) cacheGastro.set(clave, lugares)
     return NextResponse.json({ lugares })

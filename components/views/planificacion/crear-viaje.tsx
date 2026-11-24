@@ -149,8 +149,25 @@ export function CrearViaje({
     setIntereses((prev) => (prev.includes(item) ? prev.filter((x) => x !== item) : [...prev, item]))
   }
 
+  // Mapa de lugares ya asignados a OTRO día/momento para no permitir repetirlos en otro día
+  const usadoEnOtroDia = useMemo(() => {
+    const mapa = new Map<string, string>()
+    fechas.forEach((f, idx) => {
+      const p = planesPorDia[f]
+      if (!p) return
+      const esMismoDia = f === fechaActiva
+      if (!(esMismoDia && momentoSeguro === "dia")) {
+        for (const l of p.dia) mapa.set(l.id, `Día ${idx + 1}`)
+      }
+      if (p.noche && !(esMismoDia && momentoSeguro === "noche")) {
+        for (const l of p.noche) mapa.set(l.id, `Día ${idx + 1} · Noche`)
+      }
+    })
+    return mapa
+  }, [fechas, planesPorDia, fechaActiva, momentoSeguro])
+
   const toggleLugarEnMomento = (item: LugarSugerido) => {
-    if (!fechaActiva) return
+    if (!fechaActiva || usadoEnOtroDia.has(item.id)) return
     setPlanesPorDia((prev) => {
       const actual = prev[fechaActiva] ?? DIA_VACIO
       const lista = momentoSeguro === "noche" ? (actual.noche ?? []) : actual.dia
@@ -612,78 +629,108 @@ export function CrearViaje({
             </span>
           </div>
 
-          {/* Cuadrícula de lugares reales para el DÍA + MOMENTO ACTIVO */}
+          {/* Cuadrícula de lugares reales: 3 por fila tanto en celular como en escritorio */}
           {cargandoDestino ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" aria-busy="true">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-5" aria-busy="true">
               {[0, 1, 2].map((k) => (
                 <div key={k} className="bg-[#F4F0E9] border border-zinc-200 flex flex-col overflow-hidden">
-                  <div className="aspect-[16/10] w-full bg-zinc-200 animate-pulse" />
-                  <div className="p-5 flex flex-col gap-3">
-                    <div className="h-3 w-24 bg-zinc-200 animate-pulse" />
-                    <div className="h-6 w-3/4 bg-zinc-200 animate-pulse" />
-                    <div className="h-4 w-full bg-zinc-200 animate-pulse" />
+                  <div className="aspect-square sm:aspect-[16/10] w-full bg-zinc-200 animate-pulse" />
+                  <div className="p-2 sm:p-4 lg:p-5 flex flex-col gap-2 sm:gap-3">
+                    <div className="h-2.5 w-16 sm:w-24 bg-zinc-200 animate-pulse" />
+                    <div className="h-4 sm:h-6 w-3/4 bg-zinc-200 animate-pulse" />
+                    <div className="hidden sm:block h-4 w-full bg-zinc-200 animate-pulse" />
                   </div>
                 </div>
               ))}
             </div>
           ) : lugaresFiltrados.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-5">
               {lugaresFiltrados.map((item) => {
                 const estaSeleccionado = seleccionadosMomento.some((s) => s.id === item.id)
+                const otroDia = usadoEnOtroDia.get(item.id)
+                const bloqueado = Boolean(otroDia)
                 return (
                   <article
                     key={item.id}
-                    onClick={() => toggleLugarEnMomento(item)}
+                    onClick={() => !bloqueado && toggleLugarEnMomento(item)}
+                    aria-disabled={bloqueado}
                     className={cn(
-                      "group cursor-pointer bg-[#F4F0E9] border flex flex-col overflow-hidden transition-colors",
-                      estaSeleccionado ? "border-terracota" : "border-zinc-200 hover:border-zinc-400"
+                      "group bg-[#F4F0E9] border flex flex-col overflow-hidden transition-colors min-w-0",
+                      bloqueado
+                        ? "opacity-55 cursor-not-allowed border-zinc-200"
+                        : estaSeleccionado
+                          ? "cursor-pointer border-terracota"
+                          : "cursor-pointer border-zinc-200 hover:border-zinc-400"
                     )}
                   >
-                    <div className="aspect-[16/10] w-full overflow-hidden bg-zinc-100 flex items-center justify-center">
+                    <div className="relative aspect-square sm:aspect-[16/10] w-full overflow-hidden bg-zinc-100 flex items-center justify-center">
                       {item.imagen ? (
                         <img
                           src={item.imagen}
                           alt={item.nombre}
                           loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                          className={cn(
+                            "w-full h-full object-cover transition-transform duration-300",
+                            !bloqueado && "group-hover:scale-[1.02]",
+                            bloqueado && "grayscale-[40%]"
+                          )}
                         />
                       ) : item.categoria === "Gastronomía" ? (
-                        <UtensilsCrossed className="w-6 h-6 text-zinc-400" aria-hidden="true" />
+                        <UtensilsCrossed className="w-5 h-5 sm:w-6 sm:h-6 text-zinc-400" aria-hidden="true" />
                       ) : (
-                        <MapPin className="w-6 h-6 text-zinc-400" aria-hidden="true" />
+                        <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-zinc-400" aria-hidden="true" />
                       )}
-                    </div>
-                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-3">
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.14em] font-semibold">
-                          <span className="text-zinc-500 truncate">{item.categoria}</span>
-                          <span className={cn("shrink-0", estaSeleccionado ? "text-terracota" : "text-zinc-500")}>
-                            {estaSeleccionado ? `✓ ${etiquetaMomento}` : "+ Añadir"}
-                          </span>
-                        </div>
-                        <h3 className="font-serif text-xl sm:text-2xl text-zinc-900 font-normal leading-snug mt-0.5">
-                          {item.nombre}
-                        </h3>
-                        <p className="text-xs text-zinc-600 leading-relaxed">{item.descripcion}</p>
-                        <p className="text-[11px] text-zinc-500 mt-1">{item.detalles}</p>
-                      </div>
-
-                      <div className="pt-3 border-t border-zinc-200/80">
+                      {/* Etiqueta compacta sobre la foto en celular */}
+                      {(estaSeleccionado || bloqueado) && (
                         <span
                           className={cn(
-                            "text-xs font-medium inline-flex items-center gap-1.5",
-                            estaSeleccionado ? "text-terracota" : "text-zinc-800"
+                            "sm:hidden absolute top-1.5 right-1.5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider",
+                            estaSeleccionado ? "bg-terracota text-zinc-900" : "bg-zinc-900/85 text-white"
                           )}
                         >
-                          {estaSeleccionado ? (
+                          {estaSeleccionado ? "✓" : otroDia}
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-2 sm:p-4 lg:p-5 flex-1 flex flex-col justify-between gap-2 sm:gap-3 min-w-0">
+                      <div className="flex flex-col gap-1 sm:gap-1.5 min-w-0">
+                        <div className="hidden sm:flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.14em] font-semibold">
+                          <span className="text-zinc-500 truncate">{item.categoria}</span>
+                          <span className={cn("shrink-0", estaSeleccionado ? "text-terracota" : "text-zinc-500")}>
+                            {bloqueado ? `En ${otroDia}` : estaSeleccionado ? `✓ ${etiquetaMomento}` : "+ Añadir"}
+                          </span>
+                        </div>
+                        <h3 className="font-serif text-xs sm:text-xl lg:text-2xl text-zinc-900 font-normal leading-tight sm:leading-snug line-clamp-2">
+                          {item.nombre}
+                        </h3>
+                        <p className="hidden sm:block text-xs text-zinc-600 leading-relaxed line-clamp-2">{item.descripcion}</p>
+                        <p className="hidden sm:block text-[11px] text-zinc-500 mt-0.5 truncate">{item.detalles}</p>
+                      </div>
+
+                      <div className="pt-1.5 sm:pt-3 border-t border-zinc-200/80">
+                        <span
+                          className={cn(
+                            "text-[10px] sm:text-xs font-medium inline-flex items-center gap-1 sm:gap-1.5 truncate max-w-full",
+                            bloqueado
+                              ? "text-zinc-500"
+                              : estaSeleccionado
+                                ? "text-terracota"
+                                : "text-zinc-800"
+                          )}
+                        >
+                          {bloqueado ? (
+                            <span className="truncate">Ya en {otroDia}</span>
+                          ) : estaSeleccionado ? (
                             <>
-                              <Check className="w-3.5 h-3.5" aria-hidden="true" />
-                              Quitar de {etiquetaMomento}
+                              <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" aria-hidden="true" />
+                              <span className="sm:hidden truncate">Quitar</span>
+                              <span className="hidden sm:inline truncate">Quitar de {etiquetaMomento}</span>
                             </>
                           ) : (
                             <>
-                              <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                              Añadir a {etiquetaMomento}
+                              <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" aria-hidden="true" />
+                              <span className="sm:hidden truncate">Añadir</span>
+                              <span className="hidden sm:inline truncate">Añadir a {etiquetaMomento}</span>
                             </>
                           )}
                         </span>
