@@ -104,22 +104,37 @@ export function PerfilView() {
       setErrorMsg(invalida)
       return
     }
+    const correo = email.trim().toLowerCase()
+    const correoCambio = correo !== userEmail.toLowerCase()
+    if (correoCambio && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+      setErrorMsg("Escribe un correo válido.")
+      return
+    }
 
     setLoading(true)
     try {
-      await updateProfile({
+      const { correoPendiente } = await updateProfile({
         name,
         phone,
         avatarBlob: avatarBlob ?? undefined,
         password: password ? password : undefined,
+        email: correoCambio ? correo : undefined,
       })
+      if (correoPendiente) {
+        // Se queda abierto para que alcance a leer a dónde le llegó el enlace.
+        setSuccessMsg(`Guardado. Te mandamos un enlace a ${correo} para confirmar el correo nuevo; mientras, sigues entrando con el anterior.`)
+        return
+      }
       setSuccessMsg("¡Perfil actualizado con éxito!")
       setTimeout(() => {
         setOpenModal(false)
         setSuccessMsg(null)
       }, 1200)
     } catch (err) {
-      setErrorMsg(err instanceof Error && /password/i.test(err.message)
+      const m = err instanceof Error ? err.message : ""
+      setErrorMsg(m.startsWith("Correo: ")
+        ? `Se guardaron tus datos, pero no el correo. ${m.slice(8)}`
+        : /password/i.test(m)
         ? "Se guardaron tus datos, pero no la contraseña. Prueba con otra distinta a la actual."
         : "Error al actualizar la información")
     } finally {
@@ -179,7 +194,7 @@ export function PerfilView() {
 
       <Grupo titulo="Tu cuenta">
         <Fila icono={User} titulo="Información personal"
-          texto="Nombre, teléfono, foto y contraseña. El correo no se puede cambiar."
+          texto="Nombre, correo, teléfono, foto y contraseña."
           onClick={handleOpenModal} />
         {userMode === "VIP" && (
           <Fila icono={Sparkles} titulo="Mi estilo"
@@ -283,9 +298,10 @@ export function PerfilView() {
                 <Mail className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                 <Input
                   value={email}
-                  readOnly
-                  disabled
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@correo.com"
                   type="email"
+                  autoComplete="email"
                   className="pl-9 h-10 rounded-none border-zinc-200 text-xs focus-visible:ring-0 focus-visible:border-zinc-900"
                 />
               </div>

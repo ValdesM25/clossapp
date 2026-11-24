@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect, useMemo } from "react"
-import { signIn, signUp, signInWithProvider, requestPasswordReset, displayNameFor, type ProveedorSocial } from "@/services/auth.service"
+import { signIn, signUp, signInWithProvider, cambiarCorreo, requestPasswordReset, displayNameFor, type ProveedorSocial } from "@/services/auth.service"
 import { createClient as createBrowserSupabaseClient } from "@/utils/supabase/client"
 import type { UserMode } from "@/types"
 import { normalizarPlan, type Plan } from "@/constants/planes"
@@ -284,13 +284,15 @@ export function useAuth() {
     phone?: string
     avatarBlob?: Blob
     password?: string
+    email?: string
   }) => {
     // Demo: se ve el cambio, pero no se guarda nada.
     if (userMode !== "VIP") {
       if (data.name !== undefined) setUserName(data.name)
       if (data.phone !== undefined) setUserPhone(data.phone)
       if (data.avatarBlob) setUserAvatarUrl(URL.createObjectURL(data.avatarBlob))
-      return
+      if (data.email) setUserEmail(data.email.trim().toLowerCase())
+      return { correoPendiente: false }
     }
 
     let avatarUrl: string | undefined
@@ -328,9 +330,21 @@ export function useAuth() {
       if (pwErr) throw new Error(pwErr.message)
     }
 
+    // Va al final: si falla, lo demás ya quedó guardado y la vista lo dice.
+    let correoPendiente = false
+    if (data.email) {
+      try {
+        ;({ requiereConfirmacion: correoPendiente } = await cambiarCorreo(supabase, data.email))
+      } catch (err) {
+        throw new Error(`Correo: ${err instanceof Error ? err.message : "No se pudo cambiar el correo."}`)
+      }
+      if (!correoPendiente) setUserEmail(data.email.trim().toLowerCase())
+    }
+
     if (avatarUrl) void registrarActividad("foto_perfil_subida")
-    const campos = [data.name !== undefined && "nombre", data.phone !== undefined && "telefono", data.password && "contrasena"].filter(Boolean)
+    const campos = [data.name !== undefined && "nombre", data.phone !== undefined && "telefono", data.password && "contrasena", data.email && "correo"].filter(Boolean)
     if (campos.length) void registrarActividad("perfil_actualizado", { campos: campos.join(",") })
+    return { correoPendiente }
   }, [userMode, userId, userAvatarUrl, supabase])
 
   return {

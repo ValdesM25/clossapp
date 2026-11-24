@@ -80,6 +80,22 @@ export async function signUp(
   return { requiereConfirmacion: !data.session }
 }
 
+/**
+ * Cambia el correo de la cuenta. Si Supabase pide confirmarlo, manda un enlace al correo nuevo
+ * y la cuenta sigue con el anterior hasta abrirlo; si no, el cambio es inmediato.
+ */
+export async function cambiarCorreo(supabase: SupabaseClient, email: string): Promise<{ requiereConfirmacion: boolean }> {
+  const nuevo = email.trim().toLowerCase()
+  const { data, error } = await supabase.auth.updateUser({ email: nuevo }, { emailRedirectTo: callbackUrl() })
+  if (error) {
+    const m = error.message.toLowerCase()
+    if (m.includes("already been registered") || m.includes("already registered")) throw new Error("Ese correo ya lo usa otra cuenta.")
+    if (m.includes("invalid") || m.includes("validate email")) throw new Error("Ese correo no es válido.")
+    throw new Error(mensajeAuth(error.message, "No se pudo cambiar el correo. Intenta de nuevo."))
+  }
+  return { requiereConfirmacion: data.user?.email?.toLowerCase() !== nuevo }
+}
+
 /** Redirige a Google o Facebook; al volver, /auth/callback crea la sesión. */
 export async function signInWithProvider(supabase: SupabaseClient, provider: ProveedorSocial): Promise<void> {
   const { error } = await supabase.auth.signInWithOAuth({

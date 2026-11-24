@@ -54,7 +54,8 @@ type AuthContextValue = {
     phone?: string
     avatarBlob?: Blob
     password?: string
-  }) => Promise<void>
+    email?: string
+  }) => Promise<{ correoPendiente: boolean }>
   loading: boolean
   error: string | null
 }
