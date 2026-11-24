@@ -23,7 +23,7 @@ export type AccionesPlan = {
   onArmar: () => void
   onOtro: (momentoId: string) => void
   onBorrar: () => Promise<void>
-  onEmpacar: (prendaId: string, valor: boolean) => void
+  onEmpacar: (prendaId: string, valor: boolean) => void | Promise<void>
   onMeLoPuse: (momento: MomentoPlan) => Promise<void>
 }
 
@@ -174,8 +174,8 @@ export function PlanDetalle({
             <div ref={tira} className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-background/95 backdrop-blur border-b border-zinc-100 flex gap-2 overflow-x-auto snap-x scroll-px-4 [scrollbar-width:none] overscroll-x-contain">
               {fechas.map((f) => {
                 const delDia = plan.momentos.filter((m) => m.fecha === f)
-                const punto = delDia.some((m) => m.estado === "error") ? "bg-red-500"
-                  : delDia.every((m) => m.estado === "listo") ? "bg-emerald-500" : "bg-zinc-300"
+                const punto = delDia.some((m) => m.estado === "error") ? "bg-red-700"
+                  : delDia.every((m) => m.estado === "listo") ? "bg-terracota" : "bg-zinc-300"
                 const activo = f === dia
                 const d = new Date(`${f}T00:00:00Z`)
                 return (

@@ -1,10 +1,10 @@
 "use client"
 
 import { useMemo, useRef, useState } from "react"
-import { ArrowRight, Check, Luggage, RotateCw, Sparkles, Trash2 } from "lucide-react"
+import { ArrowRight, Check, Luggage, Moon, RotateCw, Sparkles, Sun, Trash2 } from "lucide-react"
 import type { Prenda } from "@/types"
 import { cn } from "@/lib/utils"
-import { diasDe, fechaCorta, maletaDe, ordenMomento, type MomentoPlan, type PlanOutfit } from "@/lib/planificacion"
+import { diasDe, diasEntre, fechaCorta, maletaDe, ordenMomento, type MomentoPlan, type PlanOutfit } from "@/lib/planificacion"
 import { rangoFechasEditorial } from "@/constants/viajes-lugares"
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -53,8 +53,10 @@ function FlatLayCollage({ prendas, compacto = false }: { prendas: Prenda[]; comp
 
 /**
  * Vista editorial de Paso 3 (Outfits) para planes de tipo "viaje".
- * Replica el diseño de las 3 pantallas de referencia y mantiene toda la funcionalidad
- * real: regenerar outfit, marcar como usado, completar con IA, sugerencias del Shop y Maleta.
+ * - Puntos de estado en terracota (paleta Clossapp).
+ * - "Guardar para mi viaje" selecciona automáticamente todas las prendas del outfit en Tu maleta.
+ * - En el último día no vuelve a repetir el Día 1 a la derecha.
+ * - Soporta 1 o 2 outfits por día (Día / Noche).
  */
 export function ViajeDetalle({
   plan,
@@ -81,18 +83,26 @@ export function ViajeDetalle({
   userId: string
   acciones: AccionesPlan
 }) {
+  const fechasViaje = useMemo(() => diasEntre(plan.fecha_inicio, plan.fecha_fin), [plan.fecha_inicio, plan.fecha_fin])
   const momentosOrdenados = useMemo(() => [...plan.momentos].sort(ordenMomento), [plan.momentos])
   const [indice, setIndice] = useState(0)
+  const [guardandoMaleta, setGuardandoMaleta] = useState(false)
   const [guardandoUso, setGuardandoUso] = useState(false)
-  const [guardadoLocal, setGuardadoLocal] = useState<Record<string, boolean>>({})
   const [borrando, setBorrando] = useState(false)
   const refOutfits = useRef<HTMLDivElement>(null)
   const refMaleta = useRef<HTMLDivElement>(null)
 
   const idxSeguro = Math.min(indice, Math.max(0, momentosOrdenados.length - 1))
   const activo: MomentoPlan | undefined = momentosOrdenados[idxSeguro]
-  const sigIdx = momentosOrdenados.length > 1 ? (idxSeguro + 1) % momentosOrdenados.length : -1
+  // Al llegar al último día, NO vuelve a mostrar el Día 1
+  const sigIdx = idxSeguro < momentosOrdenados.length - 1 ? idxSeguro + 1 : -1
   const siguiente: MomentoPlan | undefined = sigIdx >= 0 ? momentosOrdenados[sigIdx] : undefined
+
+  const numeroDiaDe = (m: MomentoPlan) => {
+    const pos = fechasViaje.indexOf(m.fecha)
+    return pos >= 0 ? pos + 1 : 1
+  }
+  const tieneDosEnFecha = (fecha: string) => momentosOrdenados.filter((x) => x.fecha === fecha).length > 1
 
   const armando = generando === plan.id
   const ocupado = generando !== null
@@ -112,6 +122,7 @@ export function ViajeDetalle({
   const delActivo = prendasDe(activo)
   const delSiguiente = prendasDe(siguiente)
   const faltanPrendas = (activo?.outfit?.prenda_ids.length ?? 0) - delActivo.length
+  const todoEnMaleta = delActivo.length > 0 && delActivo.every((p) => plan.empacadas.includes(p.id))
   const motivoSinOtro = ocupado
     ? "Espera a que terminemos de armar."
     : cuotaHoy === 0
@@ -121,6 +132,26 @@ export function ViajeDetalle({
   const irAMomento = (nuevoIdx: number, subir = false) => {
     setIndice(nuevoIdx)
     if (subir) refOutfits.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
+  /** Marca todas las prendas del outfit actual como empacadas en Tu maleta. */
+  const guardarEnMaleta = async () => {
+    const porEmpacar = delActivo.filter((p) => !plan.empacadas.includes(p.id))
+    if (porEmpacar.length === 0) return
+    setGuardandoMaleta(true)
+    try {
+      for (const p of porEmpacar) {
+        await Promise.resolve(acciones.onEmpacar(p.id, true))
+      }
+    } finally {
+      setGuardandoMaleta(false)
+    }
+  }
+
+  const etiquetaDia = (m: MomentoPlan) => {
+    const num = numeroDiaDe(m)
+    const doble = tieneDosEnFecha(m.fecha)
+    return doble ? `Día ${num} · ${m.momento === "noche" ? "Noche" : "Día"}` : `Día ${num}`
   }
 
   return (
@@ -184,12 +215,13 @@ export function ViajeDetalle({
         </div>
       )}
 
-      {/* Pestañas por DÍA + clima de referencia */}
+      {/* Pestañas por DÍA (indicador terracota Clossapp) + clima de referencia */}
       {momentosOrdenados.length > 0 && (
         <div className="w-full max-w-full flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] overscroll-x-contain">
           {momentosOrdenados.map((m, i) => {
             const esActivo = i === idxSeguro
-            const punto = m.estado === "listo" ? "bg-emerald-500" : m.estado === "error" ? "bg-red-500" : "bg-zinc-400"
+            const doble = tieneDosEnFecha(m.fecha)
+            const punto = m.estado === "listo" ? "bg-terracota" : m.estado === "error" ? "bg-red-700" : "bg-zinc-300"
             return (
               <button
                 key={m.id}
@@ -203,8 +235,13 @@ export function ViajeDetalle({
                     : "bg-[#F4F0E9] text-zinc-700 border-zinc-300 hover:border-zinc-900"
                 )}
               >
-                <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", punto)} aria-hidden="true" />
-                <span className="font-mono text-[11px] uppercase">Día {i + 1}</span>
+                <span className={cn("w-2 h-2 rounded-full shrink-0", punto)} aria-hidden="true" />
+                <span className="font-mono text-[11px] uppercase">Día {numeroDiaDe(m)}</span>
+                {doble && (
+                  m.momento === "noche"
+                    ? <Moon className={cn("w-3 h-3 shrink-0", esActivo ? "text-terracota" : "text-zinc-500")} aria-label="Noche" />
+                    : <Sun className={cn("w-3 h-3 shrink-0", esActivo ? "text-terracota" : "text-zinc-500")} aria-label="Día" />
+                )}
                 <span className={cn("text-[11px]", esActivo ? "text-zinc-300" : "text-zinc-500")}>
                   · {fechaCorta(m.fecha)}
                 </span>
@@ -220,14 +257,14 @@ export function ViajeDetalle({
         </div>
       )}
 
-      {/* Grid principal: Look destacado (izquierda) + También en tu viaje (derecha) */}
+      {/* Grid principal: Look destacado (izquierda) + Siguiente día si existe (derecha) */}
       {activo && (
         <div className={cn("grid grid-cols-1 gap-6 items-start", siguiente && "lg:grid-cols-[1.65fr_1fr]")}>
           {/* Tarjeta principal del outfit */}
           <article className="bg-[#F4F0E9] border border-zinc-200 p-5 sm:p-7 flex flex-col gap-5">
             <div className="flex items-center justify-between gap-3">
               <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.16em] text-terracota font-semibold truncate">
-                Día {idxSeguro + 1} · {activo.actividad.trim() || "Paseo casual"}
+                {etiquetaDia(activo)} · {activo.actividad.trim() || "Paseo casual"}
               </p>
               <span className="text-xs font-mono text-zinc-500 shrink-0">
                 {String(idxSeguro + 1).padStart(2, "0")} / {String(momentosOrdenados.length).padStart(2, "0")}
@@ -237,10 +274,10 @@ export function ViajeDetalle({
             {activo.estado === "pendiente" && (
               <div className="py-8 flex flex-col items-center justify-center gap-3 text-center">
                 <p className="font-serif text-2xl text-zinc-900 font-normal">
-                  {armando || regenerando === activo.id ? "Armando tu look…" : `Outfit del Día ${idxSeguro + 1} pendiente`}
+                  {armando || regenerando === activo.id ? "Armando tu look…" : `Outfit de ${etiquetaDia(activo)} pendiente`}
                 </p>
                 <p className="text-xs text-zinc-500 max-w-sm">
-                  Seleccionaremos prendas reales de tu armario según el clima y los lugares que elegiste para este día ({activo.actividad.trim() || "paseo casual"}).
+                  Seleccionaremos prendas reales de tu armario según el clima y los lugares que elegiste ({activo.actividad.trim() || "paseo casual"}).
                 </p>
                 {!soloLectura && !ocupado && quedaHoy > 0 && (
                   <button
@@ -249,7 +286,7 @@ export function ViajeDetalle({
                     className="mt-2 h-11 px-5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium flex items-center gap-2 transition-colors"
                   >
                     <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-                    Armar outfit del Día {idxSeguro + 1}
+                    Armar outfit de {etiquetaDia(activo)}
                   </button>
                 )}
               </div>
@@ -261,7 +298,7 @@ export function ViajeDetalle({
                 {!soloLectura && (
                   <button
                     type="button"
-                    onClick={acciones.onArmar}
+                    onClick={() => acciones.onOtro(activo.id)}
                     disabled={ocupado}
                     className="self-start h-10 px-4 border border-zinc-900 bg-white text-zinc-900 text-xs font-medium flex items-center gap-2 disabled:opacity-45"
                   >
@@ -287,14 +324,24 @@ export function ViajeDetalle({
                       De tu armario
                     </p>
                     <ol className="divide-y divide-zinc-200/80 border-t border-b border-zinc-200/80">
-                      {delActivo.map((p, idx) => (
-                        <li key={p.id} className="py-2.5 flex items-baseline gap-3 text-sm text-zinc-900">
-                          <span className="font-mono text-[11px] text-terracota font-medium shrink-0">
-                            {String(idx + 1).padStart(2, "0")}
-                          </span>
-                          <span className="leading-snug">{p.name}</span>
-                        </li>
-                      ))}
+                      {delActivo.map((p, idx) => {
+                        const empacada = plan.empacadas.includes(p.id)
+                        return (
+                          <li key={p.id} className="py-2.5 flex items-baseline justify-between gap-3 text-sm text-zinc-900">
+                            <div className="flex items-baseline gap-3 min-w-0">
+                              <span className="font-mono text-[11px] text-terracota font-medium shrink-0">
+                                {String(idx + 1).padStart(2, "0")}
+                              </span>
+                              <span className="leading-snug truncate">{p.name}</span>
+                            </div>
+                            {empacada && (
+                              <span className="text-[10px] uppercase tracking-wider text-terracota font-medium shrink-0">
+                                En maleta
+                              </span>
+                            )}
+                          </li>
+                        )
+                      })}
                     </ol>
                     <p className="text-xs text-zinc-500 mt-3">
                       {delActivo.length} {delActivo.length === 1 ? "prenda" : "prendas"} · 1 combinación
@@ -320,27 +367,24 @@ export function ViajeDetalle({
                 )}
 
                 {/* Botones de acción */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  {activo.usado_en || guardadoLocal[activo.id] ? (
-                    <div className="h-12 px-5 bg-zinc-900 text-white text-xs sm:text-sm font-medium flex items-center justify-center gap-2">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3 pt-2">
+                  {todoEnMaleta ? (
+                    <button
+                      type="button"
+                      onClick={() => refMaleta.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                      className="h-12 px-5 bg-zinc-900 text-white text-xs sm:text-sm font-medium flex items-center justify-center gap-2"
+                    >
                       <Check className="w-4 h-4 text-terracota" aria-hidden="true" />
-                      <span>{activo.usado_en ? "Usado en tu viaje" : "Guardado para mi viaje"}</span>
-                    </div>
+                      <span>Guardado en tu maleta</span>
+                    </button>
                   ) : (
                     <button
                       type="button"
-                      disabled={guardandoUso || soloLectura}
-                      onClick={async () => {
-                        if (activo.fecha <= hoy) {
-                          setGuardandoUso(true)
-                          try { await acciones.onMeLoPuse(activo) } finally { setGuardandoUso(false) }
-                        } else {
-                          setGuardadoLocal((prev) => ({ ...prev, [activo.id]: true }))
-                        }
-                      }}
+                      disabled={guardandoMaleta || delActivo.length === 0}
+                      onClick={guardarEnMaleta}
                       className="h-12 px-5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs sm:text-sm font-medium flex items-center justify-between sm:justify-center gap-4 transition-colors disabled:opacity-50"
                     >
-                      <span>{guardandoUso ? "Guardando…" : activo.fecha <= hoy ? "Me lo puse" : "Guardar para mi viaje"}</span>
+                      <span>{guardandoMaleta ? "Guardando en maleta…" : "Guardar para mi viaje"}</span>
                       <ArrowRight className="w-4 h-4" aria-hidden="true" />
                     </button>
                   )}
@@ -360,6 +404,21 @@ export function ViajeDetalle({
                       )}
                     </button>
                   )}
+
+                  {activo.fecha <= hoy && !activo.usado_en && !soloLectura && (
+                    <button
+                      type="button"
+                      disabled={guardandoUso}
+                      onClick={async () => {
+                        setGuardandoUso(true)
+                        try { await acciones.onMeLoPuse(activo) } finally { setGuardandoUso(false) }
+                      }}
+                      className="h-12 px-4 border border-zinc-300 hover:border-zinc-900 bg-white text-zinc-900 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+                    >
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                      {guardandoUso ? "Guardando…" : "Me lo puse"}
+                    </button>
+                  )}
                 </div>
                 {motivoSinOtro && !ocupado && !soloLectura && (
                   <p className="text-xs text-zinc-500">{motivoSinOtro}</p>
@@ -368,12 +427,12 @@ export function ViajeDetalle({
             )}
           </article>
 
-          {/* Tarjeta secundaria: También en tu viaje */}
+          {/* Tarjeta secundaria: Siguiente día/momento (NO aparece en el último día) */}
           {siguiente && (
             <aside className="bg-[#EFECE6] border border-zinc-200 p-5 sm:p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[10px] uppercase tracking-[0.16em] text-terracota font-semibold">
-                  Día {sigIdx + 1} · {fechaCorta(siguiente.fecha)}
+                  {etiquetaDia(siguiente)} · {fechaCorta(siguiente.fecha)}
                 </p>
                 <span className="text-xs font-mono text-zinc-500">
                   {String(sigIdx + 1).padStart(2, "0")}
@@ -381,7 +440,7 @@ export function ViajeDetalle({
               </div>
 
               <h3 className="font-serif text-xl sm:text-2xl text-zinc-900 font-normal leading-snug">
-                {siguiente.outfit?.titulo || siguiente.actividad || `Día ${sigIdx + 1}`}
+                {siguiente.outfit?.titulo || siguiente.actividad || etiquetaDia(siguiente)}
               </h3>
 
               <FlatLayCollage prendas={delSiguiente} compacto />
@@ -401,7 +460,7 @@ export function ViajeDetalle({
                 onClick={() => irAMomento(sigIdx, true)}
                 className="mt-1 h-11 w-full border border-zinc-300 hover:border-zinc-900 bg-[#F4F0E9] text-zinc-900 text-xs font-medium px-4 flex items-center justify-between transition-colors"
               >
-                <span>Ver outfit del Día {sigIdx + 1}</span>
+                <span>Ver outfit de {etiquetaDia(siguiente)}</span>
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </aside>

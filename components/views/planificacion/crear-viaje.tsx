@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ArrowRight, ArrowUpRight, Check, ChevronLeft, MapPin, Plus, Search, X } from "lucide-react"
+import { ArrowRight, ArrowUpRight, Check, ChevronLeft, MapPin, Moon, Plus, Search, Sun, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { buscarLugares, type Lugar } from "@/lib/clima"
 import { obtenerDestinoReal, type DestinoReal } from "@/lib/destinos"
@@ -21,11 +21,17 @@ import { ViajeStepper } from "./viaje-stepper"
 
 const DESTINO_PREVIA_DEFAULT: Lugar = CIUDADES_DESTACADAS[2] // París, Francia
 
+interface PlanDiaViaje {
+  dia: LugarSugerido[]
+  /** Si es distinto de null, el usuario activó un 2.º outfit (Noche) para ese día. */
+  noche: LugarSugerido[] | null
+}
+
+const DIA_VACIO: PlanDiaViaje = { dia: [], noche: null }
+
 /**
  * Flujo editorial en 2 pasos para crear un Viaje (Paso 1: Destino, Paso 2: Lugares por día).
- * Consulta ciudades reales (Open-Meteo filtrado por ciudad/población) y fotos/lugares reales
- * (Wikipedia / Wikimedia Commons). Al pulsar "Crear mis outfits", guarda 1 outfit por día con
- * los lugares exactos elegidos para ese día.
+ * Permite elegir 1 outfit por día o activar un 2.º outfit (Noche) en los días que la persona quiera.
  */
 export function CrearViaje({
   hoy,
@@ -51,9 +57,10 @@ export function CrearViaje({
   const [filtro, setFiltro] = useState<"Para ti" | CategoriaLugar>("Para ti")
   const [destinoReal, setDestinoReal] = useState<DestinoReal | null>(null)
   const [cargandoDestino, setCargandoDestino] = useState(true)
-  // Lugares elegidos POR DÍA (fecha ISO -> lista de lugares que visitará ese día)
+  // Lugares elegidos POR DÍA (y opcionalmente 2.º outfit de Noche)
   const [diaActivoIdx, setDiaActivoIdx] = useState(0)
-  const [lugaresPorDia, setLugaresPorDia] = useState<Record<string, LugarSugerido[]>>({})
+  const [momentoActivo, setMomentoActivo] = useState<Momento>("dia")
+  const [planesPorDia, setPlanesPorDia] = useState<Record<string, PlanDiaViaje>>({})
   const [personalizado, setPersonalizado] = useState("")
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -64,7 +71,10 @@ export function CrearViaje({
 
   const idxDiaSeguro = Math.min(diaActivoIdx, Math.max(0, fechas.length - 1))
   const fechaActiva = fechas[idxDiaSeguro] ?? ""
-  const seleccionadosDia = lugaresPorDia[fechaActiva] ?? []
+  const planDiaActivo = planesPorDia[fechaActiva] ?? DIA_VACIO
+  const tieneSegundoOutfit = planDiaActivo.noche !== null
+  const momentoSeguro: Momento = momentoActivo === "noche" && tieneSegundoOutfit ? "noche" : "dia"
+  const seleccionadosMomento = momentoSeguro === "noche" ? (planDiaActivo.noche ?? []) : planDiaActivo.dia
 
   // Búsqueda de ciudades reales con Open-Meteo
   useEffect(() => {
@@ -94,8 +104,9 @@ export function CrearViaje({
       .then((info) => {
         if (!vigente) return
         setDestinoReal(info)
-        setLugaresPorDia({})
+        setPlanesPorDia({})
         setDiaActivoIdx(0)
+        setMomentoActivo("dia")
         setFiltro("Para ti")
       })
       .finally(() => {
@@ -103,6 +114,29 @@ export function CrearViaje({
       })
     return () => { vigente = false }
   }, [objetivoFoto])
+
+  const cambiarDia = (nuevoIdx: number) => {
+    setDiaActivoIdx(nuevoIdx)
+    setMomentoActivo("dia")
+  }
+
+  const activarSegundoOutfit = () => {
+    if (!fechaActiva) return
+    setPlanesPorDia((prev) => {
+      const actual = prev[fechaActiva] ?? DIA_VACIO
+      return { ...prev, [fechaActiva]: { ...actual, noche: actual.noche ?? [] } }
+    })
+    setMomentoActivo("noche")
+  }
+
+  const quitarSegundoOutfit = () => {
+    if (!fechaActiva) return
+    setPlanesPorDia((prev) => {
+      const actual = prev[fechaActiva] ?? DIA_VACIO
+      return { ...prev, [fechaActiva]: { ...actual, noche: null } }
+    })
+    setMomentoActivo("dia")
+  }
 
   const errorPaso1 =
     !lugar ? "Elige una ciudad de la lista para conocer su clima y lugares."
@@ -115,14 +149,18 @@ export function CrearViaje({
     setIntereses((prev) => (prev.includes(item) ? prev.filter((x) => x !== item) : [...prev, item]))
   }
 
-  const toggleLugarEnDia = (item: LugarSugerido) => {
+  const toggleLugarEnMomento = (item: LugarSugerido) => {
     if (!fechaActiva) return
-    setLugaresPorDia((prev) => {
-      const actuales = prev[fechaActiva] ?? []
-      const existe = actuales.some((x) => x.id === item.id)
+    setPlanesPorDia((prev) => {
+      const actual = prev[fechaActiva] ?? DIA_VACIO
+      const lista = momentoSeguro === "noche" ? (actual.noche ?? []) : actual.dia
+      const existe = lista.some((x) => x.id === item.id)
+      const nuevaLista = existe ? lista.filter((x) => x.id !== item.id) : [...lista, item]
       return {
         ...prev,
-        [fechaActiva]: existe ? actuales.filter((x) => x.id !== item.id) : [...actuales, item],
+        [fechaActiva]: momentoSeguro === "noche"
+          ? { ...actual, noche: nuevaLista }
+          : { ...actual, dia: nuevaLista },
       }
     })
   }
@@ -138,41 +176,62 @@ export function CrearViaje({
       detalles: "A tu ritmo · Personalizado",
       imagen: destinoReal?.imagen ?? null,
     }
-    setLugaresPorDia((prev) => ({
-      ...prev,
-      [fechaActiva]: [...(prev[fechaActiva] ?? []), nuevo],
-    }))
+    setPlanesPorDia((prev) => {
+      const actual = prev[fechaActiva] ?? DIA_VACIO
+      return {
+        ...prev,
+        [fechaActiva]: momentoSeguro === "noche"
+          ? { ...actual, noche: [...(actual.noche ?? []), nuevo] }
+          : { ...actual, dia: [...actual.dia, nuevo] },
+      }
+    })
     setPersonalizado("")
   }
 
-  // Incluye los lugares del catálogo + personalizados añadidos al día activo
+  // Incluye los lugares del catálogo + personalizados añadidos al momento activo
   const todosLosLugares = useMemo(() => {
     const base = destinoReal?.lugares ?? []
     const idsBase = new Set(base.map((l) => l.id))
-    const extras = seleccionadosDia.filter((s) => !idsBase.has(s.id))
+    const extras = seleccionadosMomento.filter((s) => !idsBase.has(s.id))
     return [...base, ...extras]
-  }, [destinoReal?.lugares, seleccionadosDia])
+  }, [destinoReal?.lugares, seleccionadosMomento])
 
   const lugaresFiltrados = useMemo(() => {
     if (filtro === "Para ti") return todosLosLugares
     return todosLosLugares.filter((l) => l.categoria === filtro)
   }, [todosLosLugares, filtro])
 
-  const diasConLugares = fechas.filter((f) => (lugaresPorDia[f]?.length ?? 0) > 0).length
-  const totalLugaresElegidos = fechas.reduce((acc, f) => acc + (lugaresPorDia[f]?.length ?? 0), 0)
+  const diasConLugares = fechas.filter((f) => {
+    const p = planesPorDia[f]
+    return p && (p.dia.length > 0 || (p.noche?.length ?? 0) > 0)
+  }).length
+
+  const totalOutfits = fechas.reduce((acc, f) => acc + 1 + (planesPorDia[f]?.noche !== null && planesPorDia[f]?.noche !== undefined ? 1 : 0), 0)
+  const totalLugaresElegidos = fechas.reduce(
+    (acc, f) => acc + (planesPorDia[f]?.dia.length ?? 0) + (planesPorDia[f]?.noche?.length ?? 0),
+    0
+  )
 
   const crear = async () => {
     if (!lugar || fechas.length === 0) return
     setEnviando(true)
     setError(null)
 
-    // Exactamente 1 outfit por día, usando los lugares asignados a ESE día
-    const momentos: { fecha: string; momento: Momento; actividad: string }[] = fechas.map((f) => {
-      const delDia = lugaresPorDia[f] ?? []
-      const actividad = delDia.length > 0
-        ? delDia.map((l) => l.nombre).join(", ").slice(0, 120)
+    const momentos: { fecha: string; momento: Momento; actividad: string }[] = fechas.flatMap((f) => {
+      const p = planesPorDia[f] ?? DIA_VACIO
+      const actDia = p.dia.length > 0
+        ? p.dia.map((l) => l.nombre).join(", ").slice(0, 120)
         : "Día libre y paseo casual"
-      return { fecha: f, momento: "dia", actividad }
+      const lista: { fecha: string; momento: Momento; actividad: string }[] = [
+        { fecha: f, momento: "dia", actividad: actDia },
+      ]
+      if (p.noche !== null) {
+        const actNoche = p.noche.length > 0
+          ? p.noche.map((l) => l.nombre).join(", ").slice(0, 120)
+          : "Cena o salida de noche"
+        lista.push({ fecha: f, momento: "noche", actividad: actNoche })
+      }
+      return lista
     })
 
     const nombrePlan = `Viaje a ${ciudadCorta(lugar.nombre)}`.slice(0, 60)
@@ -187,6 +246,7 @@ export function CrearViaje({
   const coordenadas = formatearCoordenadas(objetivoFoto.lat, objetivoFoto.lon)
   const fraseDestino = destinoReal?.frase ?? `${ciudadCorta(objetivoFoto.nombre)}, siempre es buena idea.`
   const subtituloDestino = destinoReal?.subtitulo ?? "Un café, un museo, una calle por descubrir."
+  const etiquetaMomento = momentoSeguro === "noche" ? `Día ${idxDiaSeguro + 1} · Noche` : `Día ${idxDiaSeguro + 1}`
 
   return (
     <div className="flex flex-col gap-5 sm:gap-8 w-full max-w-full min-w-0 overflow-x-hidden">
@@ -349,7 +409,7 @@ export function CrearViaje({
               <button
                 type="button"
                 disabled={!!errorPaso1}
-                onClick={() => { setError(null); setDiaActivoIdx(0); setPaso(2) }}
+                onClick={() => { setError(null); cambiarDia(0); setPaso(2) }}
                 className="h-12 w-full bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-medium px-5 flex items-center justify-between transition-colors disabled:opacity-45"
               >
                 <span>Descubrir lugares</span>
@@ -397,7 +457,7 @@ export function CrearViaje({
         </div>
       )}
 
-      {/* PASO 2: ELEGIR LUGARES POR DÍA */}
+      {/* PASO 2: ELEGIR LUGARES POR DÍA (CON OPCIÓN DE 2 OUTFITS POR DÍA) */}
       {paso === 2 && lugar && (
         <div className="flex flex-col gap-5 sm:gap-6 w-full min-w-0">
           {/* Encabezado */}
@@ -410,7 +470,7 @@ export function CrearViaje({
                 ¿Qué visitarás cada día?
               </h1>
               <p className="text-sm text-zinc-600">
-                Elige un día y selecciona los lugares que visitarás ese día. Armaremos 1 outfit ideal para cada día.
+                Elige un día y selecciona sus lugares. Si necesitas cambio para la noche, puedes añadir un 2.º outfit en ese día.
               </p>
             </div>
             <button
@@ -431,15 +491,17 @@ export function CrearViaje({
             <div className="w-full max-w-full flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] overscroll-x-contain">
               {fechas.map((f, idx) => {
                 const esActivo = idx === idxDiaSeguro
-                const cuenta = lugaresPorDia[f]?.length ?? 0
+                const p = planesPorDia[f] ?? DIA_VACIO
+                const cuenta = p.dia.length + (p.noche?.length ?? 0)
+                const outfitsDia = p.noche !== null ? 2 : 1
                 return (
                   <button
                     key={f}
                     type="button"
                     aria-pressed={esActivo}
-                    onClick={() => setDiaActivoIdx(idx)}
+                    onClick={() => cambiarDia(idx)}
                     className={cn(
-                      "shrink-0 px-3.5 py-2.5 border text-left flex flex-col gap-0.5 transition-colors min-w-[110px]",
+                      "shrink-0 px-3.5 py-2.5 border text-left flex flex-col gap-0.5 transition-colors min-w-[122px]",
                       esActivo
                         ? "bg-zinc-900 text-white border-zinc-900"
                         : cuenta > 0
@@ -452,11 +514,75 @@ export function CrearViaje({
                     </span>
                     <span className={cn("text-xs font-medium", esActivo ? "text-white" : "text-zinc-800")}>
                       {cuenta === 0 ? "Sin lugares aún" : `${cuenta} ${cuenta === 1 ? "lugar" : "lugares"}`}
+                      {outfitsDia === 2 && (
+                        <span className={cn("ml-1.5 text-[10px]", esActivo ? "text-zinc-300" : "text-terracota")}>
+                          · 2 outfits
+                        </span>
+                      )}
                     </span>
                   </button>
                 )
               })}
             </div>
+          </div>
+
+          {/* Control de 1 o 2 outfits para el día activo */}
+          <div className="border border-zinc-200 bg-[#F4F0E9] p-3 sm:p-3.5 flex flex-wrap items-center justify-between gap-2.5">
+            {tieneSegundoOutfit ? (
+              <>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setMomentoActivo("dia")}
+                    className={cn(
+                      "h-9 px-3.5 text-xs font-medium border flex items-center gap-1.5 transition-colors",
+                      momentoSeguro === "dia"
+                        ? "bg-zinc-900 text-white border-zinc-900"
+                        : "bg-white text-zinc-700 border-zinc-300 hover:border-zinc-900"
+                    )}
+                  >
+                    <Sun className="w-3.5 h-3.5" aria-hidden="true" />
+                    Outfit 1 · Día ({planDiaActivo.dia.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMomentoActivo("noche")}
+                    className={cn(
+                      "h-9 px-3.5 text-xs font-medium border flex items-center gap-1.5 transition-colors",
+                      momentoSeguro === "noche"
+                        ? "bg-zinc-900 text-white border-zinc-900"
+                        : "bg-white text-zinc-700 border-zinc-300 hover:border-zinc-900"
+                    )}
+                  >
+                    <Moon className="w-3.5 h-3.5" aria-hidden="true" />
+                    Outfit 2 · Noche ({planDiaActivo.noche?.length ?? 0})
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={quitarSegundoOutfit}
+                  className="text-xs text-zinc-500 hover:text-zinc-900 flex items-center gap-1"
+                >
+                  <X className="w-3.5 h-3.5" aria-hidden="true" />
+                  Solo 1 outfit este día
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 text-xs text-zinc-700">
+                  <Sun className="w-3.5 h-3.5 text-terracota shrink-0" aria-hidden="true" />
+                  <span>Planeando <strong>1 outfit</strong> para el Día {idxDiaSeguro + 1}.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={activarSegundoOutfit}
+                  className="h-9 px-3.5 border border-zinc-900 bg-white hover:bg-zinc-900 hover:text-white text-zinc-900 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                >
+                  <Moon className="w-3.5 h-3.5" aria-hidden="true" />
+                  + Agregar 2.º outfit (Noche)
+                </button>
+              </>
+            )}
           </div>
 
           {/* Filtros de categoría */}
@@ -486,7 +612,7 @@ export function CrearViaje({
             </span>
           </div>
 
-          {/* Cuadrícula de lugares reales para el DÍA ACTIVO */}
+          {/* Cuadrícula de lugares reales para el DÍA + MOMENTO ACTIVO */}
           {cargandoDestino ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" aria-busy="true">
               {[0, 1, 2].map((k) => (
@@ -503,14 +629,14 @@ export function CrearViaje({
           ) : lugaresFiltrados.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {lugaresFiltrados.map((item) => {
-                const estaEnEsteDia = seleccionadosDia.some((s) => s.id === item.id)
+                const estaSeleccionado = seleccionadosMomento.some((s) => s.id === item.id)
                 return (
                   <article
                     key={item.id}
-                    onClick={() => toggleLugarEnDia(item)}
+                    onClick={() => toggleLugarEnMomento(item)}
                     className={cn(
                       "group cursor-pointer bg-[#F4F0E9] border flex flex-col overflow-hidden transition-colors",
-                      estaEnEsteDia ? "border-terracota" : "border-zinc-200 hover:border-zinc-400"
+                      estaSeleccionado ? "border-terracota" : "border-zinc-200 hover:border-zinc-400"
                     )}
                   >
                     <div className="aspect-[16/10] w-full overflow-hidden bg-zinc-100 flex items-center justify-center">
@@ -529,8 +655,8 @@ export function CrearViaje({
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.14em] font-semibold">
                           <span className="text-zinc-500 truncate">{item.categoria}</span>
-                          <span className={cn("shrink-0", estaEnEsteDia ? "text-terracota" : "text-zinc-500")}>
-                            {estaEnEsteDia ? `✓ Día ${idxDiaSeguro + 1}` : "+ Añadir"}
+                          <span className={cn("shrink-0", estaSeleccionado ? "text-terracota" : "text-zinc-500")}>
+                            {estaSeleccionado ? `✓ ${etiquetaMomento}` : "+ Añadir"}
                           </span>
                         </div>
                         <h3 className="font-serif text-xl sm:text-2xl text-zinc-900 font-normal leading-snug mt-0.5">
@@ -544,18 +670,18 @@ export function CrearViaje({
                         <span
                           className={cn(
                             "text-xs font-medium inline-flex items-center gap-1.5",
-                            estaEnEsteDia ? "text-terracota" : "text-zinc-800"
+                            estaSeleccionado ? "text-terracota" : "text-zinc-800"
                           )}
                         >
-                          {estaEnEsteDia ? (
+                          {estaSeleccionado ? (
                             <>
                               <Check className="w-3.5 h-3.5" aria-hidden="true" />
-                              Quitar del Día {idxDiaSeguro + 1}
+                              Quitar de {etiquetaMomento}
                             </>
                           ) : (
                             <>
                               <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                              Añadir al Día {idxDiaSeguro + 1}
+                              Añadir a {etiquetaMomento}
                             </>
                           )}
                         </span>
@@ -568,11 +694,11 @@ export function CrearViaje({
           ) : (
             <div className="border border-zinc-200 bg-[#F4F0E9] p-6 text-center">
               <p className="text-sm text-zinc-700">No encontramos lugares en esta categoría para {ciudadCorta(lugar.nombre)}.</p>
-              <p className="text-xs text-zinc-500 mt-1">Prueba con el filtro «Para ti» o escribe tu plan para el Día {idxDiaSeguro + 1} abajo.</p>
+              <p className="text-xs text-zinc-500 mt-1">Prueba con el filtro «Para ti» o escribe tu plan para {etiquetaMomento} abajo.</p>
             </div>
           )}
 
-          {/* Añadir lugar personalizado para el día activo */}
+          {/* Añadir lugar personalizado para el día y momento activo */}
           <div className="border border-zinc-200 bg-[#F4F0E9] p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <input
               type="text"
@@ -580,7 +706,7 @@ export function CrearViaje({
               maxLength={80}
               onChange={(e) => setPersonalizado(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); agregarPersonalizado() } }}
-              placeholder={`¿Otro lugar para el Día ${idxDiaSeguro + 1}? Ej. Pirámides, cena especial…`}
+              placeholder={`¿Otro lugar para ${etiquetaMomento}? Ej. Cena en terraza, concierto…`}
               className="h-10 flex-1 min-w-0 border border-zinc-300 bg-white px-3 text-xs sm:text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 rounded-none"
             />
             <button
@@ -590,7 +716,7 @@ export function CrearViaje({
               className="h-10 px-4 border border-zinc-900 bg-white hover:bg-zinc-900 hover:text-white text-zinc-900 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors disabled:opacity-40 shrink-0"
             >
               <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-              Añadir al Día {idxDiaSeguro + 1}
+              Añadir a {etiquetaMomento}
             </button>
           </div>
 
@@ -598,15 +724,15 @@ export function CrearViaje({
           <div className="bg-zinc-900 text-white p-5 sm:p-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
             <div className="min-w-0 flex flex-col gap-1">
               <p className="text-[10px] uppercase tracking-[0.18em] text-terracota font-semibold">
-                DÍA {idxDiaSeguro + 1} DE {fechas.length} · {diasConLugares} {diasConLugares === 1 ? "DÍA PLANEADO" : "DÍAS PLANEADOS"}
+                {etiquetaMomento.toUpperCase()} · {diasConLugares} DE {fechas.length} DÍAS PLANEADOS
               </p>
               <h2 className="font-serif text-xl sm:text-2xl text-white font-normal leading-snug truncate">
-                {seleccionadosDia.length > 0
-                  ? seleccionadosDia.map((s) => s.nombre).join(" + ")
-                  : `Elige lugares para el Día ${idxDiaSeguro + 1}`}
+                {seleccionadosMomento.length > 0
+                  ? seleccionadosMomento.map((s) => s.nombre).join(" + ")
+                  : `Elige lugares para ${etiquetaMomento}`}
               </h2>
               <p className="text-xs text-zinc-400">
-                Se armará 1 outfit por cada día del viaje ({fechas.length} {fechas.length === 1 ? "día" : "días"}).
+                Se armarán {totalOutfits} {totalOutfits === 1 ? "outfit" : "outfits"} en total para tu viaje.
                 {quedaHoy !== null && fechas.length > quedaHoy && ` Hoy te quedan ${quedaHoy} ${quedaHoy === 1 ? "día" : "días"} de planificación.`}
               </p>
             </div>
@@ -615,7 +741,7 @@ export function CrearViaje({
               {idxDiaSeguro < fechas.length - 1 && (
                 <button
                   type="button"
-                  onClick={() => setDiaActivoIdx(idxDiaSeguro + 1)}
+                  onClick={() => cambiarDia(idxDiaSeguro + 1)}
                   className="h-12 px-5 border border-white/25 hover:border-white text-white text-xs sm:text-sm font-medium flex items-center justify-between sm:justify-center gap-3 transition-colors"
                 >
                   <span>Planear Día {idxDiaSeguro + 2}</span>
