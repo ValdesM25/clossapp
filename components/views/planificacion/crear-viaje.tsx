@@ -585,9 +585,9 @@ export function CrearViaje({
             )}
           </div>
 
-          {/* Filtros de categoría */}
+          {/* Filtros de categoría (solo muestra categorías con resultados disponibles) */}
           <div className="w-full max-w-full flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] overscroll-x-contain">
-            {FILTROS_LUGARES.map((cat) => {
+            {FILTROS_LUGARES.filter((cat) => cat === "Para ti" || todosLosLugares.some((l) => l.categoria === cat)).map((cat) => {
               const activo = filtro === cat
               return (
                 <button

@@ -29,7 +29,7 @@ const IMAGEN_INVALIDA = /\.svg|gif(\?|$)|escudo|coat_of_arms|flag_of|bandera|log
 const EXCLUIDO = /\b(distrito|electoral|elecciones|municipio|zona metropolitana|area metropolitana|ayuntamiento|gobierno|universidad|escuela|colegio|instituto tecnol|hospital|clinica|aeropuerto|estacion|prision|carcel|cementerio|panteon|estadio|arena|arquidiocesis|diocesis|radio|television|periodico|batalla|masacre|terremoto|sismo|linea \d|anexo:|anillo periferico|carretera|autopista|canal|senador|diputado|gobernador|presidente|futbol|beisbol|club|parroquia civil)\b/i
 
 // Lista blanca estricta: solo lugares reales de interés turístico, cultural, natural o gastronómico.
-const TURISTICO = /\b(museo|galeria|teatro|palacio|catedral|templo|basilica|exconvento|convento|castillo|monumento|centro cultural|bellas artes|opera|planetario|acuario|auditorio|observatorio|piramide|zona arqueologica|ruinas|parque|jardin|bosque|playa|mirador|lago|laguna|cascada|volcan|cerro|canon|malecon|isla|cenote|reserva|alameda|zoologico|bioparque|grutas|dunas|centro historico|barrio|plaza|zocalo|paseo|andador|callejon|puente|fuente|torre|arco|portales|mercado|vinedo|bodega|hacienda|cristo|santuario|museum|gallery|theatre|theater|palace|cathedral|basilica|castle|monument|park|garden|beach|ruins|pyramid|tower|square|market|old town|botanical)\b/i
+const TURISTICO = /\b(museo|galeria|teatro|palacio|catedral|templo|basilica|exconvento|convento|castillo|monumento|centro cultural|bellas artes|opera|planetario|acuario|auditorio|observatorio|piramide|zona arqueologica|ruinas|parque|jardin|bosque|playa|mirador|lago|laguna|cascada|volcan|cerro|canon|malecon|isla|cenote|reserva|alameda|zoologico|bioparque|grutas|dunas|centro historico|barrio|plaza|zocalo|paseo|andador|callejon|puente|fuente|torre|arco|portales|mercado|gastronomia|restaurante|cafe|cafeteria|cantina|bistro|vinedo|bodega|hacienda|cristo|santuario|museum|gallery|theatre|theater|palace|cathedral|basilica|castle|monument|park|garden|beach|ruins|pyramid|tower|square|market|cuisine|restaurant|old town|botanical)\b/i
 
 function esFotoValida(url: string | undefined): url is string {
   if (!url) return false
@@ -57,8 +57,8 @@ function distanciaKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 function clasificarLugar(titulo: string, texto: string): { categoria: CategoriaLugar; detalles: string; prioridad: number } {
   const s = normalizar(`${titulo} ${texto}`)
 
-  if (/(mercado|gastronomia|restaurante|cafe |cafeteria|bodega|vinedo|cantina|hacienda|market|winery)/.test(s)) {
-    return { categoria: "Gastronomía", detalles: "Paseo urbano · Interior y terraza", prioridad: 3 }
+  if (/(mercado|gastronomia|restaurante|cafe|cafeteria|bodega|vinedo|cantina|hacienda|bistro|cuisine|market|restaurant|winery)/.test(s)) {
+    return { categoria: "Gastronomía", detalles: "Paseo urbano · Interior y terraza", prioridad: 4 }
   }
   if (/(piramide|zona arqueologica|ruinas|parque|jardin|bosque|playa|mirador|lago|laguna|cascada|volcan|cerro|malecon|isla|cenote|reserva|alameda|zoologico|grutas|dunas|cristo|santuario|park|garden|beach|ruins|pyramid)/.test(s)) {
     return { categoria: "Al aire libre", detalles: "Caminata media · Exterior", prioridad: 4 }
@@ -107,17 +107,31 @@ async function fetchLugaresWiki(lat: number, lon: number, ciudad: string, lang: 
     const queryBusqueda = lang === "es"
       ? `${ciudad} museo OR parque OR catedral OR plaza OR teatro OR mirador OR monumento`
       : `${ciudad} museum OR park OR cathedral OR palace OR square OR monument`
+    const queryGastro = lang === "es"
+      ? `Mercado ${ciudad}`
+      : `Market ${ciudad}`
+    const queryCocina = lang === "es"
+      ? `Gastronomía de ${ciudad}`
+      : `Cuisine of ${ciudad}`
 
     const geoUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=geosearch&ggscoord=${lat}|${lon}&ggsradius=10000&ggslimit=50&prop=pageimages|description|extracts|coordinates&piprop=thumbnail&pithumbsize=720&exintro=1&explaintext=1&exsentences=2&format=json&origin=*`
     const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(queryBusqueda)}&gsrlimit=20&prop=pageimages|description|extracts|coordinates&piprop=thumbnail&pithumbsize=720&exintro=1&explaintext=1&exsentences=2&format=json&origin=*`
+    const gastroUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(queryGastro)}&gsrlimit=10&prop=pageimages|description|extracts|coordinates&piprop=thumbnail&pithumbsize=720&exintro=1&explaintext=1&exsentences=2&format=json&origin=*`
+    const cocinaUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(queryCocina)}&gsrlimit=5&prop=pageimages|description|extracts|coordinates&piprop=thumbnail&pithumbsize=720&exintro=1&explaintext=1&exsentences=2&format=json&origin=*`
 
-    const [geoRes, searchRes] = await Promise.all([
+    const [geoRes, searchRes, gastroRes, cocinaRes] = await Promise.all([
       fetch(geoUrl, { signal: AbortSignal.timeout(8000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
       fetch(searchUrl, { signal: AbortSignal.timeout(8000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch(gastroUrl, { signal: AbortSignal.timeout(8000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch(cocinaUrl, { signal: AbortSignal.timeout(8000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ])
 
     const geoPages = Object.values((geoRes?.query?.pages ?? {}) as Record<string, WikiPage>).map((p) => ({ page: p, deGeo: true }))
-    const searchPages = Object.values((searchRes?.query?.pages ?? {}) as Record<string, WikiPage>).map((p) => ({ page: p, deGeo: false }))
+    const searchPages = [
+      ...Object.values((searchRes?.query?.pages ?? {}) as Record<string, WikiPage>),
+      ...Object.values((gastroRes?.query?.pages ?? {}) as Record<string, WikiPage>),
+      ...Object.values((cocinaRes?.query?.pages ?? {}) as Record<string, WikiPage>),
+    ].map((p) => ({ page: p, deGeo: false }))
 
     const ciudadNorm = normalizar(ciudad)
     const candidatos: (LugarSugerido & { _score: number })[] = []
@@ -157,10 +171,29 @@ async function fetchLugaresWiki(lat: number, lon: number, ciudad: string, lang: 
       })
     }
 
-    return candidatos
-      .sort((a, b) => b._score - a._score)
-      .slice(0, 9)
-      .map(({ _score: _, ...item }) => item)
+    // Selección balanceada por categoría para que Gastronomía o Barrios no queden fuera por museos
+    const ordenados = candidatos.sort((a, b) => b._score - a._score)
+    const porCat = new Map<CategoriaLugar, (LugarSugerido & { _score: number })[]>()
+    for (const c of ordenados) {
+      porCat.set(c.categoria, [...(porCat.get(c.categoria) ?? []), c])
+    }
+    const elegidos: LugarSugerido[] = []
+    const idsElegidos = new Set<string>()
+    for (const lista of porCat.values()) {
+      for (const item of lista.slice(0, 3)) {
+        const { _score: _, ...limpio } = item
+        elegidos.push(limpio)
+        idsElegidos.add(limpio.id)
+      }
+    }
+    for (const item of ordenados) {
+      if (elegidos.length >= 12) break
+      if (idsElegidos.has(item.id)) continue
+      const { _score: _, ...limpio } = item
+      elegidos.push(limpio)
+      idsElegidos.add(limpio.id)
+    }
+    return elegidos
   } catch {
     return []
   }
