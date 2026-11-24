@@ -5,7 +5,7 @@ import { ArrowRight, ArrowUpRight, Check, ChevronLeft, MapPin, Plus, Search, X }
 import { cn } from "@/lib/utils"
 import { buscarLugares, type Lugar } from "@/lib/clima"
 import { obtenerDestinoReal, type DestinoReal } from "@/lib/destinos"
-import { diasEntre, MAX_DIAS_PLAN, prellenar, sumarDias, type Momento } from "@/lib/planificacion"
+import { diasEntre, fechaCorta, MAX_DIAS_PLAN, prellenar, sumarDias, type Momento } from "@/lib/planificacion"
 import type { DatosPlan } from "@/services/planificacion.service"
 import {
   CIUDADES_DESTACADAS,
@@ -19,18 +19,13 @@ import {
 } from "@/constants/viajes-lugares"
 import { ViajeStepper } from "./viaje-stepper"
 
-const NUMEROS_TEXTO = ["NINGÚN LUGAR", "UN LUGAR", "DOS LUGARES", "TRES LUGARES", "CUATRO LUGARES", "CINCO LUGARES"]
 const DESTINO_PREVIA_DEFAULT: Lugar = CIUDADES_DESTACADAS[2] // París, Francia
 
-function etiquetaCantidadLugares(n: number): string {
-  const base = NUMEROS_TEXTO[n] ?? `${n} LUGARES`
-  return `${base}, MUCHAS POSIBILIDADES.`
-}
-
 /**
- * Flujo editorial en 2 pasos para crear un Viaje (Paso 1: Destino, Paso 2: Lugares).
+ * Flujo editorial en 2 pasos para crear un Viaje (Paso 1: Destino, Paso 2: Lugares por día).
  * Consulta ciudades reales (Open-Meteo filtrado por ciudad/población) y fotos/lugares reales
- * (Wikipedia / Wikimedia Commons). Al pulsar "Crear mis outfits", guarda en Supabase y pasa a Paso 3.
+ * (Wikipedia / Wikimedia Commons). Al pulsar "Crear mis outfits", guarda 1 outfit por día con
+ * los lugares exactos elegidos para ese día.
  */
 export function CrearViaje({
   hoy,
@@ -56,10 +51,20 @@ export function CrearViaje({
   const [filtro, setFiltro] = useState<"Para ti" | CategoriaLugar>("Para ti")
   const [destinoReal, setDestinoReal] = useState<DestinoReal | null>(null)
   const [cargandoDestino, setCargandoDestino] = useState(true)
-  const [seleccionados, setSeleccionados] = useState<LugarSugerido[]>([])
+  // Lugares elegidos POR DÍA (fecha ISO -> lista de lugares que visitará ese día)
+  const [diaActivoIdx, setDiaActivoIdx] = useState(0)
+  const [lugaresPorDia, setLugaresPorDia] = useState<Record<string, LugarSugerido[]>>({})
   const [personalizado, setPersonalizado] = useState("")
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const maxFin = sumarDias(inicio, MAX_DIAS_PLAN - 1)
+  const fechas = useMemo(() => (inicio && fin && fin >= inicio ? diasEntre(inicio, fin) : []), [inicio, fin])
+  const quedaHoy = cuota ? Math.min(cuota.hoy, cuota.mes) : null
+
+  const idxDiaSeguro = Math.min(diaActivoIdx, Math.max(0, fechas.length - 1))
+  const fechaActiva = fechas[idxDiaSeguro] ?? ""
+  const seleccionadosDia = lugaresPorDia[fechaActiva] ?? []
 
   // Búsqueda de ciudades reales con Open-Meteo
   useEffect(() => {
@@ -89,7 +94,8 @@ export function CrearViaje({
       .then((info) => {
         if (!vigente) return
         setDestinoReal(info)
-        setSeleccionados(info.lugares.slice(0, 2))
+        setLugaresPorDia({})
+        setDiaActivoIdx(0)
         setFiltro("Para ti")
       })
       .finally(() => {
@@ -97,10 +103,6 @@ export function CrearViaje({
       })
     return () => { vigente = false }
   }, [objetivoFoto])
-
-  const maxFin = sumarDias(inicio, MAX_DIAS_PLAN - 1)
-  const fechas = inicio && fin && fin >= inicio ? diasEntre(inicio, fin) : []
-  const quedaHoy = cuota ? Math.min(cuota.hoy, cuota.mes) : null
 
   const errorPaso1 =
     !lugar ? "Elige una ciudad de la lista para conocer su clima y lugares."
@@ -113,60 +115,65 @@ export function CrearViaje({
     setIntereses((prev) => (prev.includes(item) ? prev.filter((x) => x !== item) : [...prev, item]))
   }
 
-  const toggleLugar = (item: LugarSugerido) => {
-    setSeleccionados((prev) =>
-      prev.some((x) => x.id === item.id) ? prev.filter((x) => x.id !== item.id) : [...prev, item]
-    )
+  const toggleLugarEnDia = (item: LugarSugerido) => {
+    if (!fechaActiva) return
+    setLugaresPorDia((prev) => {
+      const actuales = prev[fechaActiva] ?? []
+      const existe = actuales.some((x) => x.id === item.id)
+      return {
+        ...prev,
+        [fechaActiva]: existe ? actuales.filter((x) => x.id !== item.id) : [...actuales, item],
+      }
+    })
   }
 
   const agregarPersonalizado = () => {
     const limpio = personalizado.trim()
-    if (!limpio) return
+    if (!limpio || !fechaActiva) return
     const nuevo: LugarSugerido = {
       id: `custom-${Date.now()}`,
       nombre: limpio,
       categoria: "Barrios con encanto",
-      descripcion: "Plan personalizado añadido a tu itinerario.",
+      descripcion: "Plan personalizado añadido a este día.",
       detalles: "A tu ritmo · Personalizado",
       imagen: destinoReal?.imagen ?? null,
     }
-    setSeleccionados((prev) => [...prev, nuevo])
+    setLugaresPorDia((prev) => ({
+      ...prev,
+      [fechaActiva]: [...(prev[fechaActiva] ?? []), nuevo],
+    }))
     setPersonalizado("")
   }
 
+  // Incluye los lugares del catálogo + personalizados añadidos al día activo
   const todosLosLugares = useMemo(() => {
     const base = destinoReal?.lugares ?? []
     const idsBase = new Set(base.map((l) => l.id))
-    const extras = seleccionados.filter((s) => !idsBase.has(s.id))
+    const extras = seleccionadosDia.filter((s) => !idsBase.has(s.id))
     return [...base, ...extras]
-  }, [destinoReal?.lugares, seleccionados])
+  }, [destinoReal?.lugares, seleccionadosDia])
 
   const lugaresFiltrados = useMemo(() => {
     if (filtro === "Para ti") return todosLosLugares
     return todosLosLugares.filter((l) => l.categoria === filtro)
   }, [todosLosLugares, filtro])
 
+  const diasConLugares = fechas.filter((f) => (lugaresPorDia[f]?.length ?? 0) > 0).length
+  const totalLugaresElegidos = fechas.reduce((acc, f) => acc + (lugaresPorDia[f]?.length ?? 0), 0)
+
   const crear = async () => {
     if (!lugar || fechas.length === 0) return
     setEnviando(true)
     setError(null)
-    const actividades = seleccionados.length > 0
-      ? seleccionados.map((s) => s.nombre)
-      : ["Paseo y exploración por el destino"]
 
-    const momentos: { fecha: string; momento: Momento; actividad: string }[] = []
-    fechas.forEach((f, idx) => {
-      const actDia = actividades[idx % actividades.length]
-      momentos.push({ fecha: f, momento: "dia", actividad: actDia.slice(0, 120) })
+    // Exactamente 1 outfit por día, usando los lugares asignados a ESE día
+    const momentos: { fecha: string; momento: Momento; actividad: string }[] = fechas.map((f) => {
+      const delDia = lugaresPorDia[f] ?? []
+      const actividad = delDia.length > 0
+        ? delDia.map((l) => l.nombre).join(", ").slice(0, 120)
+        : "Día libre y paseo casual"
+      return { fecha: f, momento: "dia", actividad }
     })
-    if (actividades.length > fechas.length) {
-      const sobrantes = actividades.slice(fechas.length)
-      sobrantes.forEach((act, idx) => {
-        if (idx < fechas.length) {
-          momentos.push({ fecha: fechas[idx], momento: "noche", actividad: act.slice(0, 120) })
-        }
-      })
-    }
 
     const nombrePlan = `Viaje a ${ciudadCorta(lugar.nombre)}`.slice(0, 60)
     try {
@@ -211,7 +218,7 @@ export function CrearViaje({
                 tu próximo outfit.
               </h1>
               <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed max-w-md">
-                Descubre qué visitar y qué ponerte. Creamos looks con tu armario para cada plan de tu viaje.
+                Descubre qué visitar y qué ponerte. Creamos looks con tu armario para cada día de tu viaje.
               </p>
             </div>
 
@@ -342,7 +349,7 @@ export function CrearViaje({
               <button
                 type="button"
                 disabled={!!errorPaso1}
-                onClick={() => { setError(null); setPaso(2) }}
+                onClick={() => { setError(null); setDiaActivoIdx(0); setPaso(2) }}
                 className="h-12 w-full bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-medium px-5 flex items-center justify-between transition-colors disabled:opacity-45"
               >
                 <span>Descubrir lugares</span>
@@ -351,7 +358,7 @@ export function CrearViaje({
               {errorPaso1 ? (
                 <p className="text-xs text-zinc-500">{errorPaso1}</p>
               ) : (
-                <p className="text-xs text-zinc-500">Tú eliges el plan. Tu armario hace el resto.</p>
+                <p className="text-xs text-zinc-500">Tú eliges el plan de cada día. Tu armario hace el resto.</p>
               )}
             </div>
           </div>
@@ -390,9 +397,9 @@ export function CrearViaje({
         </div>
       )}
 
-      {/* PASO 2: LUGARES REALES */}
+      {/* PASO 2: ELEGIR LUGARES POR DÍA */}
       {paso === 2 && lugar && (
-        <div className="flex flex-col gap-6 w-full min-w-0">
+        <div className="flex flex-col gap-5 sm:gap-6 w-full min-w-0">
           {/* Encabezado */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div className="flex flex-col gap-1.5 min-w-0">
@@ -400,10 +407,10 @@ export function CrearViaje({
                 {lugar.nombre.toUpperCase()} / {rangoFechasEditorial(inicio, fin)}
               </p>
               <h1 className="font-serif text-3xl sm:text-4xl text-zinc-900 font-normal leading-tight">
-                ¿Qué te apetece descubrir?
+                ¿Qué visitarás cada día?
               </h1>
               <p className="text-sm text-zinc-600">
-                Elige los lugares de tu viaje. Nosotros pensamos en los outfits.
+                Elige un día y selecciona los lugares que visitarás ese día. Armaremos 1 outfit ideal para cada día.
               </p>
             </div>
             <button
@@ -416,7 +423,43 @@ export function CrearViaje({
             </button>
           </div>
 
-          {/* Filtros */}
+          {/* Selector de DÍAS del viaje */}
+          <div className="flex flex-col gap-2 w-full min-w-0">
+            <span className="text-[10px] uppercase tracking-[0.16em] text-zinc-500 font-semibold">
+              Selecciona el día que estás planeando
+            </span>
+            <div className="w-full max-w-full flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] overscroll-x-contain">
+              {fechas.map((f, idx) => {
+                const esActivo = idx === idxDiaSeguro
+                const cuenta = lugaresPorDia[f]?.length ?? 0
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    aria-pressed={esActivo}
+                    onClick={() => setDiaActivoIdx(idx)}
+                    className={cn(
+                      "shrink-0 px-3.5 py-2.5 border text-left flex flex-col gap-0.5 transition-colors min-w-[110px]",
+                      esActivo
+                        ? "bg-zinc-900 text-white border-zinc-900"
+                        : cuenta > 0
+                          ? "bg-[#F4F0E9] text-zinc-900 border-terracota"
+                          : "bg-[#F4F0E9] text-zinc-700 border-zinc-300 hover:border-zinc-900"
+                    )}
+                  >
+                    <span className={cn("text-[10px] uppercase tracking-widest font-semibold", esActivo ? "text-terracota" : "text-zinc-500")}>
+                      Día {idx + 1} · {fechaCorta(f)}
+                    </span>
+                    <span className={cn("text-xs font-medium", esActivo ? "text-white" : "text-zinc-800")}>
+                      {cuenta === 0 ? "Sin lugares aún" : `${cuenta} ${cuenta === 1 ? "lugar" : "lugares"}`}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Filtros de categoría */}
           <div className="w-full max-w-full flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] overscroll-x-contain">
             {FILTROS_LUGARES.map((cat) => {
               const activo = filtro === cat
@@ -443,7 +486,7 @@ export function CrearViaje({
             </span>
           </div>
 
-          {/* Cuadrícula de lugares reales */}
+          {/* Cuadrícula de lugares reales para el DÍA ACTIVO */}
           {cargandoDestino ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" aria-busy="true">
               {[0, 1, 2].map((k) => (
@@ -460,14 +503,14 @@ export function CrearViaje({
           ) : lugaresFiltrados.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {lugaresFiltrados.map((item) => {
-                const estaSeleccionado = seleccionados.some((s) => s.id === item.id)
+                const estaEnEsteDia = seleccionadosDia.some((s) => s.id === item.id)
                 return (
                   <article
                     key={item.id}
-                    onClick={() => toggleLugar(item)}
+                    onClick={() => toggleLugarEnDia(item)}
                     className={cn(
                       "group cursor-pointer bg-[#F4F0E9] border flex flex-col overflow-hidden transition-colors",
-                      estaSeleccionado ? "border-terracota" : "border-zinc-200 hover:border-zinc-400"
+                      estaEnEsteDia ? "border-terracota" : "border-zinc-200 hover:border-zinc-400"
                     )}
                   >
                     <div className="aspect-[16/10] w-full overflow-hidden bg-zinc-100 flex items-center justify-center">
@@ -486,8 +529,8 @@ export function CrearViaje({
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.14em] font-semibold">
                           <span className="text-zinc-500 truncate">{item.categoria}</span>
-                          <span className={cn("shrink-0", estaSeleccionado ? "text-terracota" : "text-zinc-500")}>
-                            {estaSeleccionado ? "✓ Seleccionado" : "+ Añadir"}
+                          <span className={cn("shrink-0", estaEnEsteDia ? "text-terracota" : "text-zinc-500")}>
+                            {estaEnEsteDia ? `✓ Día ${idxDiaSeguro + 1}` : "+ Añadir"}
                           </span>
                         </div>
                         <h3 className="font-serif text-xl sm:text-2xl text-zinc-900 font-normal leading-snug mt-0.5">
@@ -501,18 +544,18 @@ export function CrearViaje({
                         <span
                           className={cn(
                             "text-xs font-medium inline-flex items-center gap-1.5",
-                            estaSeleccionado ? "text-terracota" : "text-zinc-800"
+                            estaEnEsteDia ? "text-terracota" : "text-zinc-800"
                           )}
                         >
-                          {estaSeleccionado ? (
+                          {estaEnEsteDia ? (
                             <>
                               <Check className="w-3.5 h-3.5" aria-hidden="true" />
-                              Quitar de mi viaje
+                              Quitar del Día {idxDiaSeguro + 1}
                             </>
                           ) : (
                             <>
                               <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                              Añadir a mi viaje
+                              Añadir al Día {idxDiaSeguro + 1}
                             </>
                           )}
                         </span>
@@ -525,11 +568,11 @@ export function CrearViaje({
           ) : (
             <div className="border border-zinc-200 bg-[#F4F0E9] p-6 text-center">
               <p className="text-sm text-zinc-700">No encontramos lugares en esta categoría para {ciudadCorta(lugar.nombre)}.</p>
-              <p className="text-xs text-zinc-500 mt-1">Prueba con el filtro «Para ti» o escribe tus propios planes abajo.</p>
+              <p className="text-xs text-zinc-500 mt-1">Prueba con el filtro «Para ti» o escribe tu plan para el Día {idxDiaSeguro + 1} abajo.</p>
             </div>
           )}
 
-          {/* Añadir lugar personalizado */}
+          {/* Añadir lugar personalizado para el día activo */}
           <div className="border border-zinc-200 bg-[#F4F0E9] p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <input
               type="text"
@@ -537,7 +580,7 @@ export function CrearViaje({
               maxLength={80}
               onChange={(e) => setPersonalizado(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); agregarPersonalizado() } }}
-              placeholder="¿Tienes otro plan? Ej. Pirámides de Teotihuacán, cena especial…"
+              placeholder={`¿Otro lugar para el Día ${idxDiaSeguro + 1}? Ej. Pirámides, cena especial…`}
               className="h-10 flex-1 min-w-0 border border-zinc-300 bg-white px-3 text-xs sm:text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 rounded-none"
             />
             <button
@@ -547,36 +590,48 @@ export function CrearViaje({
               className="h-10 px-4 border border-zinc-900 bg-white hover:bg-zinc-900 hover:text-white text-zinc-900 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors disabled:opacity-40 shrink-0"
             >
               <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-              Añadir lugar
+              Añadir al Día {idxDiaSeguro + 1}
             </button>
           </div>
 
-          {/* Barra oscura inferior de resumen y acción */}
-          <div className="bg-zinc-900 text-white p-5 sm:p-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          {/* Barra oscura inferior de resumen por día y acción */}
+          <div className="bg-zinc-900 text-white p-5 sm:p-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
             <div className="min-w-0 flex flex-col gap-1">
               <p className="text-[10px] uppercase tracking-[0.18em] text-terracota font-semibold">
-                {etiquetaCantidadLugares(seleccionados.length)}
+                DÍA {idxDiaSeguro + 1} DE {fechas.length} · {diasConLugares} {diasConLugares === 1 ? "DÍA PLANEADO" : "DÍAS PLANEADOS"}
               </p>
               <h2 className="font-serif text-xl sm:text-2xl text-white font-normal leading-snug truncate">
-                {seleccionados.length > 0
-                  ? seleccionados.map((s) => s.nombre).join(" + ")
-                  : "Elige al menos un lugar"}
+                {seleccionadosDia.length > 0
+                  ? seleccionadosDia.map((s) => s.nombre).join(" + ")
+                  : `Elige lugares para el Día ${idxDiaSeguro + 1}`}
               </h2>
               <p className="text-xs text-zinc-400">
-                Outfits pensados para caminar, explorar y disfrutar.
-                {quedaHoy !== null && fechas.length > quedaHoy && ` Hoy armamos ${quedaHoy} ${quedaHoy === 1 ? "día" : "días"}.`}
+                Se armará 1 outfit por cada día del viaje ({fechas.length} {fechas.length === 1 ? "día" : "días"}).
+                {quedaHoy !== null && fechas.length > quedaHoy && ` Hoy te quedan ${quedaHoy} ${quedaHoy === 1 ? "día" : "días"} de planificación.`}
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={crear}
-              disabled={enviando || seleccionados.length === 0}
-              className="h-12 px-6 bg-terracota hover:bg-[#b86752] text-zinc-900 text-sm font-medium flex items-center justify-between sm:justify-center gap-4 transition-colors disabled:opacity-45 shrink-0"
-            >
-              <span>{enviando ? "Creando viaje…" : "Crear mis outfits"}</span>
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+              {idxDiaSeguro < fechas.length - 1 && (
+                <button
+                  type="button"
+                  onClick={() => setDiaActivoIdx(idxDiaSeguro + 1)}
+                  className="h-12 px-5 border border-white/25 hover:border-white text-white text-xs sm:text-sm font-medium flex items-center justify-between sm:justify-center gap-3 transition-colors"
+                >
+                  <span>Planear Día {idxDiaSeguro + 2}</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={crear}
+                disabled={enviando || totalLugaresElegidos === 0}
+                className="h-12 px-6 bg-terracota hover:bg-[#b86752] text-zinc-900 text-sm font-medium flex items-center justify-between sm:justify-center gap-4 transition-colors disabled:opacity-45"
+              >
+                <span>{enviando ? "Creando viaje…" : "Crear mis outfits"}</span>
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
           </div>
 
           {error && <p role="alert" className="text-xs text-red-700 border border-red-200 bg-red-50 p-3">{error}</p>}

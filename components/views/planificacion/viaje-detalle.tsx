@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react"
 import { ArrowRight, Check, Luggage, RotateCw, Sparkles, Trash2 } from "lucide-react"
 import type { Prenda } from "@/types"
 import { cn } from "@/lib/utils"
-import { diasDe, maletaDe, ordenMomento, type MomentoPlan, type PlanOutfit } from "@/lib/planificacion"
+import { diasDe, fechaCorta, maletaDe, ordenMomento, type MomentoPlan, type PlanOutfit } from "@/lib/planificacion"
 import { rangoFechasEditorial } from "@/constants/viajes-lugares"
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -184,12 +184,12 @@ export function ViajeDetalle({
         </div>
       )}
 
-      {/* Pestañas de lugares + clima de referencia */}
+      {/* Pestañas por DÍA + clima de referencia */}
       {momentosOrdenados.length > 0 && (
         <div className="w-full max-w-full flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] overscroll-x-contain">
           {momentosOrdenados.map((m, i) => {
             const esActivo = i === idxSeguro
-            const etiqueta = m.actividad.trim() || (m.momento === "noche" ? "Plan de noche" : `Día ${i + 1}`)
+            const punto = m.estado === "listo" ? "bg-emerald-500" : m.estado === "error" ? "bg-red-500" : "bg-zinc-400"
             return (
               <button
                 key={m.id}
@@ -197,16 +197,17 @@ export function ViajeDetalle({
                 aria-pressed={esActivo}
                 onClick={() => irAMomento(i)}
                 className={cn(
-                  "shrink-0 h-10 px-4 border text-xs font-medium flex items-center gap-2 transition-colors",
+                  "shrink-0 h-11 px-4 border text-xs font-medium flex items-center gap-2 transition-colors",
                   esActivo
                     ? "bg-zinc-900 text-white border-zinc-900"
                     : "bg-[#F4F0E9] text-zinc-700 border-zinc-300 hover:border-zinc-900"
                 )}
               >
-                <span className={cn("font-mono text-[11px]", esActivo ? "text-zinc-300" : "text-zinc-400")}>
-                  {String(i + 1).padStart(2, "0")}
+                <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", punto)} aria-hidden="true" />
+                <span className="font-mono text-[11px] uppercase">Día {i + 1}</span>
+                <span className={cn("text-[11px]", esActivo ? "text-zinc-300" : "text-zinc-500")}>
+                  · {fechaCorta(m.fecha)}
                 </span>
-                <span className="max-w-[180px] truncate">{etiqueta}</span>
               </button>
             )
           })}
@@ -226,7 +227,7 @@ export function ViajeDetalle({
           <article className="bg-[#F4F0E9] border border-zinc-200 p-5 sm:p-7 flex flex-col gap-5">
             <div className="flex items-center justify-between gap-3">
               <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.16em] text-terracota font-semibold truncate">
-                Sugerencia para {activo.actividad.trim() || "tu día"}
+                Día {idxSeguro + 1} · {activo.actividad.trim() || "Paseo casual"}
               </p>
               <span className="text-xs font-mono text-zinc-500 shrink-0">
                 {String(idxSeguro + 1).padStart(2, "0")} / {String(momentosOrdenados.length).padStart(2, "0")}
@@ -234,13 +235,23 @@ export function ViajeDetalle({
             </div>
 
             {activo.estado === "pendiente" && (
-              <div className="py-10 flex flex-col items-center justify-center gap-3 text-center">
+              <div className="py-8 flex flex-col items-center justify-center gap-3 text-center">
                 <p className="font-serif text-2xl text-zinc-900 font-normal">
-                  {armando ? "Armando tu look…" : "Este look aún está pendiente"}
+                  {armando || regenerando === activo.id ? "Armando tu look…" : `Outfit del Día ${idxSeguro + 1} pendiente`}
                 </p>
                 <p className="text-xs text-zinc-500 max-w-sm">
-                  Seleccionaremos prendas reales de tu armario según el clima y el plan de este lugar.
+                  Seleccionaremos prendas reales de tu armario según el clima y los lugares que elegiste para este día ({activo.actividad.trim() || "paseo casual"}).
                 </p>
+                {!soloLectura && !ocupado && quedaHoy > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => acciones.onOtro(activo.id)}
+                    className="mt-2 h-11 px-5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium flex items-center gap-2 transition-colors"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+                    Armar outfit del Día {idxSeguro + 1}
+                  </button>
+                )}
               </div>
             )}
 
@@ -362,7 +373,7 @@ export function ViajeDetalle({
             <aside className="bg-[#EFECE6] border border-zinc-200 p-5 sm:p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[10px] uppercase tracking-[0.16em] text-terracota font-semibold">
-                  También en tu viaje
+                  Día {sigIdx + 1} · {fechaCorta(siguiente.fecha)}
                 </p>
                 <span className="text-xs font-mono text-zinc-500">
                   {String(sigIdx + 1).padStart(2, "0")}
@@ -370,7 +381,7 @@ export function ViajeDetalle({
               </div>
 
               <h3 className="font-serif text-xl sm:text-2xl text-zinc-900 font-normal leading-snug">
-                {siguiente.outfit?.titulo || siguiente.actividad || `Plan ${sigIdx + 1}`}
+                {siguiente.outfit?.titulo || siguiente.actividad || `Día ${sigIdx + 1}`}
               </h3>
 
               <FlatLayCollage prendas={delSiguiente} compacto />
@@ -382,7 +393,7 @@ export function ViajeDetalle({
               )}
 
               <p className="text-xs text-zinc-600 leading-relaxed line-clamp-3">
-                {siguiente.outfit?.justificacion || siguiente.outfit?.descripcion || `Look pensado para ${siguiente.actividad || "tu próximo día de viaje"}.`}
+                {siguiente.outfit?.justificacion || siguiente.outfit?.descripcion || `Lugares del día: ${siguiente.actividad || "paseo casual"}.`}
               </p>
 
               <button
@@ -390,7 +401,7 @@ export function ViajeDetalle({
                 onClick={() => irAMomento(sigIdx, true)}
                 className="mt-1 h-11 w-full border border-zinc-300 hover:border-zinc-900 bg-[#F4F0E9] text-zinc-900 text-xs font-medium px-4 flex items-center justify-between transition-colors"
               >
-                <span>Ver este outfit</span>
+                <span>Ver outfit del Día {sigIdx + 1}</span>
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </aside>
